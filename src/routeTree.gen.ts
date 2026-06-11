@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedSosNewRouteImport } from './routes/_authenticated/sos.new'
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -52,6 +53,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSosNewRoute = AuthenticatedSosNewRouteImport.update({
+  id: '/sos/new',
+  path: '/sos/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlayersIdRoute = AuthenticatedPlayersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/players'
     | '/players/$id'
+    | '/sos/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/players'
     | '/players/$id'
+    | '/sos/new'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me'
     | '/_authenticated/players'
     | '/_authenticated/players/$id'
+    | '/_authenticated/sos/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sos/new': {
+      id: '/_authenticated/sos/new'
+      path: '/sos/new'
+      fullPath: '/sos/new'
+      preLoaderRoute: typeof AuthenticatedSosNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/players/$id': {
       id: '/_authenticated/players/$id'
       path: '/$id'
@@ -201,12 +220,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
+  AuthenticatedSosNewRoute: typeof AuthenticatedSosNewRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
+  AuthenticatedSosNewRoute: AuthenticatedSosNewRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
