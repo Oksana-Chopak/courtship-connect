@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -39,18 +40,25 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlayersIdRoute = AuthenticatedPlayersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedPlayersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/players': typeof AuthenticatedPlayersRoute
+  '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/players/$id': typeof AuthenticatedPlayersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/players': typeof AuthenticatedPlayersRoute
+  '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/players/$id': typeof AuthenticatedPlayersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,13 +66,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/_authenticated/players': typeof AuthenticatedPlayersRoute
+  '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding' | '/players'
+  fullPaths: '/' | '/auth' | '/onboarding' | '/players' | '/players/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/players'
+  to: '/' | '/auth' | '/onboarding' | '/players' | '/players/$id'
   id:
     | '__root__'
     | '/'
@@ -72,6 +81,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/_authenticated/players'
+    | '/_authenticated/players/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,15 +128,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/players/$id': {
+      id: '/_authenticated/players/$id'
+      path: '/$id'
+      fullPath: '/players/$id'
+      preLoaderRoute: typeof AuthenticatedPlayersIdRouteImport
+      parentRoute: typeof AuthenticatedPlayersRoute
+    }
   }
 }
 
+interface AuthenticatedPlayersRouteChildren {
+  AuthenticatedPlayersIdRoute: typeof AuthenticatedPlayersIdRoute
+}
+
+const AuthenticatedPlayersRouteChildren: AuthenticatedPlayersRouteChildren = {
+  AuthenticatedPlayersIdRoute: AuthenticatedPlayersIdRoute,
+}
+
+const AuthenticatedPlayersRouteWithChildren =
+  AuthenticatedPlayersRoute._addFileChildren(AuthenticatedPlayersRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRoute
+  AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedPlayersRoute: AuthenticatedPlayersRoute,
+  AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
