@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/courtship";
+import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/players/$id")({
@@ -51,12 +52,8 @@ function PlayerDetail() {
       </Link>
 
       <div className="ccard p-5 space-y-4">
-        <div className="aspect-square w-40 mx-auto rounded-2xl overflow-hidden border-2 border-[var(--ink)] bg-[var(--cream)] flex items-center justify-center">
-          {p.photo_url ? (
-            <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="font-display text-6xl text-[var(--wood)]">{p.name.charAt(0).toUpperCase()}</div>
-          )}
+        <div className="flex justify-center">
+          <Avatar src={p.photo_url} name={p.name} seed={p.id} size={160} />
         </div>
 
         <div className="text-center">
