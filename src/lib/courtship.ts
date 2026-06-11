@@ -88,3 +88,43 @@ export const COURTS = [
   "Sunnersta Court",
   "Luthagen Court",
 ] as const;
+
+export const COURT_STATUSES = [
+  { value: "booked_paid", label: "Booked & paid 💸" },
+  { value: "booked", label: "Booked" },
+  { value: "will_book", label: "Will book" },
+  { value: "public", label: "Public court" },
+] as const;
+
+export const SOS_FORMATS = [
+  { value: "singles", label: "Singles" },
+  { value: "doubles_need1", label: "Doubles — need 1" },
+  { value: "doubles_need2", label: "Doubles — need 2" },
+] as const;
+
+export function timeAgo(iso: string): string {
+  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  return `${Math.floor(sec / 86400)}d ago`;
+}
+
+export function timeUntil(iso: string): string {
+  const sec = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+  if (sec < 0) return "now";
+  if (sec < 3600) return `in ${Math.max(1, Math.floor(sec / 60))}m`;
+  if (sec < 86400) return `in ${Math.floor(sec / 3600)}h`;
+  return `in ${Math.floor(sec / 86400)}d`;
+}
+
+export function whenLabel(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const tomorrow = new Date(today.getTime() + 86400000);
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  const hhmm = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (sameDay(d, today)) return `Today ${hhmm}`;
+  if (sameDay(d, tomorrow)) return `Tomorrow ${hhmm}`;
+  return d.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
+}
