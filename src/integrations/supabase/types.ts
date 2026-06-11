@@ -253,7 +253,7 @@ export type Database = {
       }
     }
     Functions: {
-      get_whatsapp_phone: { Args: { target_id: string }; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       buddy_optin_t: "yes" | "sometimes" | "no"
