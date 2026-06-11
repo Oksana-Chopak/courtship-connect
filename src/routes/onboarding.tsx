@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileForm, emptyProfile } from "@/components/ProfileForm";
+import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding")({
@@ -34,17 +34,21 @@ function Onboarding() {
           </p>
         </div>
         <div className="ccard p-5">
-          <ProfileForm
+          <ProfileWizard
             initial={emptyProfile}
+            userId={uid}
             submitLabel="Save & see players"
             busy={busy}
-            onSubmit={async (v) => {
+            onSubmit={async (v: ProfileFormValues) => {
               setBusy(true);
               const { error } = await supabase
                 .from("profiles" as any)
                 .insert({ id: uid, ...v });
               setBusy(false);
-              if (error) return toast.error(error.message);
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
               toast.success("You're in. Game on.");
               navigate({ to: "/players" });
             }}

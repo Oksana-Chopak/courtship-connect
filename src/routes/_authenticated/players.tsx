@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji } from "@/lib/courtship";
+import { Avatar } from "@/components/Avatar";
 
 export const Route = createFileRoute("/_authenticated/players")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),
@@ -137,14 +138,8 @@ function PlayerCard({ p }: { p: P }) {
       params={{ id: p.id }}
       className="ccard p-3 block hover:translate-y-[-2px] transition-transform"
     >
-      <div className="aspect-square rounded-lg overflow-hidden border-2 border-[var(--ink)] bg-[var(--cream)] mb-2 flex items-center justify-center">
-        {p.photo_url ? (
-          <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="font-display text-4xl text-[var(--wood)]">
-            {p.name.charAt(0).toUpperCase()}
-          </div>
-        )}
+      <div className="flex justify-center mb-2">
+        <Avatar src={p.photo_url} name={p.name} seed={p.id} size={104} />
       </div>
       <div className="flex items-center justify-between gap-1">
         <div className="font-display text-lg truncate">{p.name}</div>
