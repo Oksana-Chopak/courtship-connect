@@ -14,16 +14,254 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      courts: {
+        Row: {
+          area: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          area?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          area?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      games: {
+        Row: {
+          confirmed_a: boolean
+          confirmed_b: boolean
+          id: string
+          played_at: string
+          player_a: string
+          player_b: string
+          reported_noshow: string | null
+          sos_id: string | null
+        }
+        Insert: {
+          confirmed_a?: boolean
+          confirmed_b?: boolean
+          id?: string
+          played_at: string
+          player_a: string
+          player_b: string
+          reported_noshow?: string | null
+          sos_id?: string | null
+        }
+        Update: {
+          confirmed_a?: boolean
+          confirmed_b?: boolean
+          id?: string
+          played_at?: string
+          player_a?: string
+          player_b?: string
+          reported_noshow?: string | null
+          sos_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_sos_id_fkey"
+            columns: ["sos_id"]
+            isOneToOne: false
+            referencedRelation: "sos_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          uses_remaining: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          uses_remaining?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          uses_remaining?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km: number
+          created_at: string
+          formats: string[]
+          ghost_badge: boolean
+          home_courts: string | null
+          id: string
+          level: number
+          looking_for: Database["public"]["Enums"]["looking_for_t"]
+          name: string
+          phone_e164: string
+          photo_url: string | null
+          play_times: string[]
+          rescues_count: number
+          vibe: Database["public"]["Enums"]["vibe_t"]
+        }
+        Insert: {
+          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km?: number
+          created_at?: string
+          formats?: string[]
+          ghost_badge?: boolean
+          home_courts?: string | null
+          id: string
+          level: number
+          looking_for?: Database["public"]["Enums"]["looking_for_t"]
+          name: string
+          phone_e164: string
+          photo_url?: string | null
+          play_times?: string[]
+          rescues_count?: number
+          vibe?: Database["public"]["Enums"]["vibe_t"]
+        }
+        Update: {
+          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km?: number
+          created_at?: string
+          formats?: string[]
+          ghost_badge?: boolean
+          home_courts?: string | null
+          id?: string
+          level?: number
+          looking_for?: Database["public"]["Enums"]["looking_for_t"]
+          name?: string
+          phone_e164?: string
+          photo_url?: string | null
+          play_times?: string[]
+          rescues_count?: number
+          vibe?: Database["public"]["Enums"]["vibe_t"]
+        }
+        Relationships: []
+      }
+      sos_requests: {
+        Row: {
+          caller_id: string
+          claimed_by: string | null
+          court_id: string | null
+          court_status: Database["public"]["Enums"]["court_status_t"]
+          created_at: string
+          format: Database["public"]["Enums"]["sos_format_t"]
+          id: string
+          level_max: number
+          level_min: number
+          note: string | null
+          play_at: string
+          status: Database["public"]["Enums"]["sos_status_t"]
+        }
+        Insert: {
+          caller_id: string
+          claimed_by?: string | null
+          court_id?: string | null
+          court_status: Database["public"]["Enums"]["court_status_t"]
+          created_at?: string
+          format: Database["public"]["Enums"]["sos_format_t"]
+          id?: string
+          level_max?: number
+          level_min?: number
+          note?: string | null
+          play_at: string
+          status?: Database["public"]["Enums"]["sos_status_t"]
+        }
+        Update: {
+          caller_id?: string
+          claimed_by?: string | null
+          court_id?: string | null
+          court_status?: Database["public"]["Enums"]["court_status_t"]
+          created_at?: string
+          format?: Database["public"]["Enums"]["sos_format_t"]
+          id?: string
+          level_max?: number
+          level_min?: number
+          note?: string | null
+          play_at?: string
+          status?: Database["public"]["Enums"]["sos_status_t"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_requests_court_id_fkey"
+            columns: ["court_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"] | null
+          buddy_radius_km: number | null
+          created_at: string | null
+          formats: string[] | null
+          ghost_badge: boolean | null
+          home_courts: string | null
+          id: string | null
+          level: number | null
+          looking_for: Database["public"]["Enums"]["looking_for_t"] | null
+          name: string | null
+          photo_url: string | null
+          play_times: string[] | null
+          rescues_count: number | null
+          vibe: Database["public"]["Enums"]["vibe_t"] | null
+        }
+        Insert: {
+          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
+          buddy_radius_km?: number | null
+          created_at?: string | null
+          formats?: string[] | null
+          ghost_badge?: boolean | null
+          home_courts?: string | null
+          id?: string | null
+          level?: number | null
+          looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
+          name?: string | null
+          photo_url?: string | null
+          play_times?: string[] | null
+          rescues_count?: number | null
+          vibe?: Database["public"]["Enums"]["vibe_t"] | null
+        }
+        Update: {
+          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
+          buddy_radius_km?: number | null
+          created_at?: string | null
+          formats?: string[] | null
+          ghost_badge?: boolean | null
+          home_courts?: string | null
+          id?: string | null
+          level?: number | null
+          looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
+          name?: string | null
+          photo_url?: string | null
+          play_times?: string[] | null
+          rescues_count?: number | null
+          vibe?: Database["public"]["Enums"]["vibe_t"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_whatsapp_phone: { Args: { target_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      buddy_optin_t: "yes" | "sometimes" | "no"
+      court_status_t: "booked_paid" | "booked" | "will_book" | "public"
+      looking_for_t: "regular" | "dropin" | "both"
+      sos_format_t: "singles" | "doubles_need1" | "doubles_need2"
+      sos_status_t: "active" | "claimed" | "expired" | "cancelled"
+      vibe_t: "chill" | "friendly" | "sweat"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +388,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      buddy_optin_t: ["yes", "sometimes", "no"],
+      court_status_t: ["booked_paid", "booked", "will_book", "public"],
+      looking_for_t: ["regular", "dropin", "both"],
+      sos_format_t: ["singles", "doubles_need1", "doubles_need2"],
+      sos_status_t: ["active", "claimed", "expired", "cancelled"],
+      vibe_t: ["chill", "friendly", "sweat"],
+    },
   },
 } as const
