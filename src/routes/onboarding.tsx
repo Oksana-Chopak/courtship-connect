@@ -50,7 +50,12 @@ function Onboarding() {
                 return;
               }
               toast.success("You're in. Game on.");
-              navigate({ to: "/players" });
+              try {
+                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+                  await Notification.requestPermission();
+                }
+              } catch {}
+              navigate({ to: "/home" });
             }}
           />
         </div>
