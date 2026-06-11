@@ -78,6 +78,7 @@ function PlayerDetail() {
         <Row label="Looking for">{p.looking_for}</Row>
         <Row label="Home courts">{p.home_courts || "—"}</Row>
         <Row label="Buddy">{p.buddy_optin === "yes" ? `Yes — rescues within ${p.buddy_radius_km} km` : p.buddy_optin}</Row>
+        <Row label="Rescues">🚑 {p.rescues_count ?? 0}</Row>
       </div>
     </div>
   );

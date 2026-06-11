@@ -13,8 +13,12 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRescueRouteImport } from './routes/_authenticated/rescue'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedSosNewRouteImport } from './routes/_authenticated/sos.new'
+import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/sos.$id'
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -36,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRescueRoute = AuthenticatedRescueRouteImport.update({
+  id: '/rescue',
+  path: '/rescue',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   id: '/players',
   path: '/players',
@@ -44,6 +53,21 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSosNewRoute = AuthenticatedSosNewRouteImport.update({
+  id: '/sos/new',
+  path: '/sos/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSosIdRoute = AuthenticatedSosIdRouteImport.update({
+  id: '/sos/$id',
+  path: '/sos/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPlayersIdRoute = AuthenticatedPlayersIdRouteImport.update({
@@ -56,17 +80,25 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/rescue': typeof AuthenticatedRescueRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/sos/$id': typeof AuthenticatedSosIdRoute
+  '/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/rescue': typeof AuthenticatedRescueRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/sos/$id': typeof AuthenticatedSosIdRoute
+  '/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -74,24 +106,52 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/_authenticated/rescue': typeof AuthenticatedRescueRoute
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
+  '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
+  '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding' | '/me' | '/players' | '/players/$id'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/home'
+    | '/me'
+    | '/players'
+    | '/rescue'
+    | '/players/$id'
+    | '/sos/$id'
+    | '/sos/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/me' | '/players' | '/players/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/home'
+    | '/me'
+    | '/players'
+    | '/rescue'
+    | '/players/$id'
+    | '/sos/$id'
+    | '/sos/new'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/onboarding'
+    | '/_authenticated/home'
     | '/_authenticated/me'
     | '/_authenticated/players'
+    | '/_authenticated/rescue'
     | '/_authenticated/players/$id'
+    | '/_authenticated/sos/$id'
+    | '/_authenticated/sos/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/rescue': {
+      id: '/_authenticated/rescue'
+      path: '/rescue'
+      fullPath: '/rescue'
+      preLoaderRoute: typeof AuthenticatedRescueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/players': {
       id: '/_authenticated/players'
       path: '/players'
@@ -143,6 +210,27 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof AuthenticatedMeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sos/new': {
+      id: '/_authenticated/sos/new'
+      path: '/sos/new'
+      fullPath: '/sos/new'
+      preLoaderRoute: typeof AuthenticatedSosNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sos/$id': {
+      id: '/_authenticated/sos/$id'
+      path: '/sos/$id'
+      fullPath: '/sos/$id'
+      preLoaderRoute: typeof AuthenticatedSosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/players/$id': {
@@ -167,13 +255,21 @@ const AuthenticatedPlayersRouteWithChildren =
   AuthenticatedPlayersRoute._addFileChildren(AuthenticatedPlayersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
+  AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
+  AuthenticatedSosIdRoute: typeof AuthenticatedSosIdRoute
+  AuthenticatedSosNewRoute: typeof AuthenticatedSosNewRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
+  AuthenticatedRescueRoute: AuthenticatedRescueRoute,
+  AuthenticatedSosIdRoute: AuthenticatedSosIdRoute,
+  AuthenticatedSosNewRoute: AuthenticatedSosNewRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
