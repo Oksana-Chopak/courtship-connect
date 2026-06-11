@@ -1,29 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Courtship — It's a match. Literally." },
+      { name: "description", content: "Tennis partner matching for Uppsala. Invite-only beta." },
+      { property: "og:title", content: "Courtship" },
+      { property: "og:description", content: "Find your hitting partner in Uppsala." },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="terry-bg min-h-screen flex flex-col items-center justify-center px-6 text-[var(--ink)] font-body">
+      <div className="max-w-md w-full text-center space-y-8">
+        <div className="inline-block px-4 py-1 rounded-full border-2 border-[var(--ink)] bg-[var(--cream2)] text-xs font-extrabold tracking-widest uppercase">
+          Uppsala · Invite-only beta
+        </div>
+        <h1 className="font-display text-6xl leading-[0.95]">
+          It's a match.<br/>
+          <span className="text-[var(--coral)]">Literally.</span>
+        </h1>
+        <p className="text-lg text-[var(--ink)]/70 font-semibold">
+          Find your tennis partner in Uppsala. Hit. Repeat.
+        </p>
+        <div className="flex flex-col gap-3 pt-2">
+          <Link to="/auth" search={{ mode: "signup" }} className="cbtn cbtn-coral">
+            Get an invite 🎾
+          </Link>
+          <Link to="/auth" search={{ mode: "login" }} className="cbtn cbtn-ghost">
+            I already have an account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
