@@ -45,7 +45,7 @@ function AuthPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         const has = await userHasProfile(data.session.user.id);
-        navigate({ to: has ? "/players" : "/onboarding" });
+        navigate({ to: has ? "/home" : "/onboarding" });
       }
     });
   }, [navigate]);
@@ -77,7 +77,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         const has = await userHasProfile(data.user.id);
-        navigate({ to: has ? "/players" : "/onboarding" });
+        navigate({ to: has ? "/home" : "/onboarding" });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Something went wrong");
