@@ -45,7 +45,10 @@ function Onboarding() {
                 .from("profiles" as any)
                 .insert({ id: uid, ...v });
               setBusy(false);
-              if (error) return toast.error(error.message);
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
               toast.success("You're in. Game on.");
               navigate({ to: "/players" });
             }}
