@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileForm, emptyProfile, type ProfileFormValues } from "@/components/ProfileForm";
+import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -57,18 +57,22 @@ function MePage() {
         <p className="text-[var(--ink)]/70 font-semibold">Tweak until it feels right.</p>
       </div>
       <div className="ccard p-5">
-        <ProfileForm
+        <ProfileWizard
           initial={initial ?? emptyProfile}
+          userId={uid}
           submitLabel="Save changes"
           busy={busy}
-          onSubmit={async (v) => {
+          onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
             const { error } = await supabase
               .from("profiles" as any)
               .update(v)
               .eq("id", uid);
             setBusy(false);
-            if (error) return toast.error(error.message);
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
             toast.success("Updated 🎾");
           }}
         />
