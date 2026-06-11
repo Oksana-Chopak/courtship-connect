@@ -17,10 +17,12 @@ function AuthedShell() {
     <div className="terry-bg min-h-screen font-body text-[var(--ink)]">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)]">
         <div className="max-w-md mx-auto px-5 py-3 flex items-center justify-between">
-          <Link to="/players" className="font-display text-2xl">
+          <Link to="/home" className="font-display text-2xl">
             Courtship
           </Link>
           <nav className="flex items-center gap-3 text-sm font-extrabold">
+            <Link to="/home" className="hover:text-[var(--coral)]">Home</Link>
+            <Link to="/rescue" className="hover:text-[var(--coral)]">Rescue 🚨</Link>
             <Link to="/players" className="hover:text-[var(--coral)]">Players</Link>
             <Link to="/me" className="hover:text-[var(--coral)]">Me</Link>
             <button
