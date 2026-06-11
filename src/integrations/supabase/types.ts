@@ -253,7 +253,18 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      active_sos_count: { Args: { _uid: string }; Returns: number }
+      claim_sos: {
+        Args: { _sos_id: string }
+        Returns: {
+          game_id: string
+          ok: boolean
+          reason: string
+          sos_id: string
+        }[]
+      }
+      count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
+      expire_old_sos: { Args: never; Returns: undefined }
     }
     Enums: {
       buddy_optin_t: "yes" | "sometimes" | "no"
