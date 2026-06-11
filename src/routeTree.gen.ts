@@ -13,6 +13,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRescueRouteImport } from './routes/_authenticated/rescue'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRescueRoute = AuthenticatedRescueRouteImport.update({
+  id: '/rescue',
+  path: '/rescue',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   id: '/players',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/rescue': typeof AuthenticatedRescueRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/rescue': typeof AuthenticatedRescueRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/_authenticated/rescue': typeof AuthenticatedRescueRoute
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
   '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
   '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/me'
     | '/players'
+    | '/rescue'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/me'
     | '/players'
+    | '/rescue'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/me'
     | '/_authenticated/players'
+    | '/_authenticated/rescue'
     | '/_authenticated/players/$id'
     | '/_authenticated/sos/$id'
     | '/_authenticated/sos/new'
@@ -178,6 +190,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/rescue': {
+      id: '/_authenticated/rescue'
+      path: '/rescue'
+      fullPath: '/rescue'
+      preLoaderRoute: typeof AuthenticatedRescueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/players': {
       id: '/_authenticated/players'
@@ -239,6 +258,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
+  AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
   AuthenticatedSosIdRoute: typeof AuthenticatedSosIdRoute
   AuthenticatedSosNewRoute: typeof AuthenticatedSosNewRoute
 }
@@ -247,6 +267,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
+  AuthenticatedRescueRoute: AuthenticatedRescueRoute,
   AuthenticatedSosIdRoute: AuthenticatedSosIdRoute,
   AuthenticatedSosNewRoute: AuthenticatedSosNewRoute,
 }
