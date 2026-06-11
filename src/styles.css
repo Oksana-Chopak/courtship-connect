@@ -4,6 +4,18 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Courtship — Retro Flirt theme */
+@theme inline {
+  --color-cream: var(--cream);
+  --color-cream2: var(--cream2);
+  --color-ink: var(--ink);
+  --color-wood: var(--wood);
+  --color-coral: var(--coral);
+  --color-green-pop: var(--green-pop);
+  --font-display: 'Young Serif', ui-serif, Georgia, serif;
+  --font-body: 'Karla', ui-sans-serif, system-ui, sans-serif;
+}
+
 /*
  * Design system definition.
  *
@@ -63,6 +75,12 @@
 
 :root {
   --radius: 0.625rem;
+  --cream: oklch(0.953 0.026 85);
+  --cream2: oklch(0.975 0.018 85);
+  --ink: oklch(0.27 0.03 60);
+  --wood: oklch(0.5 0.08 55);
+  --coral: oklch(0.69 0.21 28);
+  --green-pop: oklch(0.91 0.21 122);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
