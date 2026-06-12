@@ -2,12 +2,15 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCourts, activeSosCount, type CourtRow } from "@/lib/sos";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, type City } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, URGENCY_WINDOW_HOURS, isUrgent, type City } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
-  head: () => ({ meta: [{ title: "Save my set — Courtship" }] }),
+  head: () => ({ meta: [{ title: "New post — Courtship" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    planned: s.planned === "1" || s.planned === 1 || s.planned === true ? 1 : undefined,
+  }),
   component: NewSos,
 });
 
@@ -17,12 +20,22 @@ function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMin
 function NewSos() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const planned = search.planned === 1;
   const [courts, setCourts] = useState<CourtRow[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
 
-  const defaultDate = useMemo(() => new Date(Date.now() + 2 * 3600 * 1000), []);
+  // Defaults: urgent button -> today +2h; planned button -> tomorrow 18:00
+  const defaultDate = useMemo(() => {
+    if (planned) {
+      const d = new Date(Date.now() + 86400000);
+      d.setHours(18, 0, 0, 0);
+      return d;
+    }
+    return new Date(Date.now() + 2 * 3600 * 1000);
+  }, [planned]);
   const [day, setDay] = useState<"today" | "tomorrow">(
     defaultDate.toDateString() === new Date().toDateString() ? "today" : "tomorrow",
   );
@@ -34,6 +47,7 @@ function NewSos() {
   const [levelMax, setLevelMax] = useState(4);
   const [courtStatus, setCourtStatus] = useState<typeof COURT_STATUSES[number]["value"]>("booked");
   const [note, setNote] = useState("");
+  const [autoFlare, setAutoFlare] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -76,16 +90,20 @@ function NewSos() {
     return base;
   }, [day, time]);
 
+  const urgent = isUrgent(playAt);
+
   async function submit() {
     if (!uid) return;
     if (!courtId) { toast.error("Pick a court"); return; }
     if (playAt.getTime() < Date.now()) { toast.error("That time's already gone ⏰"); return; }
     setBusy(true);
-    const count = await activeSosCount(uid);
-    if (count >= 3) {
-      setBusy(false);
-      toast.error("Easy, hero — max 3 SOS at once. Cancel one first.");
-      return;
+    if (urgent) {
+      const count = await activeSosCount(uid);
+      if (count >= 3) {
+        setBusy(false);
+        toast.error("Easy, hero — max 3 SOS at once. Cancel one first.");
+        return;
+      }
     }
     const insertRow: any = {
       caller_id: uid,
@@ -97,6 +115,9 @@ function NewSos() {
       court_status: courtStatus,
       note: note.trim() || null,
       status: "active",
+      kind: urgent ? "sos" : "open",
+      auto_flare: urgent ? false : autoFlare,
+      flared_at: urgent ? new Date().toISOString() : null,
     };
     const { data, error } = await (supabase as any)
       .from("sos_requests")
@@ -105,16 +126,25 @@ function NewSos() {
       .single();
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("SOS sent 🚨");
-    navigate({ to: "/sos/$id", params: { id: data.id } });
+    if (urgent) {
+      toast.success(t("post.sos_toast"));
+      navigate({ to: "/sos/$id", params: { id: data.id } });
+    } else {
+      toast.success(t("post.posted_toast"));
+      navigate({ to: "/games" });
+    }
   }
 
   return (
     <div className="space-y-5">
       <Link to="/home" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
       <div>
-        <h1 className="font-display text-4xl">{t("sos.new_title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("sos.new_sub")}</p>
+        <h1 className="font-display text-4xl">
+          {urgent ? t("post.new_title_urgent") : t("post.new_title_planned")}
+        </h1>
+        <p className="text-[var(--ink)] font-semibold">
+          {urgent ? t("post.sub_urgent") : t("post.sub_planned")}
+        </p>
       </div>
 
       <Section label={t("sos.when")}>
@@ -127,6 +157,18 @@ function NewSos() {
             value={time}
             onChange={(e) => setTime(e.target.value)}
           />
+        </div>
+        <div className="mt-2">
+          <span
+            className="inline-flex items-center font-extrabold rounded-full border-2 border-[var(--ink)] px-3 py-1 text-base"
+            style={{
+              background: urgent ? "var(--coral)" : "var(--green-pop)",
+              color: urgent ? "#FFF6E8" : "var(--ink)",
+              minHeight: 32,
+            }}
+          >
+            {urgent ? t("post.mode_urgent") : t("post.mode_planned")}
+          </span>
         </div>
       </Section>
 
@@ -195,9 +237,28 @@ function NewSos() {
         />
       </Section>
 
-      <button disabled={busy} onClick={submit} className="cbtn cbtn-coral w-full">
-        {busy ? "..." : t("sos.send")}
+      {!urgent && (
+        <Section label={t("post.auto_flare_label")}>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-[var(--ink)] font-semibold flex-1">
+              {t("post.auto_flare_help")}
+            </p>
+            <Chip on={autoFlare} onClick={() => setAutoFlare(!autoFlare)}>
+              {autoFlare ? "ON" : "OFF"}
+            </Chip>
+          </div>
+        </Section>
+      )}
+
+      <button
+        disabled={busy}
+        onClick={submit}
+        className={`cbtn w-full ${urgent ? "cbtn-coral" : "cbtn-green"}`}
+      >
+        {busy ? "..." : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
       </button>
+      {/* silence unused warning */}
+      {false && <span>{myLevel}</span>}
     </div>
   );
 }
