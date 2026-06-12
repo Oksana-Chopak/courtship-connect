@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { sweepExpired, formatLabel, type SosRow, type CourtRow, fetchCourts } from "@/lib/sos";
+import { sweepExpired, formatLabel, fetchEligibleSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 
@@ -12,55 +12,37 @@ export const Route = createFileRoute("/_authenticated/rescue")({
 
 function Rescue() {
   const { t } = useI18n();
-  const [me, setMe] = useState<{ id: string; level: number; buddy_optin: string } | null>(null);
-  const [rows, setRows] = useState<SosRow[]>([]);
-  const [courts, setCourts] = useState<Record<string, CourtRow>>({});
+  const [me, setMe] = useState<{ id: string; level: number; buddy_optin: string; buddy_sos_optin: boolean } | null>(null);
+  const [rows, setRows] = useState<EligibleSosRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (level: number) => {
+  const load = useCallback(async () => {
     await sweepExpired();
-    const { data } = await (supabase as any)
-      .from("sos_requests")
-      .select("*")
-      .eq("status", "active")
-      .lte("level_min", level)
-      .gte("level_max", level)
-      .gt("play_at", new Date().toISOString())
-      .order("play_at", { ascending: true });
-    setRows((data as SosRow[]) ?? []);
+    setRows(await fetchEligibleSos());
     setLoading(false);
   }, []);
 
   useEffect(() => {
     (async () => {
-      const cs = await fetchCourts();
-      setCourts(Object.fromEntries(cs.map((c) => [c.id, c])));
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("id,level,buddy_optin")
+        .select("id,level,buddy_optin,buddy_sos_optin")
         .eq("id", u.user.id)
         .maybeSingle();
       const meRow = p as any;
       setMe(meRow);
-      if (meRow?.buddy_optin === "no") {
-        setLoading(false);
-        return;
-      }
-      await load(meRow?.level ?? 3);
+      await load();
     })();
   }, [load]);
 
   useEffect(() => {
-    if (!me || me.buddy_optin === "no") return;
+    if (!me) return;
     const ch = (supabase as any)
       .channel("rescue-board")
       .on("postgres_changes", { event: "*", schema: "public", table: "sos_requests" }, () => {
-        load(me.level);
-        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-          // light pulse on new SOS — handled in load via row diff
-        }
+        load();
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -74,8 +56,8 @@ function Rescue() {
       const newOnes = rows.filter((r) => !prevIds.has(r.id));
       for (const r of newOnes) {
         try {
-          new Notification("Someone needs a hero 🚨", {
-            body: `${whenLabel(r.play_at)} · ${courts[r.court_id ?? ""]?.name ?? "court"}`,
+          new Notification(r.is_buddy ? "Your buddy needs you 🤝🚨" : "Someone needs a hero 🚨", {
+            body: `${whenLabel(r.play_at)} · 📍 ${r.court_city ?? ""} · ${r.court_name ?? "court"}`,
           });
         } catch {}
       }
@@ -86,7 +68,8 @@ function Rescue() {
 
   if (!me) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
 
-  if (me.buddy_optin === "no") {
+  // If both rescuer-mode AND buddy-SOS are off, user gets nothing.
+  if (me.buddy_optin === "no" && !me.buddy_sos_optin) {
     return (
       <div className="space-y-5">
         <h1 className="font-display text-4xl">Rescue board 🚑</h1>
@@ -94,13 +77,16 @@ function Rescue() {
           <div className="text-3xl">🛌</div>
           <div className="font-display text-xl mt-1">You're off duty</div>
           <div className="text-sm text-[var(--ink)]">
-            Turn on Buddy mode in your profile to see rescue calls.
+            Turn on Buddy mode or Buddy SOS in your profile to see rescue calls.
           </div>
           <Link to="/me" className="cbtn cbtn-coral mt-4 inline-flex">Edit profile</Link>
         </div>
       </div>
     );
   }
+
+  const buddyRows = rows.filter((r) => r.is_buddy);
+  const nearbyRows = rows.filter((r) => !r.is_buddy);
 
   return (
     <div className="space-y-5">
@@ -121,25 +107,47 @@ function Rescue() {
           <Link to="/sos/new" className="cbtn cbtn-coral mt-4 inline-flex">{t("home.save_my_set")}</Link>
         </div>
       ) : (
-        <div className="space-y-3">
-          {rows.map((r) => (
-            <SosCard key={r.id} sos={r} court={courts[r.court_id ?? ""]?.name ?? "Court"} mine={r.caller_id === me.id} />
-          ))}
+        <div className="space-y-5">
+          {buddyRows.length > 0 && (
+            <div className="space-y-3">
+              <div className="csection-label">{t("buddy.from_buddies")}</div>
+              {buddyRows.map((r) => <SosCard key={r.id} sos={r} />)}
+            </div>
+          )}
+          {nearbyRows.length > 0 && (
+            <div className="space-y-3">
+              {buddyRows.length > 0 && <div className="csection-label">{t("rescue.title")}</div>}
+              {nearbyRows.map((r) => <SosCard key={r.id} sos={r} />)}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function SosCard({ sos, court, mine }: { sos: SosRow; court: string; mine: boolean }) {
+function SosCard({ sos }: { sos: EligibleSosRow }) {
   const lmMin = levelMeta(sos.level_min);
   const lmMax = levelMeta(sos.level_max);
   return (
-    <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block">
+    <Link
+      to="/sos/$id"
+      params={{ id: sos.id }}
+      className="ccard p-4 block"
+      style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}
+    >
+      {sos.is_buddy && (
+        <div
+          className="inline-block text-xs font-extrabold uppercase px-2 py-1 rounded-full mb-2"
+          style={{ background: "var(--coral)", color: "#FFF6E8" }}
+        >
+          🤝 {sos.caller_name ? `Your buddy ${sos.caller_name}` : "Your buddy"}
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-tight">{whenLabel(sos.play_at)}</div>
-          <div className="font-extrabold truncate">{court}</div>
+          <div className="font-extrabold truncate">📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"}</div>
           <div className="text-sm text-[var(--ink)]">
             {formatLabel(sos.format)} · L
             <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
@@ -150,9 +158,7 @@ function SosCard({ sos, court, mine }: { sos: SosRow; court: string; mine: boole
         <div className="text-xs text-[var(--ink)] whitespace-nowrap">{timeAgo(sos.created_at)}</div>
       </div>
       <div className="mt-3">
-        <span className={`cbtn ${mine ? "cbtn-ghost" : "cbtn-coral"} w-full`} style={{ pointerEvents: "none" }}>
-          {mine ? "Your SOS — view status" : "I'm in! 🎾"}
-        </span>
+        <span className="cbtn cbtn-coral w-full" style={{ pointerEvents: "none" }}>I'm in! 🎾</span>
       </div>
     </Link>
   );

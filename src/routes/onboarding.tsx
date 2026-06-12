@@ -5,6 +5,8 @@ import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/component
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
+const SIGNUP_CODE_KEY = "courtship.signup_code";
+
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Set up your profile — Courtship" }] }),
   component: Onboarding,
@@ -43,14 +45,23 @@ function Onboarding() {
             busy={busy}
             onSubmit={async (v: ProfileFormValues) => {
               setBusy(true);
+              let signupCode: string | null = null;
+              try {
+                const { data: u } = await supabase.auth.getUser();
+                signupCode =
+                  ((u.user?.user_metadata as any)?.signup_code as string | undefined) ??
+                  (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) : null) ??
+                  null;
+              } catch {}
               const { error } = await supabase
                 .from("profiles" as any)
-                .insert({ id: uid, ...v });
+                .insert({ id: uid, ...v, signup_code: signupCode });
               setBusy(false);
               if (error) {
                 toast.error(error.message);
                 return;
               }
+              try { localStorage.removeItem(SIGNUP_CODE_KEY); } catch {}
               toast.success(t("onboarding.welcome_in"));
               try {
                 if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {

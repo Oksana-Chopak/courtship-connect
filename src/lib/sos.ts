@@ -15,15 +15,33 @@ export type SosRow = {
   created_at: string;
 };
 
-export type CourtRow = { id: string; name: string; area: string | null };
+export type CourtRow = { id: string; name: string; area: string | null; city: string };
+
+export type EligibleSosRow = SosRow & {
+  court_name: string | null;
+  court_city: string | null;
+  court_area: string | null;
+  caller_name: string | null;
+  is_buddy: boolean;
+};
 
 export async function sweepExpired() {
   await (supabase as any).rpc("expire_old_sos");
 }
 
 export async function fetchCourts(): Promise<CourtRow[]> {
-  const { data } = await (supabase as any).from("courts").select("id,name,area").order("name");
+  const { data } = await (supabase as any)
+    .from("courts")
+    .select("id,name,area,city")
+    .order("city")
+    .order("name");
   return (data as CourtRow[]) ?? [];
+}
+
+export async function fetchEligibleSos(): Promise<EligibleSosRow[]> {
+  const { data, error } = await (supabase as any).rpc("eligible_sos_for_me");
+  if (error) return [];
+  return (data as EligibleSosRow[]) ?? [];
 }
 
 export async function activeSosCount(uid: string): Promise<number> {

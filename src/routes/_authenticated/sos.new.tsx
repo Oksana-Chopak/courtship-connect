@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCourts, activeSosCount, type CourtRow } from "@/lib/sos";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, type City } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
@@ -20,6 +20,7 @@ function NewSos() {
   const [courts, setCourts] = useState<CourtRow[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
+  const [city, setCity] = useState<City>("Uppsala");
 
   const defaultDate = useMemo(() => new Date(Date.now() + 2 * 3600 * 1000), []);
   const [day, setDay] = useState<"today" | "tomorrow">(
@@ -39,21 +40,34 @@ function NewSos() {
     (async () => {
       const cs = await fetchCourts();
       setCourts(cs);
-      if (cs[0]) setCourtId(cs[0].id);
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       setUid(u.user.id);
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("level")
+        .select("level,home_city")
         .eq("id", u.user.id)
         .maybeSingle();
       const lv = (p as any)?.level ?? 3;
+      const hc = ((p as any)?.home_city ?? "Uppsala") as City;
       setMyLevel(lv);
+      setCity(hc);
+      const first = cs.find((c) => c.city === hc) ?? cs[0];
+      if (first) setCourtId(first.id);
       setLevelMin(Math.max(1, lv - 1));
       setLevelMax(Math.min(5, lv + 1));
     })();
   }, []);
+
+  // When city changes, pick first matching court if current isn't in city
+  useEffect(() => {
+    if (!courts.length) return;
+    const cur = courts.find((c) => c.id === courtId);
+    if (!cur || cur.city !== city) {
+      const first = courts.find((c) => c.city === city);
+      if (first) setCourtId(first.id);
+    }
+  }, [city, courts, courtId]);
 
   const playAt = useMemo(() => {
     const base = day === "today" ? new Date() : new Date(Date.now() + 86400000);
@@ -117,8 +131,15 @@ function NewSos() {
       </Section>
 
       <Section label={t("sos.court")}>
+        <div className="flex gap-2 mb-2">
+          {CITIES.map((cy) => (
+            <Chip key={cy} on={city === cy} onClick={() => setCity(cy)}>
+              📍 {cy}
+            </Chip>
+          ))}
+        </div>
         <select className="cinput" value={courtId} onChange={(e) => setCourtId(e.target.value)}>
-          {courts.map((c) => (
+          {courts.filter((c) => c.city === city).map((c) => (
             <option key={c.id} value={c.id}>{c.name}{c.area ? ` · ${c.area}` : ""}</option>
           ))}
         </select>

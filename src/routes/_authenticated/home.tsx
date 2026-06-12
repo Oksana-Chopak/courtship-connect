@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sweepExpired } from "@/lib/sos";
 import { fetchPendingPostGameChecks, confirmGame, reportNoshow, type GameRow } from "@/lib/games";
+import { fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "sonner";
 import { whenLabel } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
@@ -20,6 +21,8 @@ function Home() {
   const [uid, setUid] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pending, setPending] = useState<GameRow[]>([]);
+  const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
+  const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -38,6 +41,17 @@ function Home() {
       setIsAdmin(!!d?.is_admin);
 
       setPending(await fetchPendingPostGameChecks(u.user.id));
+
+      const reqs = await fetchPendingRequestsTo(u.user.id);
+      setBuddyReqs(reqs);
+      if (reqs.length) {
+        const ids = reqs.map((r) => r.from_id);
+        const { data: names } = await (supabase as any)
+          .from("profiles_public").select("id,name").in("id", ids);
+        const m: Record<string, string> = {};
+        (names as any[] | null)?.forEach((n) => { m[n.id] = n.name; });
+        setRequesterNames(m);
+      }
 
       if (d?.buddy_optin !== "no" && d?.level) {
         const { count } = await (supabase as any)
@@ -74,6 +88,14 @@ function Home() {
     } catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
   }
 
+  async function respond(req: BuddyRequest, accept: boolean) {
+    try {
+      await respondBuddyRequest(req.id, accept);
+      setBuddyReqs((p) => p.filter((x) => x.id !== req.id));
+      toast.success(accept ? t("buddy.accepted") : t("buddy.declined"));
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -96,6 +118,21 @@ function Home() {
           </div>
         </div>
       ))}
+
+      {buddyReqs.length > 0 && (
+        <div className="ccard p-4 space-y-3">
+          <div className="font-display text-2xl">{t("buddy.requests_title")}</div>
+          {buddyReqs.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
+              <div className="font-extrabold truncate">{requesterNames[r.from_id] ?? "Player"}</div>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={() => respond(r, true)} className="cbtn cbtn-green">{t("buddy.accept")}</button>
+                <button onClick={() => respond(r, false)} className="cbtn cbtn-ghost">{t("buddy.decline")}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <Link
         to="/sos/new"

@@ -20,6 +20,7 @@ function SosDetail() {
   const navigate = useNavigate();
   const [sos, setSos] = useState<SosRow | null>(null);
   const [courtName, setCourtName] = useState<string>("");
+  const [courtCity, setCourtCity] = useState<string>("");
   const [me, setMe] = useState<{ id: string; name: string } | null>(null);
   const [other, setOther] = useState<any>(null);
   const [rescuerCount, setRescuerCount] = useState(0);
@@ -30,8 +31,9 @@ function SosDetail() {
     const { data } = await (supabase as any).from("sos_requests").select("*").eq("id", id).maybeSingle();
     setSos(data ?? null);
     if (data?.court_id) {
-      const { data: c } = await (supabase as any).from("courts").select("name").eq("id", data.court_id).maybeSingle();
+      const { data: c } = await (supabase as any).from("courts").select("name,city").eq("id", data.court_id).maybeSingle();
       setCourtName(c?.name ?? "");
+      setCourtCity(c?.city ?? "");
     }
   }
 
@@ -93,7 +95,7 @@ function SosDetail() {
         <div className="ccard p-5 text-center space-y-3" style={{ background: "var(--green-pop)" }}>
           <div className="text-5xl">🎾</div>
           <h1 className="font-display text-3xl">{t("sos.matched")}</h1>
-          <div className="font-extrabold">{when} · {courtName}</div>
+          <div className="font-extrabold">{when} · 📍 {courtCity} · {courtName}</div>
         </div>
         {other && (
           <div className="ccard p-5 space-y-3 text-center">
@@ -152,7 +154,7 @@ function SosDetail() {
         <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
           <div className="sos-dot text-5xl">🚨</div>
           <div className="font-display text-3xl">{t("sos.broadcasting", { n: rescuerCount })}</div>
-          <div className="text-sm opacity-90">{when} · {courtName} · {formatLabel(sos.format)}</div>
+          <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
         </div>
         <button
           className="cbtn cbtn-ghost w-full"
@@ -184,7 +186,7 @@ function SosDetail() {
       <Link to="/rescue" className="text-sm font-extrabold underline">← Rescue board</Link>
       <div className="ccard p-5 space-y-3">
         <div className="font-display text-3xl">{when}</div>
-        <div className="font-extrabold">{courtName} · {formatLabel(sos.format)}</div>
+        <div className="font-extrabold">📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
         <div className="text-sm">
           Level <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
           –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
