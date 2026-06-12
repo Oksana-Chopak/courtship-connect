@@ -13,6 +13,9 @@ export type SosRow = {
   status: "active" | "claimed" | "expired" | "cancelled";
   claimed_by: string | null;
   created_at: string;
+  kind: "sos" | "open";
+  auto_flare: boolean;
+  flared_at: string | null;
 };
 
 export type CourtRow = { id: string; name: string; area: string | null; city: string };
@@ -42,6 +45,26 @@ export async function fetchEligibleSos(): Promise<EligibleSosRow[]> {
   const { data, error } = await (supabase as any).rpc("eligible_sos_for_me");
   if (error) return [];
   return (data as EligibleSosRow[]) ?? [];
+}
+
+export async function fetchOpenGames(): Promise<EligibleSosRow[]> {
+  const { data, error } = await (supabase as any).rpc("eligible_open_games_for_me");
+  if (error) return [];
+  return (data as EligibleSosRow[]) ?? [];
+}
+
+export type CommunityStats = {
+  sets_saved: number;
+  games_matched: number;
+  new_buddies: number;
+  all_time_games: number;
+};
+
+export async function fetchCommunityStats(city: string): Promise<CommunityStats | null> {
+  const { data, error } = await (supabase as any).rpc("community_stats", { _city: city });
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ?? null;
 }
 
 export async function activeSosCount(uid: string): Promise<number> {
