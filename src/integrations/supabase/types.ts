@@ -85,8 +85,10 @@ export type Database = {
       }
       games: {
         Row: {
+          archived_by: string[]
           confirmed_a: boolean
           confirmed_b: boolean
+          created_at: string
           id: string
           played_at: string
           player_a: string
@@ -95,8 +97,10 @@ export type Database = {
           sos_id: string | null
         }
         Insert: {
+          archived_by?: string[]
           confirmed_a?: boolean
           confirmed_b?: boolean
+          created_at?: string
           id?: string
           played_at: string
           player_a: string
@@ -105,8 +109,10 @@ export type Database = {
           sos_id?: string | null
         }
         Update: {
+          archived_by?: string[]
           confirmed_a?: boolean
           confirmed_b?: boolean
+          created_at?: string
           id?: string
           played_at?: string
           player_a?: string
@@ -342,6 +348,11 @@ export type Database = {
         Returns: undefined
       }
       active_sos_count: { Args: { _uid: string }; Returns: number }
+      admin_create_invite_code: {
+        Args: { _code: string; _owner_id: string; _uses: number }
+        Returns: undefined
+      }
+      admin_dashboard: { Args: never; Returns: Json }
       admin_set_invite_active: {
         Args: { _active: boolean; _code: string }
         Returns: undefined
@@ -354,6 +365,7 @@ export type Database = {
           profiles_count: number
         }[]
       }
+      archive_game: { Args: { _game_id: string }; Returns: undefined }
       claim_sos: {
         Args: { _sos_id: string }
         Returns: {
@@ -427,6 +439,14 @@ export type Database = {
       respond_buddy_request: {
         Args: { _accept: boolean; _req_id: string }
         Returns: undefined
+      }
+      withdraw_claim: {
+        Args: { _sos_id: string }
+        Returns: {
+          ok: boolean
+          re_flared: boolean
+          reason: string
+        }[]
       }
     }
     Enums: {

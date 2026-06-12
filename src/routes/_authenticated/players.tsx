@@ -112,9 +112,15 @@ function Players() {
       {loading ? (
         <div className="text-center py-10 text-[var(--ink)]">{t("players.warming")}</div>
       ) : filtered.length === 0 ? (
-        <div className="ccard p-6 text-center">
-          <div className="text-3xl">🎾</div>
-          <div className="font-display text-xl mt-1">{t("players.empty")}</div>
+        <div className="ccard p-6 text-center space-y-3">
+          <div className="text-4xl">🎾</div>
+          <div className="font-display text-2xl mt-1 leading-tight">{t("empty.directory")}</div>
+          <button
+            className="cbtn cbtn-coral inline-flex"
+            onClick={() => { setLevel(null); setFormat(null); setTime(null); setCity(null); setBuddiesOnly(false); }}
+          >
+            {t("empty.directory_cta")}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">

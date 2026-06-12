@@ -131,6 +131,27 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    const host = window.location.hostname;
+    const isPreview =
+      host.startsWith("id-preview--") ||
+      host.startsWith("preview--") ||
+      host.endsWith(".lovableproject.com") ||
+      host.endsWith(".lovableproject-dev.com") ||
+      host.endsWith(".beta.lovable.dev") ||
+      window.self !== window.top ||
+      new URL(window.location.href).searchParams.get("sw") === "off";
+    if (isPreview || !import.meta.env.PROD) {
+      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => {
+        if (r.active?.scriptURL?.endsWith("/sw.js")) r.unregister().catch(() => {});
+      })).catch(() => {});
+      return;
+    }
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
