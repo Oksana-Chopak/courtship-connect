@@ -158,6 +158,9 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-size: 17px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
   }
 }
 

@@ -45,6 +45,10 @@ function AuthPage() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
+        if (!data.session.user.email_confirmed_at) {
+          navigate({ to: "/check-email", search: { email: data.session.user.email ?? "" } });
+          return;
+        }
         const has = await userHasProfile(data.session.user.id);
         navigate({ to: has ? "/home" : "/onboarding" });
       }
@@ -69,14 +73,21 @@ function AuthPage() {
         });
         if (error) throw error;
         if (!data.session) {
-          toast.success("Check your email to confirm, then sign in.");
-          navigate({ to: "/auth", search: { mode: "login" } });
+          navigate({ to: "/check-email", search: { email } });
+          return;
+        }
+        if (!data.user?.email_confirmed_at) {
+          navigate({ to: "/check-email", search: { email } });
           return;
         }
         navigate({ to: "/onboarding" });
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (!data.user?.email_confirmed_at) {
+          navigate({ to: "/check-email", search: { email } });
+          return;
+        }
         const has = await userHasProfile(data.user.id);
         navigate({ to: has ? "/home" : "/onboarding" });
       }

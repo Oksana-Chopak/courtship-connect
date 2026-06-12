@@ -7,6 +7,9 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth", search: { mode: "login" } });
+    if (!data.user.email_confirmed_at) {
+      throw redirect({ to: "/check-email", search: { email: data.user.email ?? "" } });
+    }
     return { user: data.user };
   },
   component: AuthedShell,
