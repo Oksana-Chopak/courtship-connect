@@ -75,16 +75,19 @@ export type Database = {
       }
       invite_codes: {
         Row: {
+          active: boolean
           code: string
           created_at: string
           uses_remaining: number
         }
         Insert: {
+          active?: boolean
           code: string
           created_at?: string
           uses_remaining?: number
         }
         Update: {
+          active?: boolean
           code?: string
           created_at?: string
           uses_remaining?: number
@@ -100,6 +103,7 @@ export type Database = {
           ghost_badge: boolean
           home_courts: string | null
           id: string
+          is_admin: boolean
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -117,6 +121,7 @@ export type Database = {
           ghost_badge?: boolean
           home_courts?: string | null
           id: string
+          is_admin?: boolean
           level: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -134,6 +139,7 @@ export type Database = {
           ghost_badge?: boolean
           home_courts?: string | null
           id?: string
+          is_admin?: boolean
           level?: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name?: string
@@ -254,6 +260,18 @@ export type Database = {
     }
     Functions: {
       active_sos_count: { Args: { _uid: string }; Returns: number }
+      admin_set_invite_active: {
+        Args: { _active: boolean; _code: string }
+        Returns: undefined
+      }
+      admin_stats: {
+        Args: never
+        Returns: {
+          active_sos_count: number
+          fill_rate: number
+          profiles_count: number
+        }[]
+      }
       claim_sos: {
         Args: { _sos_id: string }
         Returns: {
@@ -263,8 +281,10 @@ export type Database = {
           sos_id: string
         }[]
       }
+      confirm_game: { Args: { _game_id: string }; Returns: undefined }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
       expire_old_sos: { Args: never; Returns: undefined }
+      report_noshow: { Args: { _game_id: string }; Returns: undefined }
     }
     Enums: {
       buddy_optin_t: "yes" | "sometimes" | "no"
