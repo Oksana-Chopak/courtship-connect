@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Set up your profile — Courtship" }] }),
@@ -13,6 +14,7 @@ function Onboarding() {
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -28,16 +30,16 @@ function Onboarding() {
       <div className="max-w-md mx-auto space-y-6">
         <div>
           <div className="csection-label">Step 1 of 1</div>
-          <h1 className="font-display text-4xl mt-1">Make your profile</h1>
+          <h1 className="font-display text-4xl mt-1">{t("onboarding.title")}</h1>
           <p className="text-[var(--ink)] font-semibold">
-            Tell us how you like to play. We'll match the vibe.
+            {t("onboarding.sub")}
           </p>
         </div>
         <div className="ccard p-5">
           <ProfileWizard
             initial={emptyProfile}
             userId={uid}
-            submitLabel="Save & see players"
+            submitLabel={t("wiz.save_see")}
             busy={busy}
             onSubmit={async (v: ProfileFormValues) => {
               setBusy(true);
@@ -49,7 +51,7 @@ function Onboarding() {
                 toast.error(error.message);
                 return;
               }
-              toast.success("You're in. Game on.");
+              toast.success(t("onboarding.welcome_in"));
               try {
                 if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
                   await Notification.requestPermission();
