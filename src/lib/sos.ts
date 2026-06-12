@@ -84,6 +84,32 @@ export async function claimSos(sosId: string): Promise<{ ok: boolean; reason: st
   return { ok: !!row?.ok, reason: row?.reason ?? "unknown", game_id: row?.game_id ?? null };
 }
 
+export async function withdrawClaim(sosId: string): Promise<{ ok: boolean; re_flared: boolean; reason: string }> {
+  const { data, error } = await (supabase as any).rpc("withdraw_claim", { _sos_id: sosId });
+  if (error) return { ok: false, re_flared: false, reason: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  return { ok: !!row?.ok, re_flared: !!row?.re_flared, reason: row?.reason ?? "unknown" };
+}
+
+/** SOS / open games I claimed and that haven't started yet. */
+export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow[]> {
+  const { data } = await (supabase as any)
+    .from("sos_requests")
+    .select("*, courts(name,city,area), profiles!sos_requests_caller_id_fkey(name)")
+    .eq("claimed_by", uid)
+    .eq("status", "claimed")
+    .gt("play_at", new Date().toISOString())
+    .order("play_at", { ascending: true });
+  return ((data as any[]) ?? []).map((r: any) => ({
+    ...r,
+    court_name: r.courts?.name ?? null,
+    court_city: r.courts?.city ?? null,
+    court_area: r.courts?.area ?? null,
+    caller_name: r.profiles?.name ?? null,
+    is_buddy: false,
+  })) as EligibleSosRow[];
+}
+
 export function formatLabel(f: string): string {
   if (f === "singles") return "Singles";
   if (f === "doubles_need1") return "Doubles · need 1";
