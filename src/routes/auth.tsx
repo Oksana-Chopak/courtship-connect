@@ -17,11 +17,12 @@ export const Route = createFileRoute("/auth")({
 async function checkInvite(code: string) {
   const { data, error } = await supabase
     .from("invite_codes" as any)
-    .select("code, uses_remaining")
+    .select("code, uses_remaining, active")
     .eq("code", code.trim().toUpperCase())
     .maybeSingle();
   if (error) return false;
-  return !!data && (data as any).uses_remaining > 0;
+  const d = data as any;
+  return !!d && d.uses_remaining > 0 && d.active !== false;
 }
 
 async function userHasProfile(id: string) {

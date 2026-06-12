@@ -113,9 +113,10 @@ function Rescue() {
         <div className="text-center py-10 text-[var(--ink)]/60">Listening...</div>
       ) : rows.length === 0 ? (
         <div className="ccard p-6 text-center">
-          <div className="text-3xl">🎾</div>
-          <div className="font-display text-xl mt-1">No SOS right now</div>
-          <div className="text-sm text-[var(--ink)]/60">We'll ping you when someone needs saving.</div>
+          <div className="text-3xl">🌅</div>
+          <div className="font-display text-xl mt-1">All quiet on the courts</div>
+          <div className="text-sm text-[var(--ink)]/60">Be the first to send a flare 🚨</div>
+          <Link to="/sos/new" className="cbtn cbtn-coral mt-4 inline-flex">Save my set</Link>
         </div>
       ) : (
         <div className="space-y-3">

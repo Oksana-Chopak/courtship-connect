@@ -99,8 +99,8 @@ function Players() {
       ) : filtered.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🎾</div>
-          <div className="font-display text-xl mt-1">No matches yet</div>
-          <div className="text-sm text-[var(--ink)]/60">Loosen the filters.</div>
+          <div className="font-display text-xl mt-1">Crickets on the court</div>
+          <div className="text-sm text-[var(--ink)]/60">Loosen the filters — your match is out there.</div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
