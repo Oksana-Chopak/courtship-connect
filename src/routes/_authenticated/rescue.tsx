@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sweepExpired, formatLabel, fetchEligibleSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta } from "@/lib/courtship";
+import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/rescue")({
@@ -148,7 +149,8 @@ function SosCard({ sos }: { sos: EligibleSosRow }) {
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-tight">{whenLabel(sos.play_at)}</div>
           <div className="font-extrabold truncate">📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"}</div>
-          <div className="text-sm text-[var(--ink)]">
+          <div className="mt-2"><CourtStatusBadge status={sos.court_status} /></div>
+          <div className="text-sm text-[var(--ink)] mt-2">
             {formatLabel(sos.format)} · L
             <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
             –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>

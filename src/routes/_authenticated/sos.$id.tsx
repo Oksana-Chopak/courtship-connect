@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
+import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -96,6 +97,7 @@ function SosDetail() {
           <div className="text-5xl">🎾</div>
           <h1 className="font-display text-3xl">{t("sos.matched")}</h1>
           <div className="font-extrabold">{when} · 📍 {courtCity} · {courtName}</div>
+          <div><CourtStatusBadge status={sos.court_status} /></div>
         </div>
         {other && (
           <div className="ccard p-5 space-y-3 text-center">
@@ -156,6 +158,7 @@ function SosDetail() {
           <div className="font-display text-3xl">{t("sos.broadcasting", { n: rescuerCount })}</div>
           <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
         </div>
+        <div><CourtStatusBadge status={sos.court_status} /></div>
         <button
           className="cbtn cbtn-ghost w-full"
           disabled={busy}
@@ -187,10 +190,10 @@ function SosDetail() {
       <div className="ccard p-5 space-y-3">
         <div className="font-display text-3xl">{when}</div>
         <div className="font-extrabold">📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
+        <div><CourtStatusBadge status={sos.court_status} /></div>
         <div className="text-sm">
           Level <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
           –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
-          {" · "}{sos.court_status.replace("_", " ")}
         </div>
         {sos.note && <div className="text-[var(--ink)] italic">"{sos.note}"</div>}
       </div>
