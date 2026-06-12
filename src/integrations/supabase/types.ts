@@ -219,13 +219,16 @@ export type Database = {
       }
       sos_requests: {
         Row: {
+          auto_flare: boolean
           caller_id: string
           claimed_by: string | null
           court_id: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
           created_at: string
+          flared_at: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
+          kind: string
           level_max: number
           level_min: number
           note: string | null
@@ -233,13 +236,16 @@ export type Database = {
           status: Database["public"]["Enums"]["sos_status_t"]
         }
         Insert: {
+          auto_flare?: boolean
           caller_id: string
           claimed_by?: string | null
           court_id?: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
           created_at?: string
+          flared_at?: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
           id?: string
+          kind?: string
           level_max?: number
           level_min?: number
           note?: string | null
@@ -247,13 +253,16 @@ export type Database = {
           status?: Database["public"]["Enums"]["sos_status_t"]
         }
         Update: {
+          auto_flare?: boolean
           caller_id?: string
           claimed_by?: string | null
           court_id?: string | null
           court_status?: Database["public"]["Enums"]["court_status_t"]
           created_at?: string
+          flared_at?: string | null
           format?: Database["public"]["Enums"]["sos_format_t"]
           id?: string
+          kind?: string
           level_max?: number
           level_min?: number
           note?: string | null
@@ -354,8 +363,39 @@ export type Database = {
           sos_id: string
         }[]
       }
+      community_stats: {
+        Args: { _city: string }
+        Returns: {
+          all_time_games: number
+          games_matched: number
+          new_buddies: number
+          sets_saved: number
+        }[]
+      }
       confirm_game: { Args: { _game_id: string }; Returns: undefined }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
+      eligible_open_games_for_me: {
+        Args: never
+        Returns: {
+          caller_id: string
+          caller_name: string
+          claimed_by: string
+          court_area: string
+          court_city: string
+          court_id: string
+          court_name: string
+          court_status: Database["public"]["Enums"]["court_status_t"]
+          created_at: string
+          format: Database["public"]["Enums"]["sos_format_t"]
+          id: string
+          is_buddy: boolean
+          level_max: number
+          level_min: number
+          note: string
+          play_at: string
+          status: Database["public"]["Enums"]["sos_status_t"]
+        }[]
+      }
       eligible_sos_for_me: {
         Args: never
         Returns: {
@@ -378,6 +418,7 @@ export type Database = {
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
       }
+      escalate_due_open_games: { Args: never; Returns: number }
       expire_old_sos: { Args: never; Returns: undefined }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
