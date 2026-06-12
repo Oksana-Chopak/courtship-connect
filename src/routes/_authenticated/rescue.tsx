@@ -1,14 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { sweepExpired, formatLabel, fetchEligibleSos, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta } from "@/lib/courtship";
-import { CourtStatusBadge } from "@/components/CourtStatusBadge";
-import { useI18n } from "@/lib/i18n";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/rescue")({
-  head: () => ({ meta: [{ title: "Rescue board — Courtship" }] }),
-  component: Rescue,
+  beforeLoad: () => { throw redirect({ to: "/board", search: { seg: "urgent" } }); },
+  component: () => null,
 });
 
 function Rescue() {
