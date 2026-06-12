@@ -7,6 +7,12 @@ import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/co
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import {
+  isBuddyWith,
+  hasOutgoingRequest,
+  requestBuddy,
+  removeBuddy,
+} from "@/lib/buddies";
 
 export const Route = createFileRoute("/_authenticated/players/$id")({
   head: () => ({ meta: [{ title: "Player — Courtship" }] }),
@@ -18,10 +24,20 @@ function PlayerDetail() {
   const { id } = Route.useParams();
   const [p, setP] = useState<any>(null);
   const [busy, setBusy] = useState(false);
+  const [meId, setMeId] = useState<string | null>(null);
+  const [buddyState, setBuddyState] = useState<"none" | "pending" | "buddy">("none");
   const getPhone = useServerFn(getProfilePhone);
 
   useEffect(() => {
     (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        setMeId(u.user.id);
+        if (u.user.id !== id) {
+          if (await isBuddyWith(u.user.id, id)) setBuddyState("buddy");
+          else if (await hasOutgoingRequest(u.user.id, id)) setBuddyState("pending");
+        }
+      }
       const { data } = await supabase
         .from("profiles_public" as any)
         .select("*")
@@ -80,6 +96,48 @@ function PlayerDetail() {
           {t("players.message_wa")}
         </button>
 
+        {meId && meId !== id && (
+          <>
+            {buddyState === "buddy" ? (
+              <button
+                disabled={busy}
+                onClick={async () => {
+                  if (typeof window !== "undefined" && !window.confirm(t("buddy.confirm_remove"))) return;
+                  setBusy(true);
+                  try {
+                    await removeBuddy(id);
+                    setBuddyState("none");
+                    toast.success(t("buddy.removed"));
+                  } catch (e: any) { toast.error(e?.message ?? "Error"); }
+                  setBusy(false);
+                }}
+                className="cbtn cbtn-ghost w-full"
+              >
+                {t("buddy.is_buddy")} · {t("buddy.remove")}
+              </button>
+            ) : buddyState === "pending" ? (
+              <button disabled className="cbtn cbtn-ghost w-full opacity-70">{t("buddy.requested")}</button>
+            ) : (
+              <button
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await requestBuddy(id);
+                    setBuddyState("pending");
+                    toast.success(t("buddy.request_sent"));
+                  } catch (e: any) { toast.error(e?.message ?? "Error"); }
+                  setBusy(false);
+                }}
+                className="cbtn cbtn-coral w-full"
+              >
+                {t("buddy.add")}
+              </button>
+            )}
+          </>
+        )}
+
+        <Row label={t("city.label")}>📍 {p.home_city ?? "—"}</Row>
         <Row label="Formats">{p.formats?.join(" · ") || "—"}</Row>
         <Row label="When">{p.play_times?.join(" · ") || "—"}</Row>
         <Row label="Looking for">{p.looking_for}</Row>

@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji } from "@/lib/courtship";
+import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, CITIES, type City } from "@/lib/courtship";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
+import { fetchBuddyIds } from "@/lib/buddies";
 
 export const Route = createFileRoute("/_authenticated/players")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),
@@ -20,6 +21,7 @@ type P = {
   vibe: string;
   buddy_optin: string;
   home_courts: string | null;
+  home_city: string | null;
 };
 
 function Players() {
@@ -30,12 +32,16 @@ function Players() {
   const [format, setFormat] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [buddiesOnly, setBuddiesOnly] = useState(false);
+  const [city, setCity] = useState<City | null>(null);
+  const [buddyIds, setBuddyIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) setBuddyIds(await fetchBuddyIds(u.user.id));
       const { data } = await supabase
         .from("profiles_public" as any)
-        .select("id,name,photo_url,level,formats,play_times,vibe,buddy_optin,home_courts")
+        .select("id,name,photo_url,level,formats,play_times,vibe,buddy_optin,home_courts,home_city")
         .order("created_at", { ascending: false });
       setRows((data as any) ?? []);
       setLoading(false);
@@ -49,9 +55,10 @@ function Players() {
           (level == null || p.level === level) &&
           (!format || p.formats?.includes(format)) &&
           (!time || p.play_times?.includes(time)) &&
+          (!city || p.home_city === city) &&
           (!buddiesOnly || p.buddy_optin === "yes"),
       ),
-    [rows, level, format, time, buddiesOnly],
+    [rows, level, format, time, city, buddiesOnly],
   );
 
   return (
@@ -62,6 +69,14 @@ function Players() {
       </div>
 
       <div className="space-y-2">
+        <FilterRow label={t("city.label")}>
+          <Chip on={city == null} onClick={() => setCity(null)}>{t("city.any")}</Chip>
+          {CITIES.map((cy) => (
+            <Chip key={cy} on={city === cy} onClick={() => setCity(city === cy ? null : cy)}>
+              📍 {cy}
+            </Chip>
+          ))}
+        </FilterRow>
         <FilterRow label="Level">
           <Chip on={level == null} onClick={() => setLevel(null)}>All</Chip>
           {LEVELS.map((l) => (
@@ -104,7 +119,7 @@ function Players() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((p) => (
-            <PlayerCard key={p.id} p={p} />
+            <PlayerCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} />
           ))}
         </div>
       )}
@@ -129,7 +144,7 @@ function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => void; c
   );
 }
 
-function PlayerCard({ p }: { p: P }) {
+function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
   const lm = levelMeta(p.level);
   return (
     <Link
@@ -141,10 +156,16 @@ function PlayerCard({ p }: { p: P }) {
         <Avatar src={p.photo_url} name={p.name} seed={p.id} size={104} />
       </div>
       <div className="flex items-center justify-between gap-1">
-        <div className="font-display text-lg truncate">{p.name}</div>
+        <div className="font-display text-lg truncate flex items-center gap-1">
+          {p.name}
+          {isBuddy && <span title="Buddy">🤝</span>}
+        </div>
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
       <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]">{lm.name}</span></div>
+      {p.home_city && (
+        <div className="text-xs font-extrabold mt-1">📍 {p.home_city}</div>
+      )}
       {p.play_times?.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1">
           {p.play_times.slice(0, 2).map((t) => (
