@@ -47,7 +47,6 @@ function Home() {
       setIsAdmin(!!d?.is_admin);
       if (d?.home_city) setHomeCity(d.home_city);
 
-      setPending(await fetchPendingPostGameChecks(u.user.id));
       // Enrich pending with court name + other player name
       const pendingRows = await fetchPendingPostGameChecks(u.user.id);
       setPending(pendingRows);
