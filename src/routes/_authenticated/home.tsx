@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sweepExpired } from "@/lib/sos";
+import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { fetchPendingPostGameChecks, confirmGame, reportNoshow, type GameRow } from "@/lib/games";
 import { fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "sonner";
-import { whenLabel } from "@/lib/courtship";
+import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -18,11 +19,13 @@ function Home() {
   const [name, setName] = useState<string>("");
   const [rescues, setRescues] = useState(0);
   const [activeRescueCount, setActiveRescueCount] = useState(0);
-  const [uid, setUid] = useState<string | null>(null);
+  const [, setUid] = useState<string | null>(null);
+  const [homeCity, setHomeCity] = useState<string>("Uppsala");
   const [isAdmin, setIsAdmin] = useState(false);
   const [pending, setPending] = useState<GameRow[]>([]);
   const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
   const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
+  const [flarePrompts, setFlarePrompts] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -32,15 +35,29 @@ function Home() {
       setUid(u.user.id);
       const { data } = await supabase
         .from("profiles" as any)
-        .select("name,rescues_count,level,buddy_optin,is_admin")
+        .select("name,rescues_count,level,buddy_optin,is_admin,home_city")
         .eq("id", u.user.id)
         .maybeSingle();
       const d = data as any;
       setName(d?.name?.split(" ")[0] ?? "");
       setRescues(d?.rescues_count ?? 0);
       setIsAdmin(!!d?.is_admin);
+      if (d?.home_city) setHomeCity(d.home_city);
 
       setPending(await fetchPendingPostGameChecks(u.user.id));
+
+      // My own open games unfilled within URGENCY_WINDOW where auto_flare is off → prompt to flare
+      const cutoff = new Date(Date.now() + URGENCY_WINDOW_HOURS * 3600 * 1000).toISOString();
+      const { data: prompts } = await (supabase as any)
+        .from("sos_requests")
+        .select("id,play_at,court_id,kind,auto_flare,status")
+        .eq("caller_id", u.user.id)
+        .eq("status", "active")
+        .eq("kind", "open")
+        .eq("auto_flare", false)
+        .gt("play_at", new Date().toISOString())
+        .lte("play_at", cutoff);
+      setFlarePrompts((prompts as any[]) ?? []);
 
       const reqs = await fetchPendingRequestsTo(u.user.id);
       setBuddyReqs(reqs);
@@ -96,12 +113,32 @@ function Home() {
     } catch (e: any) { toast.error(e?.message ?? "Error"); }
   }
 
+  async function fireFlare(sosId: string) {
+    const { error } = await (supabase as any)
+      .from("sos_requests")
+      .update({ kind: "sos", flared_at: new Date().toISOString() })
+      .eq("id", sosId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("post.flare_fired"));
+    setFlarePrompts((p) => p.filter((x) => x.id !== sosId));
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <div className="csection-label">{name ? `${t("nav.home")} · ${name}` : t("nav.home")}</div>
         <h1 className="font-display text-4xl mt-1">{t("home.lets_play")}</h1>
       </div>
+
+      {flarePrompts.map((g) => (
+        <div key={g.id} className="ccard p-4 space-y-3" style={{ borderColor: "var(--coral)" }}>
+          <div className="font-display text-2xl">{t("home.flare_prompt_title")}</div>
+          <div className="text-sm text-[var(--ink)] font-semibold">{whenLabel(g.play_at)}</div>
+          <button onClick={() => fireFlare(g.id)} className="cbtn cbtn-coral w-full">
+            {t("home.flare_prompt_cta")}
+          </button>
+        </div>
+      ))}
 
       {pending.map((g) => (
         <div key={g.id} className="ccard p-4 space-y-3" style={{ borderColor: "var(--ink)" }}>
@@ -149,6 +186,23 @@ function Home() {
         <div className="font-display text-4xl leading-tight">{t("home.save_my_set")}</div>
       </Link>
 
+      <Link
+        to="/sos/new"
+        search={{ planned: 1 }}
+        className="block ccard p-4 text-center"
+        style={{ background: "var(--green-pop)", borderColor: "var(--ink)" }}
+      >
+        <div className="font-display text-2xl">{t("home.post_a_game")}</div>
+      </Link>
+
+      <Link to="/games" className="ccard p-4 flex items-center justify-between">
+        <div>
+          <div className="font-display text-2xl">{t("home.open_games")}</div>
+          <div className="text-sm text-[var(--ink)] font-semibold">{t("games.sub")}</div>
+        </div>
+        <div className="text-3xl">🎾</div>
+      </Link>
+
       <Link to="/rescue" className="ccard p-4 flex items-center justify-between">
         <div>
           <div className="font-display text-2xl">{t("rescue.title")}</div>
@@ -167,6 +221,8 @@ function Home() {
           )}
         </div>
       </Link>
+
+      <CommunityStatsWidget city={homeCity} />
 
       <div className="grid grid-cols-2 gap-3">
         <Link to="/players" className="ccard p-4 text-center">
