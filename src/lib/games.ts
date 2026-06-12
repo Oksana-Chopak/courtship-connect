@@ -9,22 +9,29 @@ export type GameRow = {
   reported_noshow: string | null;
   played_at: string;
   sos_id: string | null;
+  archived_by?: string[] | null;
+  created_at?: string | null;
 };
 
-/** Games this user played that are ≥ 2h after play time and not yet resolved by them. */
+/** Games this user played that are ≥ 2h after play time, not archived by them,
+ *  not yet confirmed by them, and not older than 7 days (silent expiry). */
 export async function fetchPendingPostGameChecks(uid: string): Promise<GameRow[]> {
   const cutoff = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const { data } = await (supabase as any)
     .from("games")
     .select("*")
     .or(`player_a.eq.${uid},player_b.eq.${uid}`)
     .lte("played_at", cutoff)
+    .gte("played_at", sevenDaysAgo)
     .is("reported_noshow", null)
     .order("played_at", { ascending: false });
   const rows = (data as GameRow[]) ?? [];
   return rows.filter((g) => {
     const mine = g.player_a === uid ? g.confirmed_a : g.confirmed_b;
-    return !mine;
+    if (mine) return false;
+    if (Array.isArray(g.archived_by) && g.archived_by.includes(uid)) return false;
+    return true;
   });
 }
 
@@ -35,5 +42,10 @@ export async function confirmGame(gameId: string) {
 
 export async function reportNoshow(gameId: string) {
   const { error } = await (supabase as any).rpc("report_noshow", { _game_id: gameId });
+  if (error) throw new Error(error.message);
+}
+
+export async function archiveGame(gameId: string) {
+  const { error } = await (supabase as any).rpc("archive_game", { _game_id: gameId });
   if (error) throw new Error(error.message);
 }
