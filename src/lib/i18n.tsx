@@ -147,6 +147,40 @@ const en: Dict = {
   "buddy.request_sent": "Buddy request sent 🤝",
   "buddy.accepted": "Buddies! 🤝",
   "buddy.declined": "Declined",
+
+  // Unified post form
+  "post.new_title_urgent": "Save my set 🚨",
+  "post.new_title_planned": "Post a game 🎾",
+  "post.sub_urgent": "Tap fast. Rescuers are waiting.",
+  "post.sub_planned": "Get it on the board. Players will find you.",
+  "post.mode_urgent": "🚨 Urgent",
+  "post.mode_planned": "🎾 Planned",
+  "post.cta_urgent": "Send the flare 🚨",
+  "post.cta_planned": "Post it 🎾",
+  "post.auto_flare_label": "Auto-flare if still unfilled 🚨",
+  "post.auto_flare_help": "If nobody claims by 6h before start, we'll fire an SOS for you.",
+  "post.posted_toast": "Posted! It's on the board.",
+  "post.sos_toast": "SOS sent 🚨",
+  "post.flare_now": "Fire the flare instead 🚨",
+  "post.flare_fired": "Your game went urgent — flare fired 🚨 Broadcasting to rescuers now.",
+  "home.post_a_game": "+ Post a game",
+  "home.open_games": "Open games 🎾",
+  "home.flare_prompt_title": "6h to game, still solo.",
+  "home.flare_prompt_cta": "Fire the flare? 🚨",
+
+  // Open games board
+  "games.title": "Open games",
+  "games.sub": "Planned hits looking for a partner.",
+  "games.empty_title": "No open games yet.",
+  "games.empty_sub": "Post one — players will find it 🎾",
+  "games.im_in": "I'm in! 🎾",
+
+  // Community stats
+  "stats.this_week_in": "This week in {city}",
+  "stats.sets_saved": "{n} sets saved",
+  "stats.games_matched": "{n} games matched",
+  "stats.new_buddies": "{n} new buddy pairs",
+  "stats.all_time": "All-time: {n} games played in {city}",
 };
 
 const sv: Dict = {
@@ -277,6 +311,37 @@ const sv: Dict = {
   "buddy.request_sent": "Kompisförfrågan skickad 🤝",
   "buddy.accepted": "Kompisar! 🤝",
   "buddy.declined": "Avböjd",
+
+  "post.new_title_urgent": "Rädda mitt set 🚨",
+  "post.new_title_planned": "Lägg upp en match 🎾",
+  "post.sub_urgent": "Tryck snabbt. Räddare väntar.",
+  "post.sub_planned": "Få upp den på tavlan. Spelare hittar dig.",
+  "post.mode_urgent": "🚨 Brådskande",
+  "post.mode_planned": "🎾 Planerad",
+  "post.cta_urgent": "Skicka nödraketen 🚨",
+  "post.cta_planned": "Lägg upp 🎾",
+  "post.auto_flare_label": "Automatisk nödraket om ingen nappar 🚨",
+  "post.auto_flare_help": "Om ingen tagit den 6h innan start, skickar vi ett nödrop åt dig.",
+  "post.posted_toast": "Upplagd! Den är på tavlan.",
+  "post.sos_toast": "Nödrop skickat 🚨",
+  "post.flare_now": "Skicka nödraketen nu 🚨",
+  "post.flare_fired": "Din match blev brådskande — raketen avfyrad 🚨 Sänder till räddare nu.",
+  "home.post_a_game": "+ Lägg upp en match",
+  "home.open_games": "Öppna matcher 🎾",
+  "home.flare_prompt_title": "6h till matchen, fortfarande ensam.",
+  "home.flare_prompt_cta": "Avfyra raketen? 🚨",
+
+  "games.title": "Öppna matcher",
+  "games.sub": "Planerade matcher som söker spelare.",
+  "games.empty_title": "Inga öppna matcher än.",
+  "games.empty_sub": "Lägg upp en — spelare hittar den 🎾",
+  "games.im_in": "Jag är med! 🎾",
+
+  "stats.this_week_in": "Denna vecka i {city}",
+  "stats.sets_saved": "{n} set räddade",
+  "stats.games_matched": "{n} matcher matchade",
+  "stats.new_buddies": "{n} nya kompispar",
+  "stats.all_time": "Totalt: {n} matcher spelade i {city}",
 };
 
 const DICTS: Record<Lang, Dict> = { en, sv };
