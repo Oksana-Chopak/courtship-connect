@@ -79,15 +79,8 @@ export function toE164(raw: string, defaultPrefix = "+46"): string {
   return defaultPrefix + local;
 }
 
-export const COURTS = [
-  "Fyrishov",
-  "UTK (Uppsala Tennisklubb)",
-  "Studenternas",
-  "Stadsträdgården Court",
-  "Gränby Court",
-  "Sunnersta Court",
-  "Luthagen Court",
-] as const;
+export const CITIES = ["Uppsala", "Stockholm"] as const;
+export type City = (typeof CITIES)[number];
 
 export const COURT_STATUSES = [
   { value: "booked_paid", label: "Booked & paid 💸" },
