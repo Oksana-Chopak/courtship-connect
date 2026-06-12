@@ -15,7 +15,6 @@ export const Route = createFileRoute("/_authenticated/me")({
 
 function MePage() {
   const { t } = useI18n();
-  const { lang } = useI18n();
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
