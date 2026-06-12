@@ -63,6 +63,11 @@ function PlayerDetail() {
             <span className="font-extrabold">{lm.name}</span>
             <span>· {vibeEmoji(p.vibe)}</span>
           </div>
+          {p.ghost_badge && (
+            <div className="mt-2 inline-block text-xs font-extrabold uppercase tracking-wider px-2 py-1 rounded-full border-2 border-[var(--ink)] bg-[var(--cream2)]">
+              🪦 ghosted a match
+            </div>
+          )}
         </div>
 
         <button
