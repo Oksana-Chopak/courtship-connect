@@ -1,12 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
 import { LangToggle, useI18n } from "@/lib/i18n";
-import { fetchMyBuddies, removeBuddy, buddySourceLabel, type BuddyRow } from "@/lib/buddies";
+import {
+  fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
+  type BuddyRow, type BuddyRequest,
+} from "@/lib/buddies";
 import { Avatar } from "@/components/Avatar";
-import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Edit profile — Courtship" }] }),
@@ -19,7 +21,11 @@ function MePage() {
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
   const [busy, setBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
+  const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
+  const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
+  const [confirmSignout, setConfirmSignout] = useState(false);
 
   async function loadBuddies(u: string) {
     const rows = await fetchMyBuddies(u);
@@ -37,6 +43,27 @@ function MePage() {
     }));
   }
 
+  async function loadBuddyReqs(u: string) {
+    const reqs = await fetchPendingRequestsTo(u);
+    setBuddyReqs(reqs);
+    if (reqs.length) {
+      const ids = reqs.map((r) => r.from_id);
+      const { data: names } = await (supabase as any)
+        .from("profiles_public").select("id,name").in("id", ids);
+      const m: Record<string, string> = {};
+      (names as any[] | null)?.forEach((n) => { m[n.id] = n.name; });
+      setRequesterNames(m);
+    }
+  }
+
+  async function respond(req: BuddyRequest, accept: boolean) {
+    try {
+      await respondBuddyRequest(req.id, accept);
+      setBuddyReqs((p) => p.filter((x) => x.id !== req.id));
+      toast.success(accept ? t("buddy.accepted") : t("buddy.declined"));
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
+
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -52,6 +79,7 @@ function MePage() {
         return;
       }
       const d = data as any;
+      setIsAdmin(!!d.is_admin);
       setInitial({
         name: d.name ?? "",
         phone_e164: d.phone_e164 ?? "",
@@ -68,6 +96,7 @@ function MePage() {
         buddy_sos_optin: d.buddy_sos_optin ?? true,
       });
       loadBuddies(u.user.id);
+      loadBuddyReqs(u.user.id);
     })();
   }, [navigate]);
 
@@ -81,6 +110,22 @@ function MePage() {
         <h1 className="font-display text-4xl">{t("me.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("me.sub")}</p>
       </div>
+
+      {buddyReqs.length > 0 && (
+        <div className="ccard p-4 space-y-3">
+          <div className="font-display text-2xl">{t("buddy.requests_title")}</div>
+          {buddyReqs.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
+              <div className="font-extrabold truncate">{requesterNames[r.from_id] ?? "Player"}</div>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={() => respond(r, true)} className="cbtn cbtn-green">{t("buddy.accept")}</button>
+                <button onClick={() => respond(r, false)} className="cbtn cbtn-ghost">{t("buddy.decline")}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="ccard p-4 flex items-center justify-between">
         <div className="font-extrabold">{t("me.language")}</div>
         <LangToggle />
@@ -141,6 +186,47 @@ function MePage() {
           }}
         />
       </div>
+
+      {isAdmin && (
+        <Link to="/admin" className="ccard p-4 flex items-center justify-between">
+          <div>
+            <div className="font-display text-xl">{t("admin.title")}</div>
+            <div className="text-base text-[var(--ink)] font-semibold">{t("admin.tag")}</div>
+          </div>
+          <div className="text-2xl">🛠️</div>
+        </Link>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setConfirmSignout(true)}
+        className="cbtn cbtn-ghost w-full"
+      >
+        {t("auth.signout")}
+      </button>
+
+      {confirmSignout && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: "rgba(43,33,24,0.5)" }} onClick={() => setConfirmSignout(false)}>
+          <div className="ccard p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
+            <div className="font-display text-2xl">{t("auth.signout_confirm_title")}</div>
+            <div className="text-base font-semibold text-[var(--ink)]">{t("auth.signout_confirm_body")}</div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmSignout(false)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  toast.success(t("auth.signed_out"));
+                  window.location.href = "/";
+                }}
+                className="cbtn cbtn-coral flex-1"
+              >
+                {t("auth.signout")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
