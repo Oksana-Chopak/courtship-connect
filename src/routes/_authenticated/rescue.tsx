@@ -82,7 +82,7 @@ function Rescue() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
 
-  if (!me) return <div className="text-center py-12 text-[var(--ink)]/60">Loading...</div>;
+  if (!me) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
 
   if (me.buddy_optin === "no") {
     return (
@@ -91,7 +91,7 @@ function Rescue() {
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🛌</div>
           <div className="font-display text-xl mt-1">You're off duty</div>
-          <div className="text-sm text-[var(--ink)]/70">
+          <div className="text-sm text-[var(--ink)]">
             Turn on Buddy mode in your profile to see rescue calls.
           </div>
           <Link to="/me" className="cbtn cbtn-coral mt-4 inline-flex">Edit profile</Link>
@@ -104,18 +104,18 @@ function Rescue() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">Rescue board 🚑</h1>
-        <p className="text-[var(--ink)]/70 font-semibold">
+        <p className="text-[var(--ink)] font-semibold">
           {rows.length === 0 ? "Quiet out there. Stay warm." : `${rows.length} player${rows.length === 1 ? "" : "s"} need${rows.length === 1 ? "s" : ""} you.`}
         </p>
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-[var(--ink)]/60">Listening...</div>
+        <div className="text-center py-10 text-[var(--ink)]">Listening...</div>
       ) : rows.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🌅</div>
           <div className="font-display text-xl mt-1">All quiet on the courts</div>
-          <div className="text-sm text-[var(--ink)]/60">Be the first to send a flare 🚨</div>
+          <div className="text-sm text-[var(--ink)]">Be the first to send a flare 🚨</div>
           <Link to="/sos/new" className="cbtn cbtn-coral mt-4 inline-flex">Save my set</Link>
         </div>
       ) : (
@@ -138,14 +138,14 @@ function SosCard({ sos, court, mine }: { sos: SosRow; court: string; mine: boole
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-tight">{whenLabel(sos.play_at)}</div>
           <div className="font-extrabold truncate">{court}</div>
-          <div className="text-sm text-[var(--ink)]/70">
+          <div className="text-sm text-[var(--ink)]">
             {formatLabel(sos.format)} · L
             <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
             –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
           </div>
-          {sos.note && <div className="text-sm italic mt-1 text-[var(--ink)]/80">"{sos.note}"</div>}
+          {sos.note && <div className="text-sm italic mt-1 text-[var(--ink)]">"{sos.note}"</div>}
         </div>
-        <div className="text-xs text-[var(--ink)]/50 whitespace-nowrap">{timeAgo(sos.created_at)}</div>
+        <div className="text-xs text-[var(--ink)] whitespace-nowrap">{timeAgo(sos.created_at)}</div>
       </div>
       <div className="mt-3">
         <span className={`cbtn ${mine ? "cbtn-ghost" : "cbtn-coral"} w-full`} style={{ pointerEvents: "none" }}>

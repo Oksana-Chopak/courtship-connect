@@ -24,7 +24,7 @@ function Index() {
           It's a match.<br/>
           <span className="text-[var(--coral)]">Literally.</span>
         </h1>
-        <p className="text-lg text-[var(--ink)]/70 font-semibold">
+        <p className="text-lg text-[var(--ink)] font-semibold">
           Find your tennis partner in Uppsala. Hit. Repeat.
         </p>
         <div className="flex flex-col gap-3 pt-2">

@@ -38,12 +38,12 @@ function AdminPage() {
     load();
   }
 
-  if (allowed === null) return <div className="text-center py-12 text-[var(--ink)]/60">Loading...</div>;
+  if (allowed === null) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
   if (allowed === false) {
     return (
       <div className="space-y-4">
         <h1 className="font-display text-3xl">Members only 🚪</h1>
-        <p className="text-[var(--ink)]/70 font-semibold">This page is for club admins.</p>
+        <p className="text-[var(--ink)] font-semibold">This page is for club admins.</p>
         <Link to="/home" className="cbtn cbtn-coral inline-flex">Back home</Link>
       </div>
     );
@@ -68,12 +68,12 @@ function AdminPage() {
         <div className="csection-label mb-2">Invite codes</div>
         <div className="space-y-2">
           {codes.length === 0 ? (
-            <div className="ccard p-4 text-center text-[var(--ink)]/60">No codes yet.</div>
+            <div className="ccard p-4 text-center text-[var(--ink)]">No codes yet.</div>
           ) : codes.map((c) => (
             <div key={c.code} className="ccard p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="font-display text-lg tracking-widest">{c.code}</div>
-                <div className="text-xs text-[var(--ink)]/60">
+                <div className="text-xs text-[var(--ink)]">
                   {c.uses_remaining} uses left · {c.active ? "active" : "deactivated"}
                 </div>
               </div>

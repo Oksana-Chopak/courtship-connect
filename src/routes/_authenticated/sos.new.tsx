@@ -98,7 +98,7 @@ function NewSos() {
       <Link to="/home" className="text-sm font-extrabold underline">← Back</Link>
       <div>
         <h1 className="font-display text-4xl">Save my set 🚨</h1>
-        <p className="text-[var(--ink)]/70 font-semibold">Tap fast. Rescuers are waiting.</p>
+        <p className="text-[var(--ink)] font-semibold">Tap fast. Rescuers are waiting.</p>
       </div>
 
       <Section label="When">
@@ -149,7 +149,7 @@ function NewSos() {
             </select>
           </div>
         )}
-        <div className="text-xs text-[var(--ink)]/60 mt-1">Your level: {myLevel}</div>
+        <div className="text-xs text-[var(--ink)] mt-1">Your level: {myLevel}</div>
       </Section>
 
       <Section label="Court status">

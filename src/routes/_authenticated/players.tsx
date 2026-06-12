@@ -56,7 +56,7 @@ function Players() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">The courtroom</h1>
-        <p className="text-[var(--ink)]/70 font-semibold">
+        <p className="text-[var(--ink)] font-semibold">
           Pick a partner. Make it happen.
         </p>
       </div>
@@ -95,12 +95,12 @@ function Players() {
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-[var(--ink)]/60">Warming up...</div>
+        <div className="text-center py-10 text-[var(--ink)]">Warming up...</div>
       ) : filtered.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🎾</div>
           <div className="font-display text-xl mt-1">Crickets on the court</div>
-          <div className="text-sm text-[var(--ink)]/60">Loosen the filters — your match is out there.</div>
+          <div className="text-sm text-[var(--ink)]">Loosen the filters — your match is out there.</div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -145,7 +145,7 @@ function PlayerCard({ p }: { p: P }) {
         <div className="font-display text-lg truncate">{p.name}</div>
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
-      <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]/60">{lm.name}</span></div>
+      <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]">{lm.name}</span></div>
       {p.play_times?.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1">
           {p.play_times.slice(0, 2).map((t) => (

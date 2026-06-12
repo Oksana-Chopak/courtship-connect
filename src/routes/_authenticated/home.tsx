@@ -84,7 +84,7 @@ function Home() {
           <div>
             <div className="csection-label">Post-game check</div>
             <div className="font-display text-2xl mt-1">Did the game happen? 🎾</div>
-            <div className="text-sm text-[var(--ink)]/70 font-semibold">
+            <div className="text-sm text-[var(--ink)] font-semibold">
               {whenLabel(g.played_at)} — we just need a quick yes / no.
             </div>
           </div>
@@ -116,7 +116,7 @@ function Home() {
       <Link to="/rescue" className="ccard p-4 flex items-center justify-between">
         <div>
           <div className="font-display text-2xl">Rescue board</div>
-          <div className="text-sm text-[var(--ink)]/70 font-semibold">
+          <div className="text-sm text-[var(--ink)] font-semibold">
             {activeRescueCount > 0
               ? `${activeRescueCount} player${activeRescueCount === 1 ? "" : "s"} need${activeRescueCount === 1 ? "s" : ""} you`
               : "All quiet on the courts."}
@@ -147,7 +147,7 @@ function Home() {
         <Link to="/admin" className="ccard p-4 flex items-center justify-between">
           <div>
             <div className="font-display text-xl">Club admin</div>
-            <div className="text-sm text-[var(--ink)]/70 font-semibold">Invite codes & stats</div>
+            <div className="text-sm text-[var(--ink)] font-semibold">Invite codes & stats</div>
           </div>
           <div className="text-2xl">🛠️</div>
         </Link>

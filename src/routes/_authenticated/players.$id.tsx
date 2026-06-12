@@ -29,7 +29,7 @@ function PlayerDetail() {
     })();
   }, [id]);
 
-  if (!p) return <div className="text-center py-12 text-[var(--ink)]/60">Loading...</div>;
+  if (!p) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
 
   const lm = levelMeta(p.level);
 

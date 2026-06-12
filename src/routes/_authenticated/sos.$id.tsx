@@ -77,7 +77,7 @@ function SosDetail() {
     })();
   }, [sos?.status, sos?.caller_id, sos?.claimed_by, me?.id]);
 
-  if (!sos || !me) return <div className="text-center py-12 text-[var(--ink)]/60">Loading...</div>;
+  if (!sos || !me) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
 
   const isCaller = sos.caller_id === me.id;
   const isClaimant = sos.claimed_by === me.id;
@@ -122,7 +122,7 @@ function SosDetail() {
         <div className="ccard p-6 text-center space-y-2">
           <div className="text-5xl">💔</div>
           <div className="font-display text-2xl">This one's taken</div>
-          <div className="text-[var(--ink)]/70 font-semibold">
+          <div className="text-[var(--ink)] font-semibold">
             Stay ready — heroes are always needed.
           </div>
         </div>
@@ -191,7 +191,7 @@ function SosDetail() {
           –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
           {" · "}{sos.court_status.replace("_", " ")}
         </div>
-        {sos.note && <div className="text-[var(--ink)]/80 italic">"{sos.note}"</div>}
+        {sos.note && <div className="text-[var(--ink)] italic">"{sos.note}"</div>}
       </div>
       <button
         className="cbtn cbtn-coral w-full"

@@ -29,7 +29,7 @@ function Onboarding() {
         <div>
           <div className="csection-label">Step 1 of 1</div>
           <h1 className="font-display text-4xl mt-1">Make your profile</h1>
-          <p className="text-[var(--ink)]/70 font-semibold">
+          <p className="text-[var(--ink)] font-semibold">
             Tell us how you like to play. We'll match the vibe.
           </p>
         </div>
