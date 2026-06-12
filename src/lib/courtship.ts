@@ -89,6 +89,32 @@ export const COURT_STATUSES = [
   { value: "public", label: "Public court" },
 ] as const;
 
+/** Hours-before-play that flip a posting from a planned open game to an urgent SOS. */
+export const URGENCY_WINDOW_HOURS = 6;
+
+export function isUrgent(playAt: Date | string): boolean {
+  const t = typeof playAt === "string" ? new Date(playAt).getTime() : playAt.getTime();
+  return t - Date.now() <= URGENCY_WINDOW_HOURS * 3600 * 1000;
+}
+
+export type CourtStatus = "booked_paid" | "booked" | "will_book" | "public";
+
+export function courtStatusMeta(s: CourtStatus, lang: "en" | "sv" = "en") {
+  const en: Record<CourtStatus, { label: string; tone: "green" | "neutral" }> = {
+    booked_paid: { label: "💸 Court booked & paid", tone: "green" },
+    booked:      { label: "✓ Court booked",         tone: "green" },
+    will_book:   { label: "🤝 We'll book together", tone: "neutral" },
+    public:      { label: "🏞 Public court",        tone: "neutral" },
+  };
+  const sv: Record<CourtStatus, { label: string; tone: "green" | "neutral" }> = {
+    booked_paid: { label: "💸 Banan bokad & betald", tone: "green" },
+    booked:      { label: "✓ Banan bokad",            tone: "green" },
+    will_book:   { label: "🤝 Vi bokar ihop",         tone: "neutral" },
+    public:      { label: "🏞 Allmän bana",            tone: "neutral" },
+  };
+  return (lang === "sv" ? sv : en)[s];
+}
+
 export const SOS_FORMATS = [
   { value: "singles", label: "Singles" },
   { value: "doubles_need1", label: "Doubles — need 1" },
