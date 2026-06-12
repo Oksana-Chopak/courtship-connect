@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 const search = z.object({
   email: z.string().optional().default(""),
@@ -20,6 +21,7 @@ const COOLDOWN_SECONDS = 30;
 function CheckEmail() {
   const { email } = Route.useSearch();
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [sending, setSending] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -63,11 +65,13 @@ function CheckEmail() {
   async function resend() {
     if (secondsLeft > 0 || sending) return;
     if (!email) {
-      toast.error("We don't know which email to resend to. Try signing up again.");
+      toast.error(t("ce.title"));
       return;
     }
     setSending(true);
     try {
+      // Persist lang to user metadata so the email template can localize.
+      try { await supabase.auth.updateUser({ data: { lang } }); } catch {}
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
@@ -76,7 +80,7 @@ function CheckEmail() {
       if (error) throw error;
       localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       setSecondsLeft(COOLDOWN_SECONDS);
-      toast.success("Email sent again. Check your inbox 📩");
+      toast.success(t("ce.resent_ok"));
     } catch (err: any) {
       toast.error(err?.message ?? "Couldn't resend right now.");
     } finally {
@@ -90,13 +94,13 @@ function CheckEmail() {
         <div className="text-center">
           <div className="text-7xl leading-none" aria-hidden="true">📩</div>
           <h1 className="font-display text-5xl mt-4 leading-tight">
-            Check your email
+            {t("ce.title")}
           </h1>
         </div>
 
         {email && (
           <div className="text-center">
-            <div className="csection-label mb-1">We sent it to</div>
+            <div className="csection-label mb-1">{t("ce.sent_to")}</div>
             <div className="text-2xl font-extrabold break-all">{email}</div>
           </div>
         )}
@@ -104,15 +108,15 @@ function CheckEmail() {
         <ol className="space-y-4 text-xl font-semibold leading-snug">
           <li className="flex gap-3">
             <span className="shrink-0 w-9 h-9 rounded-full bg-[var(--green-pop)] border-2 border-[var(--ink)] flex items-center justify-center font-extrabold">1</span>
-            <span>Open your email app</span>
+            <span>{t("ce.step1")}</span>
           </li>
           <li className="flex gap-3">
             <span className="shrink-0 w-9 h-9 rounded-full bg-[var(--green-pop)] border-2 border-[var(--ink)] flex items-center justify-center font-extrabold">2</span>
-            <span>Find the email from Courtship</span>
+            <span>{t("ce.step2")}</span>
           </li>
           <li className="flex gap-3">
             <span className="shrink-0 w-9 h-9 rounded-full bg-[var(--green-pop)] border-2 border-[var(--ink)] flex items-center justify-center font-extrabold">3</span>
-            <span>Tap the <span className="font-extrabold">"Confirm my email"</span> button inside it</span>
+            <span>{t("ce.step3_a")} <span className="font-extrabold">"{t("ce.step3_button")}"</span> {t("ce.step3_b")}</span>
           </li>
         </ol>
 
@@ -123,20 +127,20 @@ function CheckEmail() {
             className="cbtn cbtn-coral w-full text-lg"
           >
             {sending
-              ? "Sending..."
+              ? t("ce.resend_sending")
               : secondsLeft > 0
-                ? `Resend email (${secondsLeft}s)`
-                : "Resend email"}
+                ? t("ce.resend_cooldown", { s: secondsLeft })
+                : t("ce.resend")}
           </button>
           <p className="text-base text-[var(--ink)] font-semibold text-center">
-            Didn't get it? Check your spam folder.
+            {t("ce.spam_hint")}
           </p>
         </div>
 
         <div className="border-t-2 border-[var(--ink)]/15 pt-4 text-center text-base">
-          Wrong address?{" "}
+          {t("ce.wrong_address")}{" "}
           <Link to="/auth" search={{ mode: "signup" }} className="underline font-extrabold">
-            Start over
+            {t("ce.start_over")}
           </Link>
         </div>
       </div>

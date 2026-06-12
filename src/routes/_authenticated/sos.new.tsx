@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCourts, activeSosCount, type CourtRow } from "@/lib/sos";
 import { COURT_STATUSES, SOS_FORMATS, LEVELS } from "@/lib/courtship";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "Save my set — Courtship" }] }),
@@ -14,6 +15,7 @@ function pad(n: number) { return n.toString().padStart(2, "0"); }
 function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 
 function NewSos() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [courts, setCourts] = useState<CourtRow[]>([]);
   const [myLevel, setMyLevel] = useState(3);
@@ -95,16 +97,16 @@ function NewSos() {
 
   return (
     <div className="space-y-5">
-      <Link to="/home" className="text-sm font-extrabold underline">← Back</Link>
+      <Link to="/home" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
       <div>
-        <h1 className="font-display text-4xl">Save my set 🚨</h1>
-        <p className="text-[var(--ink)] font-semibold">Tap fast. Rescuers are waiting.</p>
+        <h1 className="font-display text-4xl">{t("sos.new_title")}</h1>
+        <p className="text-[var(--ink)] font-semibold">{t("sos.new_sub")}</p>
       </div>
 
-      <Section label="When">
+      <Section label={t("sos.when")}>
         <div className="flex gap-2">
-          <Chip on={day === "today"} onClick={() => setDay("today")}>Today</Chip>
-          <Chip on={day === "tomorrow"} onClick={() => setDay("tomorrow")}>Tomorrow</Chip>
+          <Chip on={day === "today"} onClick={() => setDay("today")}>{t("sos.today")}</Chip>
+          <Chip on={day === "tomorrow"} onClick={() => setDay("tomorrow")}>{t("sos.tomorrow")}</Chip>
           <input
             type="time"
             className="cinput flex-1"
@@ -114,7 +116,7 @@ function NewSos() {
         </div>
       </Section>
 
-      <Section label="Court">
+      <Section label={t("sos.court")}>
         <select className="cinput" value={courtId} onChange={(e) => setCourtId(e.target.value)}>
           {courts.map((c) => (
             <option key={c.id} value={c.id}>{c.name}{c.area ? ` · ${c.area}` : ""}</option>
@@ -122,7 +124,7 @@ function NewSos() {
         </select>
       </Section>
 
-      <Section label="Format">
+      <Section label={t("sos.format")}>
         <div className="flex flex-wrap gap-2">
           {SOS_FORMATS.map((f) => (
             <Chip key={f.value} on={format === f.value} onClick={() => setFormat(f.value)}>
@@ -132,10 +134,10 @@ function NewSos() {
         </div>
       </Section>
 
-      <Section label="Level">
+      <Section label={t("sos.level_range")}>
         <div className="flex items-center justify-between">
           <Chip on={anyone} onClick={() => setAnyone(!anyone)}>
-            Anyone — I just want to play
+            {t("sos.anyone")}
           </Chip>
         </div>
         {!anyone && (
@@ -143,16 +145,16 @@ function NewSos() {
             <select className="cinput flex-1" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
               {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
             </select>
-            <span className="font-extrabold">to</span>
+            <span className="font-extrabold">–</span>
             <select className="cinput flex-1" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
               {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
             </select>
           </div>
         )}
-        <div className="text-xs text-[var(--ink)] mt-1">Your level: {myLevel}</div>
+        <div className="text-xs text-[var(--ink)] mt-1">L{myLevel}</div>
       </Section>
 
-      <Section label="Court status">
+      <Section label={t("sos.court_status")}>
         <div className="flex flex-wrap gap-2">
           {COURT_STATUSES.map((s) => (
             <Chip key={s.value} on={courtStatus === s.value} onClick={() => setCourtStatus(s.value)}>
@@ -162,10 +164,10 @@ function NewSos() {
         </div>
       </Section>
 
-      <Section label="Note (optional)">
+      <Section label={t("sos.note_label")}>
         <input
           className="cinput"
-          placeholder="I'll bring balls 🎾"
+          placeholder={t("sos.note_placeholder")}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={140}
@@ -173,7 +175,7 @@ function NewSos() {
       </Section>
 
       <button disabled={busy} onClick={submit} className="cbtn cbtn-coral w-full">
-        {busy ? "Sending..." : "Send SOS 🚨"}
+        {busy ? "..." : t("sos.send")}
       </button>
     </div>
   );

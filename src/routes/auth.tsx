@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { LangToggle, useI18n } from "@/lib/i18n";
 
 const search = z.object({
   mode: z.enum(["signup", "login"]).optional().default("signup"),
@@ -37,6 +38,7 @@ async function userHasProfile(id: string) {
 function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [invite, setInvite] = useState("");
@@ -62,14 +64,14 @@ function AuthPage() {
       if (mode === "signup") {
         const ok = await checkInvite(invite);
         if (!ok) {
-          toast.error("That invite code doesn't work. Beta is invite-only.");
+          toast.error(t("auth.invite_bad"));
           setBusy(false);
           return;
         }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: window.location.origin, data: { lang } },
         });
         if (error) throw error;
         if (!data.session) {
@@ -101,20 +103,21 @@ function AuthPage() {
   return (
     <div className="terry-bg min-h-screen flex items-center justify-center px-6 py-10 font-body text-[var(--ink)]">
       <div className="ccard w-full max-w-md p-7 space-y-5">
+        <div className="flex justify-end -mb-2"><LangToggle /></div>
         <div>
-          <div className="csection-label mb-2">Courtship · Uppsala</div>
+          <div className="csection-label mb-2">{t("brand.uppsala_beta")}</div>
           <h1 className="font-display text-4xl">
-            {mode === "signup" ? "Join the club" : "Welcome back"}
+            {mode === "signup" ? t("auth.signup_title") : t("auth.login_title")}
           </h1>
           <p className="text-[var(--ink)] font-semibold mt-1">
-            {mode === "signup" ? "Invite-only beta. Got a code?" : "Time for a hit."}
+            {mode === "signup" ? t("auth.signup_sub") : t("auth.login_sub")}
           </p>
         </div>
 
         <form onSubmit={submit} className="space-y-3">
           {mode === "signup" && (
             <div>
-              <label className="csection-label block mb-1">Invite code</label>
+              <label className="csection-label block mb-1">{t("auth.invite_label")}</label>
               <input
                 className="cinput tracking-widest uppercase"
                 placeholder="UPPSALA80"
@@ -125,7 +128,7 @@ function AuthPage() {
             </div>
           )}
           <div>
-            <label className="csection-label block mb-1">Email</label>
+            <label className="csection-label block mb-1">{t("auth.email_label")}</label>
             <input
               type="email"
               className="cinput"
@@ -136,7 +139,7 @@ function AuthPage() {
             />
           </div>
           <div>
-            <label className="csection-label block mb-1">Password</label>
+            <label className="csection-label block mb-1">{t("auth.password_label")}</label>
             <input
               type="password"
               className="cinput"
@@ -148,15 +151,15 @@ function AuthPage() {
             />
           </div>
           <button disabled={busy} className="cbtn cbtn-coral w-full">
-            {busy ? "..." : mode === "signup" ? "Create account 🎾" : "Sign in"}
+            {busy ? "..." : mode === "signup" ? t("auth.create_account") : t("auth.sign_in")}
           </button>
         </form>
 
         <div className="text-center text-sm">
           {mode === "signup" ? (
-            <>Already in? <Link to="/auth" search={{ mode: "login" }} className="underline font-extrabold">Sign in</Link></>
+            <>{t("auth.have_account")} <Link to="/auth" search={{ mode: "login" }} className="underline font-extrabold">{t("auth.go_login")}</Link></>
           ) : (
-            <>New here? <Link to="/auth" search={{ mode: "signup" }} className="underline font-extrabold">Get an invite</Link></>
+            <>{t("auth.no_account")} <Link to="/auth" search={{ mode: "signup" }} className="underline font-extrabold">{t("auth.go_signup")}</Link></>
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { LangToggle, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedShell() {
+  const { t } = useI18n();
   return (
     <div className="terry-bg min-h-screen font-body text-[var(--ink)]">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)]">
@@ -24,19 +26,19 @@ function AuthedShell() {
             Courtship
           </Link>
           <nav className="flex items-center gap-3 text-sm font-extrabold">
-            <Link to="/home" className="hover:text-[var(--coral)]">Home</Link>
-            <Link to="/rescue" className="hover:text-[var(--coral)]">Rescue 🚨</Link>
-            <Link to="/players" className="hover:text-[var(--coral)]">Players</Link>
-            <Link to="/me" className="hover:text-[var(--coral)]">Me</Link>
+            <Link to="/home" className="hover:text-[var(--coral)]">{t("nav.home")}</Link>
+            <Link to="/rescue" className="hover:text-[var(--coral)]">{t("nav.rescue")}</Link>
+            <Link to="/players" className="hover:text-[var(--coral)]">{t("nav.players")}</Link>
+            <Link to="/me" className="hover:text-[var(--coral)]">{t("nav.me")}</Link>
             <button
               className="underline text-[var(--ink)]"
               onClick={async () => {
                 await supabase.auth.signOut();
-                toast.success("See you on court 👋");
+                toast.success(t("auth.signed_out"));
                 window.location.href = "/";
               }}
             >
-              Sign out
+              {t("auth.signout")}
             </button>
           </nav>
         </div>

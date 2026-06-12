@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
+import { LangToggle, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Edit profile — Courtship" }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/_authenticated/me")({
 });
 
 function MePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
@@ -53,14 +55,18 @@ function MePage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-4xl">Your profile</h1>
-        <p className="text-[var(--ink)] font-semibold">Tweak until it feels right.</p>
+        <h1 className="font-display text-4xl">{t("me.title")}</h1>
+        <p className="text-[var(--ink)] font-semibold">{t("me.sub")}</p>
+      </div>
+      <div className="ccard p-4 flex items-center justify-between">
+        <div className="font-extrabold">{t("me.language")}</div>
+        <LangToggle />
       </div>
       <div className="ccard p-5">
         <ProfileWizard
           initial={initial ?? emptyProfile}
           userId={uid}
-          submitLabel="Save changes"
+          submitLabel={t("me.save")}
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
@@ -73,7 +79,7 @@ function MePage() {
               toast.error(error.message);
               return;
             }
-            toast.success("Updated 🎾");
+            toast.success(t("me.updated"));
           }}
         />
       </div>

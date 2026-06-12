@@ -104,6 +104,7 @@ export type Database = {
           home_courts: string | null
           id: string
           is_admin: boolean
+          lang: string
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -122,6 +123,7 @@ export type Database = {
           home_courts?: string | null
           id: string
           is_admin?: boolean
+          lang?: string
           level: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -140,6 +142,7 @@ export type Database = {
           home_courts?: string | null
           id?: string
           is_admin?: boolean
+          lang?: string
           level?: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name?: string

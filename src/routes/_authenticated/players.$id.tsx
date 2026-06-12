@@ -6,6 +6,7 @@ import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/courtship";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/players/$id")({
   head: () => ({ meta: [{ title: "Player — Courtship" }] }),
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/players/$id")({
 });
 
 function PlayerDetail() {
+  const { t } = useI18n();
   const { id } = Route.useParams();
   const [p, setP] = useState<any>(null);
   const [busy, setBusy] = useState(false);
@@ -75,7 +77,7 @@ function PlayerDetail() {
           onClick={openWhatsapp}
           className="cbtn cbtn-green w-full"
         >
-          Message on WhatsApp 👋
+          {t("players.message_wa")}
         </button>
 
         <Row label="Formats">{p.formats?.join(" · ") || "—"}</Row>
