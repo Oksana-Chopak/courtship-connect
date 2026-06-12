@@ -14,19 +14,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      buddies: {
+        Row: {
+          created_at: string
+          id: string
+          source: string
+          user_high: string
+          user_low: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source: string
+          user_high: string
+          user_low: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source?: string
+          user_high?: string
+          user_low?: string
+        }
+        Relationships: []
+      }
+      buddy_requests: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+          status: string
+          to_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          id?: string
+          status?: string
+          to_id: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          status?: string
+          to_id?: string
+        }
+        Relationships: []
+      }
       courts: {
         Row: {
           area: string | null
+          city: string
           id: string
           name: string
         }
         Insert: {
           area?: string | null
+          city?: string
           id?: string
           name: string
         }
         Update: {
           area?: string | null
+          city?: string
           id?: string
           name?: string
         }
@@ -78,18 +129,21 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          owner_id: string | null
           uses_remaining: number
         }
         Insert: {
           active?: boolean
           code: string
           created_at?: string
+          owner_id?: string | null
           uses_remaining?: number
         }
         Update: {
           active?: boolean
           code?: string
           created_at?: string
+          owner_id?: string | null
           uses_remaining?: number
         }
         Relationships: []
@@ -98,9 +152,11 @@ export type Database = {
         Row: {
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
+          buddy_sos_optin: boolean
           created_at: string
           formats: string[]
           ghost_badge: boolean
+          home_city: string
           home_courts: string | null
           id: string
           is_admin: boolean
@@ -112,14 +168,17 @@ export type Database = {
           photo_url: string | null
           play_times: string[]
           rescues_count: number
+          signup_code: string | null
           vibe: Database["public"]["Enums"]["vibe_t"]
         }
         Insert: {
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
+          buddy_sos_optin?: boolean
           created_at?: string
           formats?: string[]
           ghost_badge?: boolean
+          home_city?: string
           home_courts?: string | null
           id: string
           is_admin?: boolean
@@ -131,14 +190,17 @@ export type Database = {
           photo_url?: string | null
           play_times?: string[]
           rescues_count?: number
+          signup_code?: string | null
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Update: {
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
+          buddy_sos_optin?: boolean
           created_at?: string
           formats?: string[]
           ghost_badge?: boolean
+          home_city?: string
           home_courts?: string | null
           id?: string
           is_admin?: boolean
@@ -150,6 +212,7 @@ export type Database = {
           photo_url?: string | null
           play_times?: string[]
           rescues_count?: number
+          signup_code?: string | null
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Relationships: []
@@ -216,6 +279,7 @@ export type Database = {
           created_at: string | null
           formats: string[] | null
           ghost_badge: boolean | null
+          home_city: string | null
           home_courts: string | null
           id: string | null
           level: number | null
@@ -232,6 +296,7 @@ export type Database = {
           created_at?: string | null
           formats?: string[] | null
           ghost_badge?: boolean | null
+          home_city?: string | null
           home_courts?: string | null
           id?: string | null
           level?: number | null
@@ -248,6 +313,7 @@ export type Database = {
           created_at?: string | null
           formats?: string[] | null
           ghost_badge?: boolean | null
+          home_city?: string | null
           home_courts?: string | null
           id?: string | null
           level?: number | null
@@ -262,6 +328,10 @@ export type Database = {
       }
     }
     Functions: {
+      _add_buddy: {
+        Args: { _a: string; _b: string; _source: string }
+        Returns: undefined
+      }
       active_sos_count: { Args: { _uid: string }; Returns: number }
       admin_set_invite_active: {
         Args: { _active: boolean; _code: string }
@@ -286,8 +356,37 @@ export type Database = {
       }
       confirm_game: { Args: { _game_id: string }; Returns: undefined }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
+      eligible_sos_for_me: {
+        Args: never
+        Returns: {
+          caller_id: string
+          caller_name: string
+          claimed_by: string
+          court_area: string
+          court_city: string
+          court_id: string
+          court_name: string
+          court_status: Database["public"]["Enums"]["court_status_t"]
+          created_at: string
+          format: Database["public"]["Enums"]["sos_format_t"]
+          id: string
+          is_buddy: boolean
+          level_max: number
+          level_min: number
+          note: string
+          play_at: string
+          status: Database["public"]["Enums"]["sos_status_t"]
+        }[]
+      }
       expire_old_sos: { Args: never; Returns: undefined }
+      is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
+      remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
+      request_buddy: { Args: { _other: string }; Returns: undefined }
+      respond_buddy_request: {
+        Args: { _accept: boolean; _req_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       buddy_optin_t: "yes" | "sometimes" | "no"
