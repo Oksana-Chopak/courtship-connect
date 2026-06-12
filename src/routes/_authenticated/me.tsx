@@ -89,7 +89,7 @@ function MePage() {
       <div className="ccard p-4 space-y-3">
         <div className="font-display text-2xl">{t("buddy.my_buddies")}</div>
         {buddies.length === 0 ? (
-          <div className="text-sm text-[var(--ink)]">{t("buddy.no_buddies")}</div>
+          <div className="text-base font-semibold text-[var(--ink)]">{t("empty.buddies")}</div>
         ) : (
           buddies.map((b) => (
             <div key={b.id} className="flex items-center gap-3 border-t border-[var(--ink)]/15 pt-3">
