@@ -42,8 +42,10 @@ function MePage() {
         vibe: d.vibe ?? "friendly",
         looking_for: d.looking_for ?? "both",
         home_courts: d.home_courts ?? "",
+        home_city: d.home_city ?? "Uppsala",
         buddy_optin: d.buddy_optin ?? "sometimes",
         buddy_radius_km: d.buddy_radius_km ?? 10,
+        buddy_sos_optin: d.buddy_sos_optin ?? true,
       });
     })();
   }, [navigate]);

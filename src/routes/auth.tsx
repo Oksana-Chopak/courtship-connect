@@ -62,16 +62,18 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const ok = await checkInvite(invite);
+        const code = invite.trim().toUpperCase();
+        const ok = await checkInvite(code);
         if (!ok) {
           toast.error(t("auth.invite_bad"));
           setBusy(false);
           return;
         }
+        try { localStorage.setItem("courtship.signup_code", code); } catch {}
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { lang } },
+          options: { emailRedirectTo: window.location.origin, data: { lang, signup_code: code } },
         });
         if (error) throw error;
         if (!data.session) {
