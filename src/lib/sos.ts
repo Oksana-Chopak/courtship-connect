@@ -95,17 +95,27 @@ export async function withdrawClaim(sosId: string): Promise<{ ok: boolean; re_fl
 export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow[]> {
   const { data } = await (supabase as any)
     .from("sos_requests")
-    .select("*, courts(name,city,area), profiles!sos_requests_caller_id_fkey(name)")
+    .select("*")
     .eq("claimed_by", uid)
     .eq("status", "claimed")
     .gt("play_at", new Date().toISOString())
     .order("play_at", { ascending: true });
-  return ((data as any[]) ?? []).map((r: any) => ({
+  const rows = (data as any[]) ?? [];
+  if (!rows.length) return [];
+  const courtIds = Array.from(new Set(rows.map((r) => r.court_id).filter(Boolean)));
+  const callerIds = Array.from(new Set(rows.map((r) => r.caller_id)));
+  const [{ data: cs }, { data: ps }] = await Promise.all([
+    (supabase as any).from("courts").select("id,name,city,area").in("id", courtIds.length ? courtIds : ["00000000-0000-0000-0000-000000000000"]),
+    (supabase as any).from("profiles_public").select("id,name").in("id", callerIds),
+  ]);
+  const courtMap = new Map<string, any>((cs as any[] | null)?.map((c) => [c.id, c]) ?? []);
+  const callerMap = new Map<string, string>((ps as any[] | null)?.map((p) => [p.id, p.name]) ?? []);
+  return rows.map((r) => ({
     ...r,
-    court_name: r.courts?.name ?? null,
-    court_city: r.courts?.city ?? null,
-    court_area: r.courts?.area ?? null,
-    caller_name: r.profiles?.name ?? null,
+    court_name: courtMap.get(r.court_id)?.name ?? null,
+    court_city: courtMap.get(r.court_id)?.city ?? null,
+    court_area: courtMap.get(r.court_id)?.area ?? null,
+    caller_name: callerMap.get(r.caller_id) ?? null,
     is_buddy: false,
   })) as EligibleSosRow[];
 }
