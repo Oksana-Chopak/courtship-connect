@@ -1,16 +1,19 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  COURTS,
+  CITIES,
   FORMATS,
   LEVELS,
   PLAY_TIMES,
   VIBES,
   levelMeta,
   toE164,
+  type City,
 } from "@/lib/courtship";
+import { fetchCourts, type CourtRow } from "@/lib/sos";
 import { uploadAvatar } from "@/lib/avatar";
 import { Avatar } from "@/components/Avatar";
+import { useEffect } from "react";
 
 export type ProfileFormValues = {
   name: string;
@@ -22,8 +25,10 @@ export type ProfileFormValues = {
   vibe: "chill" | "friendly" | "sweat";
   looking_for: "regular" | "dropin" | "both";
   home_courts: string;
+  home_city: City;
   buddy_optin: "yes" | "sometimes" | "no";
   buddy_radius_km: number;
+  buddy_sos_optin: boolean;
 };
 
 export const emptyProfile: ProfileFormValues = {
@@ -36,8 +41,10 @@ export const emptyProfile: ProfileFormValues = {
   vibe: "friendly",
   looking_for: "both",
   home_courts: "",
+  home_city: "Uppsala",
   buddy_optin: "sometimes",
   buddy_radius_km: 10,
+  buddy_sos_optin: true,
 };
 
 const LEVEL_DESC: Record<number, string> = {
@@ -83,6 +90,11 @@ export function ProfileWizard({
   const [v, setV] = useState<ProfileFormValues>(initial);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [courts, setCourts] = useState<CourtRow[]>([]);
+
+  useEffect(() => {
+    fetchCourts().then(setCourts);
+  }, []);
 
   function set<K extends keyof ProfileFormValues>(k: K, val: ProfileFormValues[K]) {
     setV((p) => ({ ...p, [k]: val }));
@@ -338,23 +350,35 @@ export function ProfileWizard({
             </div>
             <div>
               <div className="csection-label mb-2">Home courts</div>
+              <div className="flex gap-2 mb-3">
+                {CITIES.map((cy) => (
+                  <button
+                    key={cy}
+                    type="button"
+                    className={`cchip ${v.home_city === cy ? "cchip-on" : ""}`}
+                    onClick={() => set("home_city", cy)}
+                  >
+                    📍 {cy}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap gap-2">
-                {COURTS.map((c) => {
+                {courts.filter((c) => c.city === v.home_city).map((c) => {
                   const list = (v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean);
-                  const on = list.includes(c);
+                  const on = list.includes(c.name);
                   return (
                     <button
-                      key={c}
+                      key={c.id}
                       type="button"
                       className={`cchip ${on ? "cchip-on" : ""}`}
                       onClick={() =>
                         set(
                           "home_courts",
-                          (on ? list.filter((x) => x !== c) : [...list, c]).join(", "),
+                          (on ? list.filter((x) => x !== c.name) : [...list, c.name]).join(", "),
                         )
                       }
                     >
-                      {c}
+                      {c.name}
                     </button>
                   );
                 })}
@@ -374,6 +398,20 @@ export function ProfileWizard({
                   </button>
                 ))}
               </div>
+              <label className="flex items-start gap-3 mt-4 ccard p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 w-5 h-5 accent-[var(--coral)]"
+                  checked={v.buddy_sos_optin}
+                  onChange={(e) => set("buddy_sos_optin", e.target.checked)}
+                />
+                <span>
+                  <span className="block font-extrabold">SOS from my buddies 🤝</span>
+                  <span className="block text-sm font-semibold text-[var(--ink)] mt-1">
+                    Hear when a buddy needs you — even when rescuer mode is off.
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
         )}
