@@ -10,7 +10,8 @@ import {
   toE164,
   type City,
 } from "@/lib/courtship";
-import { fetchCourts, type CourtRow } from "@/lib/sos";
+import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
+import { CourtCombobox } from "@/components/CourtCombobox";
 import { uploadAvatar } from "@/lib/avatar";
 import { Avatar } from "@/components/Avatar";
 import { useEffect } from "react";
@@ -90,10 +91,11 @@ export function ProfileWizard({
   const [v, setV] = useState<ProfileFormValues>(initial);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [courts, setCourts] = useState<CourtRow[]>([]);
+  const [courts, setCourts] = useState<CourtFull[]>([]);
+  const [picker, setPicker] = useState<string>("");
 
   useEffect(() => {
-    fetchCourts().then(setCourts);
+    fetchCourtsForPicker().then(setCourts);
   }, []);
 
   function set<K extends keyof ProfileFormValues>(k: K, val: ProfileFormValues[K]) {
@@ -362,26 +364,38 @@ export function ProfileWizard({
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {courts.filter((c) => c.city === v.home_city).map((c) => {
-                  const list = (v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean);
-                  const on = list.includes(c.name);
-                  return (
+              <CourtCombobox
+                city={v.home_city}
+                valueId={picker}
+                onChange={(id, c) => {
+                  setPicker(id);
+                  if (c) {
+                    setCourts((p) => (p.some((x) => x.id === c.id) ? p : [...p, c]));
+                    const list = (v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean);
+                    if (!list.includes(c.name)) {
+                      set("home_courts", [...list, c.name].join(", "));
+                    }
+                    setTimeout(() => setPicker(""), 50);
+                  }
+                }}
+              />
+              <div className="flex flex-wrap gap-2 mt-3">
+                {(v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean).map((n) => (
+                  <span key={n} className="cchip cchip-on">
+                    {n}
                     <button
-                      key={c.id}
                       type="button"
-                      className={`cchip ${on ? "cchip-on" : ""}`}
-                      onClick={() =>
-                        set(
-                          "home_courts",
-                          (on ? list.filter((x) => x !== c.name) : [...list, c.name]).join(", "),
-                        )
-                      }
+                      aria-label={`Remove ${n}`}
+                      className="ml-1 underline"
+                      onClick={() => {
+                        const list = (v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean);
+                        set("home_courts", list.filter((x) => x !== n).join(", "));
+                      }}
                     >
-                      {c.name}
+                      ✕
                     </button>
-                  );
-                })}
+                  </span>
+                ))}
               </div>
             </div>
             <div>

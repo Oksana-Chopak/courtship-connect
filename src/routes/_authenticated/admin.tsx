@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, type AdminCourt } from "@/lib/courts";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Courtship" }] }),
@@ -34,6 +35,10 @@ function AdminPage() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [codes, setCodes] = useState<Invite[]>([]);
+  const [adminCourts, setAdminCourts] = useState<AdminCourt[]>([]);
+  const [editingCourt, setEditingCourt] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editArea, setEditArea] = useState("");
   const [newCode, setNewCode] = useState("");
   const [newUses, setNewUses] = useState("10");
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
@@ -48,6 +53,7 @@ function AdminPage() {
     if (error) { setAllowed(false); return; }
     setDash(d as Dashboard);
     setAllowed(true);
+    try { setAdminCourts(await adminListCustomCourts()); } catch {}
   }
 
   useEffect(() => { load(); }, []);
@@ -89,6 +95,25 @@ function AdminPage() {
   }
 
   const cities = dash ? Object.keys(dash.by_city ?? {}) : [];
+
+  async function toggleCourtHidden(c: AdminCourt) {
+    try {
+      await adminSetCourtHidden(c.id, !c.hidden);
+      setAdminCourts((p) => p.map((x) => x.id === c.id ? { ...x, hidden: !c.hidden } : x));
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
+
+  function startEdit(c: AdminCourt) {
+    setEditingCourt(c.id); setEditName(c.name); setEditArea(c.area ?? "");
+  }
+  async function saveEdit(c: AdminCourt) {
+    try {
+      await adminUpdateCourt(c.id, editName, editArea);
+      setAdminCourts((p) => p.map((x) => x.id === c.id ? { ...x, name: editName.trim(), area: editArea.trim() || null } : x));
+      setEditingCourt(null);
+      toast.success(t("admin.court_saved"));
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
 
   return (
     <div className="space-y-5">
@@ -164,6 +189,45 @@ function AdminPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div>
+        <div className="csection-label mb-2">{t("admin.courts_title")}</div>
+        {adminCourts.length === 0 ? (
+          <div className="ccard p-4 text-center text-[var(--ink)]">{t("admin.courts_empty")}</div>
+        ) : (
+          <div className="space-y-2">
+            {adminCourts.map((c) => (
+              <div key={c.id} className="ccard p-3 space-y-2" style={c.hidden ? { opacity: 0.6 } : undefined}>
+                {editingCourt === c.id ? (
+                  <div className="space-y-2">
+                    <input className="cinput" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                    <input className="cinput" value={editArea} onChange={(e) => setEditArea(e.target.value)} placeholder={t("court.area_placeholder")} />
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditingCourt(null)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
+                      <button onClick={() => saveEdit(c)} className="cbtn cbtn-green flex-1">{t("admin.save")}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-display text-xl">📍 {c.city} · {c.name}</div>
+                    {c.area && <div className="text-base text-[var(--ink)]">{c.area}</div>}
+                    <div className="text-base text-[var(--ink)]">
+                      {t("admin.court_by", { name: c.creator_name ?? "—" })} · {t("admin.court_usage", { n: c.usage_count })}
+                      {c.hidden && ` · ${t("admin.court_hidden")}`}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => startEdit(c)} className="cbtn cbtn-ghost">{t("admin.edit")}</button>
+                      <button onClick={() => toggleCourtHidden(c)} className={`cbtn ${c.hidden ? "cbtn-green" : "cbtn-ghost"}`}>
+                        {c.hidden ? t("admin.unhide") : t("admin.hide")}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

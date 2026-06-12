@@ -19,6 +19,7 @@ import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
+import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSosNewRouteImport } from './routes/_authenticated/sos.new'
 import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/sos.$id'
@@ -73,6 +74,11 @@ const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
   path: '/games',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
+  id: '/board',
+  path: '/board',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/board': typeof AuthenticatedBoardRoute
   '/games': typeof AuthenticatedGamesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/board': typeof AuthenticatedBoardRoute
   '/games': typeof AuthenticatedGamesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/me': typeof AuthenticatedMeRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/games': typeof AuthenticatedGamesRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/check-email'
     | '/onboarding'
     | '/admin'
+    | '/board'
     | '/games'
     | '/home'
     | '/me'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/check-email'
     | '/onboarding'
     | '/admin'
+    | '/board'
     | '/games'
     | '/home'
     | '/me'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/check-email'
     | '/onboarding'
     | '/_authenticated/admin'
+    | '/_authenticated/board'
     | '/_authenticated/games'
     | '/_authenticated/home'
     | '/_authenticated/me'
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/board': {
+      id: '/_authenticated/board'
+      path: '/board'
+      fullPath: '/board'
+      preLoaderRoute: typeof AuthenticatedBoardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -314,6 +333,7 @@ const AuthenticatedPlayersRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
@@ -325,6 +345,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,

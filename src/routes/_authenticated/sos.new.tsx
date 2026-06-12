@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCourts, activeSosCount, type CourtRow } from "@/lib/sos";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, URGENCY_WINDOW_HOURS, isUrgent, type City } from "@/lib/courtship";
+import { activeSosCount } from "@/lib/sos";
+import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, type City } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { DateChipPicker } from "@/components/DateChipPicker";
+import { CourtCombobox } from "@/components/CourtCombobox";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
@@ -22,7 +25,7 @@ function NewSos() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const planned = search.planned === 1;
-  const [courts, setCourts] = useState<CourtRow[]>([]);
+  const [courts, setCourts] = useState<CourtFull[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
@@ -36,9 +39,7 @@ function NewSos() {
     }
     return new Date(Date.now() + 2 * 3600 * 1000);
   }, [planned]);
-  const [day, setDay] = useState<"today" | "tomorrow">(
-    defaultDate.toDateString() === new Date().toDateString() ? "today" : "tomorrow",
-  );
+  const [date, setDate] = useState<Date>(defaultDate);
   const [time, setTime] = useState<string>(toLocalTimeValue(defaultDate));
   const [courtId, setCourtId] = useState<string>("");
   const [format, setFormat] = useState<typeof SOS_FORMATS[number]["value"]>("singles");
@@ -52,7 +53,7 @@ function NewSos() {
 
   useEffect(() => {
     (async () => {
-      const cs = await fetchCourts();
+      const cs = await fetchCourtsForPicker();
       setCourts(cs);
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
@@ -84,11 +85,11 @@ function NewSos() {
   }, [city, courts, courtId]);
 
   const playAt = useMemo(() => {
-    const base = day === "today" ? new Date() : new Date(Date.now() + 86400000);
+    const base = new Date(date);
     const [h, m] = time.split(":").map(Number);
     base.setHours(h ?? 0, m ?? 0, 0, 0);
     return base;
-  }, [day, time]);
+  }, [date, time]);
 
   const urgent = isUrgent(playAt);
 
@@ -148,12 +149,11 @@ function NewSos() {
       </div>
 
       <Section label={t("sos.when")}>
-        <div className="flex gap-2">
-          <Chip on={day === "today"} onClick={() => setDay("today")}>{t("sos.today")}</Chip>
-          <Chip on={day === "tomorrow"} onClick={() => setDay("tomorrow")}>{t("sos.tomorrow")}</Chip>
+        <DateChipPicker value={date} onChange={setDate} />
+        <div className="mt-2">
           <input
             type="time"
-            className="cinput flex-1"
+            className="cinput"
             value={time}
             onChange={(e) => setTime(e.target.value)}
           />
@@ -180,11 +180,7 @@ function NewSos() {
             </Chip>
           ))}
         </div>
-        <select className="cinput" value={courtId} onChange={(e) => setCourtId(e.target.value)}>
-          {courts.filter((c) => c.city === city).map((c) => (
-            <option key={c.id} value={c.id}>{c.name}{c.area ? ` · ${c.area}` : ""}</option>
-          ))}
-        </select>
+        <CourtCombobox city={city} valueId={courtId} onChange={(id, c) => { setCourtId(id); if (c) setCourts((p) => p.some((x) => x.id === c.id) ? p : [...p, c]); }} />
       </Section>
 
       <Section label={t("sos.format")}>

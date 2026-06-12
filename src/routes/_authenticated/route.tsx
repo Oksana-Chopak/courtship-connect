@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { LangToggle, useI18n } from "@/lib/i18n";
+import { BottomTabBar } from "@/components/BottomTabBar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -17,7 +16,6 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedShell() {
-  const { t } = useI18n();
   return (
     <div className="terry-bg min-h-screen font-body text-[var(--ink)]">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)]">
@@ -25,27 +23,12 @@ function AuthedShell() {
           <Link to="/home" className="font-display text-2xl">
             Courtship
           </Link>
-          <nav className="flex items-center gap-3 text-sm font-extrabold">
-            <Link to="/home" className="hover:text-[var(--coral)]">{t("nav.home")}</Link>
-            <Link to="/rescue" className="hover:text-[var(--coral)]">{t("nav.rescue")}</Link>
-            <Link to="/players" className="hover:text-[var(--coral)]">{t("nav.players")}</Link>
-            <Link to="/me" className="hover:text-[var(--coral)]">{t("nav.me")}</Link>
-            <button
-              className="underline text-[var(--ink)]"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                toast.success(t("auth.signed_out"));
-                window.location.href = "/";
-              }}
-            >
-              {t("auth.signout")}
-            </button>
-          </nav>
         </div>
       </header>
-      <main className="max-w-md mx-auto px-5 py-6">
+      <main className="max-w-md mx-auto px-5 py-6 pb-32">
         <Outlet />
       </main>
+      <BottomTabBar />
     </div>
   );
 }
