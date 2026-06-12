@@ -11,15 +11,16 @@ type Seg = "urgent" | "planned";
 
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    seg: (s.seg === "planned" ? "planned" : "urgent") as Seg,
+  validateSearch: (s: Record<string, unknown>): { seg?: Seg } => ({
+    seg: s.seg === "planned" ? "planned" : s.seg === "urgent" ? "urgent" : undefined,
   }),
   component: BoardPage,
 });
 
 function BoardPage() {
   const { t } = useI18n();
-  const { seg } = Route.useSearch();
+  const search = Route.useSearch();
+  const seg: Seg = search.seg ?? "urgent";
   const navigate = Route.useNavigate();
   const [urgent, setUrgent] = useState<EligibleSosRow[]>([]);
   const [planned, setPlanned] = useState<EligibleSosRow[]>([]);
