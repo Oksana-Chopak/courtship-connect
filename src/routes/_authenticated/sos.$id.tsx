@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, type SosRow } from "@/lib/sos";
+import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
@@ -115,6 +115,23 @@ function SosDetail() {
               {t("sos.message_wa")}
             </button>
           </div>
+        )}
+        {isClaimant && new Date(sos.play_at).getTime() > Date.now() && (
+          <button
+            className="cbtn cbtn-ghost w-full"
+            disabled={busy}
+            onClick={async () => {
+              if (!window.confirm(t("home.cant_make_confirm"))) return;
+              setBusy(true);
+              const r = await withdrawClaim(sos.id);
+              setBusy(false);
+              if (!r.ok) { toast.error(r.reason); return; }
+              toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
+              navigate({ to: "/home" });
+            }}
+          >
+            {t("home.cant_make_it")}
+          </button>
         )}
       </div>
     );
