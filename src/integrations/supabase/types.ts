@@ -66,19 +66,31 @@ export type Database = {
         Row: {
           area: string | null
           city: string
+          created_at: string
+          created_by: string | null
+          hidden: boolean
           id: string
+          is_custom: boolean
           name: string
         }
         Insert: {
           area?: string | null
           city?: string
+          created_at?: string
+          created_by?: string | null
+          hidden?: boolean
           id?: string
+          is_custom?: boolean
           name: string
         }
         Update: {
           area?: string | null
           city?: string
+          created_at?: string
+          created_by?: string | null
+          hidden?: boolean
           id?: string
+          is_custom?: boolean
           name?: string
         }
         Relationships: []
@@ -348,11 +360,29 @@ export type Database = {
         Returns: undefined
       }
       active_sos_count: { Args: { _uid: string }; Returns: number }
+      admin_courts_list: {
+        Args: never
+        Returns: {
+          area: string
+          city: string
+          created_at: string
+          created_by: string
+          creator_name: string
+          hidden: boolean
+          id: string
+          name: string
+          usage_count: number
+        }[]
+      }
       admin_create_invite_code: {
         Args: { _code: string; _owner_id: string; _uses: number }
         Returns: undefined
       }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_set_court_hidden: {
+        Args: { _court_id: string; _hidden: boolean }
+        Returns: undefined
+      }
       admin_set_invite_active: {
         Args: { _active: boolean; _code: string }
         Returns: undefined
@@ -364,6 +394,10 @@ export type Database = {
           fill_rate: number
           profiles_count: number
         }[]
+      }
+      admin_update_court: {
+        Args: { _area: string; _court_id: string; _name: string }
+        Returns: undefined
       }
       archive_game: { Args: { _game_id: string }; Returns: undefined }
       claim_sos: {
