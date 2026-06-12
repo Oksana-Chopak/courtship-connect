@@ -70,10 +70,12 @@ function CheckEmail() {
     }
     setSending(true);
     try {
+      // Persist lang to user metadata so the email template can localize.
+      try { await supabase.auth.updateUser({ data: { lang } }); } catch {}
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: window.location.origin, data: { lang } },
+        options: { emailRedirectTo: window.location.origin },
       });
       if (error) throw error;
       localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
