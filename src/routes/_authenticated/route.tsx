@@ -29,7 +29,7 @@ function AuthedShell() {
             <Link to="/players" className="hover:text-[var(--coral)]">Players</Link>
             <Link to="/me" className="hover:text-[var(--coral)]">Me</Link>
             <button
-              className="underline text-[var(--ink)]/60"
+              className="underline text-[var(--ink)]"
               onClick={async () => {
                 await supabase.auth.signOut();
                 toast.success("See you on court 👋");

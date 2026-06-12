@@ -128,7 +128,7 @@ function CheckEmail() {
                 ? `Resend email (${secondsLeft}s)`
                 : "Resend email"}
           </button>
-          <p className="text-base text-[var(--ink)]/70 font-semibold text-center">
+          <p className="text-base text-[var(--ink)] font-semibold text-center">
             Didn't get it? Check your spam folder.
           </p>
         </div>

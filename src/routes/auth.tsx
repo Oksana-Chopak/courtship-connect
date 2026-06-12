@@ -106,7 +106,7 @@ function AuthPage() {
           <h1 className="font-display text-4xl">
             {mode === "signup" ? "Join the club" : "Welcome back"}
           </h1>
-          <p className="text-[var(--ink)]/70 font-semibold mt-1">
+          <p className="text-[var(--ink)] font-semibold mt-1">
             {mode === "signup" ? "Invite-only beta. Got a code?" : "Time for a hit."}
           </p>
         </div>

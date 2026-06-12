@@ -170,7 +170,7 @@ export function ProfileWizard({
                 <Avatar src={v.photo_url} name={v.name || "?"} seed={userId} size={140} />
               ) : (
                 <div
-                  className="w-[140px] h-[140px] rounded-full flex flex-col items-center justify-center gap-1 bg-[var(--cream2)] text-[var(--ink)]/60 font-bold text-sm"
+                  className="w-[140px] h-[140px] rounded-full flex flex-col items-center justify-center gap-1 bg-[var(--cream2)] text-[var(--ink)] font-bold text-sm"
                   style={{ border: "2.5px dashed rgba(43,33,24,0.35)" }}
                 >
                   <span className="text-3xl">📷</span>
@@ -190,12 +190,12 @@ export function ProfileWizard({
               <button
                 type="button"
                 onClick={() => set("photo_url", "")}
-                className="text-xs underline text-[var(--ink)]/60"
+                className="text-xs underline text-[var(--ink)]"
               >
                 Remove photo (use monogram)
               </button>
             )}
-            <p className="text-xs font-bold text-[var(--ink)]/60 text-center">
+            <p className="text-xs font-bold text-[var(--ink)] text-center">
               Real face optional. Real forehand mandatory.
             </p>
 
@@ -219,7 +219,7 @@ export function ProfileWizard({
                 onChange={(e) => set("phone_e164", e.target.value)}
                 placeholder="+46 70 123 45 67"
               />
-              <p className="text-xs font-semibold text-[var(--ink)]/60 mt-2 leading-snug">
+              <p className="text-xs font-semibold text-[var(--ink)] mt-2 leading-snug">
                 Players can reach you on WhatsApp. Your number is only shared
                 when someone actually messages you — never shown in the app.
               </p>
@@ -246,7 +246,7 @@ export function ProfileWizard({
             </div>
             <div className="text-center">
               <div className="font-display text-2xl">{lm.name}</div>
-              <div className="font-bold text-sm text-[var(--ink)]/60 mt-1">
+              <div className="font-bold text-sm text-[var(--ink)] mt-1">
                 {LEVEL_DESC[v.level]}
               </div>
             </div>
@@ -309,7 +309,7 @@ export function ProfileWizard({
                   <span className="text-3xl">{meta.e}</span>
                   <span>
                     <span className="block font-display text-lg">{meta.label}</span>
-                    <span className="block text-sm font-bold text-[var(--ink)]/60 mt-0.5">
+                    <span className="block text-sm font-bold text-[var(--ink)] mt-0.5">
                       {meta.desc}
                     </span>
                   </span>

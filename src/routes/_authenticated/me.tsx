@@ -47,14 +47,14 @@ function MePage() {
   }, [navigate]);
 
   if (!initial || !uid) {
-    return <div className="text-center py-12 text-[var(--ink)]/60">Loading...</div>;
+    return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
   }
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">Your profile</h1>
-        <p className="text-[var(--ink)]/70 font-semibold">Tweak until it feels right.</p>
+        <p className="text-[var(--ink)] font-semibold">Tweak until it feels right.</p>
       </div>
       <div className="ccard p-5">
         <ProfileWizard
