@@ -257,8 +257,6 @@ function NewSos() {
       >
         {busy ? "..." : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
       </button>
-      {/* silence unused warning */}
-      {false && <span>{myLevel}</span>}
     </div>
   );
 }
