@@ -7,6 +7,7 @@ import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, type S
 import { whenLabel, levelMeta } from "@/lib/courtship";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/sos/$id")({
 });
 
 function SosDetail() {
+  const { t } = useI18n();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [sos, setSos] = useState<SosRow | null>(null);
@@ -90,7 +92,7 @@ function SosDetail() {
         <Link to="/home" className="text-sm font-extrabold underline">← Home</Link>
         <div className="ccard p-5 text-center space-y-3" style={{ background: "var(--green-pop)" }}>
           <div className="text-5xl">🎾</div>
-          <h1 className="font-display text-3xl">It's a match. Literally.</h1>
+          <h1 className="font-display text-3xl">{t("sos.matched")}</h1>
           <div className="font-extrabold">{when} · {courtName}</div>
         </div>
         {other && (
@@ -106,7 +108,7 @@ function SosDetail() {
                 } catch (e: any) { toast.error(e?.message ?? "Couldn't open WhatsApp"); }
               }}
             >
-              Message on WhatsApp 👋
+              {t("sos.message_wa")}
             </button>
           </div>
         )}
@@ -149,10 +151,7 @@ function SosDetail() {
         <Link to="/home" className="text-sm font-extrabold underline">← Home</Link>
         <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
           <div className="sos-dot text-5xl">🚨</div>
-          <div className="font-display text-3xl">Broadcasting...</div>
-          <div className="font-extrabold text-lg">
-            to {rescuerCount} rescuer{rescuerCount === 1 ? "" : "s"} nearby
-          </div>
+          <div className="font-display text-3xl">{t("sos.broadcasting", { n: rescuerCount })}</div>
           <div className="text-sm opacity-90">{when} · {courtName} · {formatLabel(sos.format)}</div>
         </div>
         <button
@@ -167,7 +166,7 @@ function SosDetail() {
             else { toast.success("Cancelled"); navigate({ to: "/home" }); }
           }}
         >
-          Cancel SOS
+          {t("sos.cancel")}
         </button>
         <style>{`
           .sos-dot { animation: dotPulse 1.2s infinite; }
@@ -212,7 +211,7 @@ function SosDetail() {
           await load();
         }}
       >
-        I'm in! 🎾
+        {t("sos.im_in")}
       </button>
     </div>
   );

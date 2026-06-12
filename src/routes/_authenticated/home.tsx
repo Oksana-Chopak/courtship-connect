@@ -5,6 +5,7 @@ import { sweepExpired } from "@/lib/sos";
 import { fetchPendingPostGameChecks, confirmGame, reportNoshow, type GameRow } from "@/lib/games";
 import { toast } from "sonner";
 import { whenLabel } from "@/lib/courtship";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Home — Courtship" }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 function Home() {
+  const { t } = useI18n();
   const [name, setName] = useState<string>("");
   const [rescues, setRescues] = useState(0);
   const [activeRescueCount, setActiveRescueCount] = useState(0);
@@ -60,14 +62,14 @@ function Home() {
   async function onConfirm(g: GameRow) {
     try {
       await confirmGame(g.id);
-      toast.success("Marked played 🎾");
+      toast.success(t("home.yes_played"));
       setPending((p) => p.filter((x) => x.id !== g.id));
     } catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
   }
   async function onNoshow(g: GameRow) {
     try {
       await reportNoshow(g.id);
-      toast.success("Logged. Sorry about that 🪦");
+      toast.success(t("home.no_show"));
       setPending((p) => p.filter((x) => x.id !== g.id));
     } catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
   }
@@ -75,22 +77,22 @@ function Home() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="csection-label">{name ? `Hey ${name}` : "Hey"}</div>
-        <h1 className="font-display text-4xl mt-1">Court's calling.</h1>
+        <div className="csection-label">{name ? `${t("nav.home")} · ${name}` : t("nav.home")}</div>
+        <h1 className="font-display text-4xl mt-1">{t("home.lets_play")}</h1>
       </div>
 
       {pending.map((g) => (
         <div key={g.id} className="ccard p-4 space-y-3" style={{ borderColor: "var(--ink)" }}>
           <div>
-            <div className="csection-label">Post-game check</div>
-            <div className="font-display text-2xl mt-1">Did the game happen? 🎾</div>
+            <div className="csection-label">{t("home.pending_check")}</div>
+            <div className="font-display text-2xl mt-1">{t("home.pending_check")}</div>
             <div className="text-sm text-[var(--ink)] font-semibold">
-              {whenLabel(g.played_at)} — we just need a quick yes / no.
+              {whenLabel(g.played_at)}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => onConfirm(g)} className="cbtn cbtn-green">Yes, we played</button>
-            <button onClick={() => onNoshow(g)} className="cbtn cbtn-ghost">No-show 🪦</button>
+            <button onClick={() => onConfirm(g)} className="cbtn cbtn-green">{t("home.yes_played")}</button>
+            <button onClick={() => onNoshow(g)} className="cbtn cbtn-ghost">{t("home.no_show")}</button>
           </div>
         </div>
       ))}
@@ -107,19 +109,16 @@ function Home() {
         <div className="sos-pulse rounded-full w-32 h-32 mx-auto flex items-center justify-center text-5xl mb-4">
           🚨
         </div>
-        <div className="font-display text-4xl leading-tight">SAVE MY SET</div>
-        <div className="text-sm font-extrabold opacity-90 mt-2">
-          Partner ghosted? Get a rescue in &lt; 30s.
-        </div>
+        <div className="font-display text-4xl leading-tight">{t("home.save_my_set")}</div>
       </Link>
 
       <Link to="/rescue" className="ccard p-4 flex items-center justify-between">
         <div>
-          <div className="font-display text-2xl">Rescue board</div>
+          <div className="font-display text-2xl">{t("rescue.title")}</div>
           <div className="text-sm text-[var(--ink)] font-semibold">
             {activeRescueCount > 0
-              ? `${activeRescueCount} player${activeRescueCount === 1 ? "" : "s"} need${activeRescueCount === 1 ? "s" : ""} you`
-              : "All quiet on the courts."}
+              ? `${activeRescueCount} · ${t("nav.rescue")}`
+              : t("rescue.empty_title")}
           </div>
         </div>
         <div className="relative">
@@ -135,11 +134,11 @@ function Home() {
       <div className="grid grid-cols-2 gap-3">
         <Link to="/players" className="ccard p-4 text-center">
           <div className="text-3xl">🎾</div>
-          <div className="font-display text-xl mt-1">Players</div>
+          <div className="font-display text-xl mt-1">{t("home.browse_players")}</div>
         </Link>
         <Link to="/me" className="ccard p-4 text-center">
           <div className="text-3xl">🚑</div>
-          <div className="font-display text-xl mt-1">Rescues: {rescues}</div>
+          <div className="font-display text-xl mt-1">🚑 {rescues}</div>
         </Link>
       </div>
 

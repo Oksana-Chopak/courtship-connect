@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sweepExpired, formatLabel, type SosRow, type CourtRow, fetchCourts } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta } from "@/lib/courtship";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/rescue")({
   head: () => ({ meta: [{ title: "Rescue board — Courtship" }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/_authenticated/rescue")({
 });
 
 function Rescue() {
+  const { t } = useI18n();
   const [me, setMe] = useState<{ id: string; level: number; buddy_optin: string } | null>(null);
   const [rows, setRows] = useState<SosRow[]>([]);
   const [courts, setCourts] = useState<Record<string, CourtRow>>({});
@@ -103,20 +105,20 @@ function Rescue() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-4xl">Rescue board 🚑</h1>
+        <h1 className="font-display text-4xl">{t("rescue.title")} 🚑</h1>
         <p className="text-[var(--ink)] font-semibold">
-          {rows.length === 0 ? "Quiet out there. Stay warm." : `${rows.length} player${rows.length === 1 ? "" : "s"} need${rows.length === 1 ? "s" : ""} you.`}
+          {rows.length === 0 ? t("rescue.empty_title") : `${rows.length} · ${t("nav.rescue")}`}
         </p>
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-[var(--ink)]">Listening...</div>
+        <div className="text-center py-10 text-[var(--ink)]">{t("rescue.listening")}</div>
       ) : rows.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🌅</div>
-          <div className="font-display text-xl mt-1">All quiet on the courts</div>
-          <div className="text-sm text-[var(--ink)]">Be the first to send a flare 🚨</div>
-          <Link to="/sos/new" className="cbtn cbtn-coral mt-4 inline-flex">Save my set</Link>
+          <div className="font-display text-xl mt-1">{t("rescue.empty_title")}</div>
+          <div className="text-sm text-[var(--ink)]">{t("rescue.empty_sub")}</div>
+          <Link to="/sos/new" className="cbtn cbtn-coral mt-4 inline-flex">{t("home.save_my_set")}</Link>
         </div>
       ) : (
         <div className="space-y-3">

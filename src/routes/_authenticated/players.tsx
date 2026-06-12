@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { Avatar } from "@/components/Avatar";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/players")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),
@@ -22,6 +23,7 @@ type P = {
 };
 
 function Players() {
+  const { t } = useI18n();
   const [rows, setRows] = useState<P[]>([]);
   const [loading, setLoading] = useState(true);
   const [level, setLevel] = useState<number | null>(null);
@@ -55,10 +57,8 @@ function Players() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-4xl">The courtroom</h1>
-        <p className="text-[var(--ink)] font-semibold">
-          Pick a partner. Make it happen.
-        </p>
+        <h1 className="font-display text-4xl">{t("players.title")}</h1>
+        <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
 
       <div className="space-y-2">
@@ -95,12 +95,11 @@ function Players() {
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-[var(--ink)]">Warming up...</div>
+        <div className="text-center py-10 text-[var(--ink)]">{t("players.warming")}</div>
       ) : filtered.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🎾</div>
-          <div className="font-display text-xl mt-1">Crickets on the court</div>
-          <div className="text-sm text-[var(--ink)]">Loosen the filters — your match is out there.</div>
+          <div className="font-display text-xl mt-1">{t("players.empty")}</div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
