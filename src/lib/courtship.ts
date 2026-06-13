@@ -192,7 +192,14 @@ export const SOS_FORMATS = [
   { value: "singles", label: "Singles" },
   { value: "doubles_need1", label: "Doubles — need 1" },
   { value: "doubles_need2", label: "Doubles — need 2" },
+  { value: "doubles_need3", label: "Doubles — need 3" },
 ] as const;
+
+export function spotsNeeded(format: string): number {
+  if (format === "doubles_need3") return 3;
+  if (format === "doubles_need2") return 2;
+  return 1;
+}
 
 export function timeAgo(iso: string): string {
   const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);

@@ -5,7 +5,7 @@ export type SosRow = {
   caller_id: string;
   play_at: string;
   court_id: string | null;
-  format: "singles" | "doubles_need1" | "doubles_need2";
+  format: "singles" | "doubles_need1" | "doubles_need2" | "doubles_need3";
   level_min: number;
   level_max: number;
   court_status: "booked_paid" | "booked" | "will_book" | "public";
@@ -17,6 +17,8 @@ export type SosRow = {
   auto_flare: boolean;
   flared_at: string | null;
   court_type: "indoor" | "outdoor";
+  spots_needed?: number;
+  spots_filled?: number;
 };
 
 export type CourtRow = { id: string; name: string; area: string | null; city: string };
@@ -153,6 +155,7 @@ export function formatLabel(f: string): string {
   if (f === "singles") return "Singles";
   if (f === "doubles_need1") return "Doubles · need 1";
   if (f === "doubles_need2") return "Doubles · need 2";
+  if (f === "doubles_need3") return "Doubles · need 3";
   return f;
 }
 

@@ -246,7 +246,7 @@ function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange:
           setBusy(true);
           const r = await claimSos(sos.id);
           setBusy(false);
-          if (!r.ok) toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason);
+          if (!r.ok) toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
           else toast.success("You're in 🎾");
           onChange();
         }}
