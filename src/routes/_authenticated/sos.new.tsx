@@ -3,11 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, type City } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
 import { CourtCombobox } from "@/components/CourtCombobox";
+import { SlotPicker } from "@/components/SlotPicker";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
@@ -21,7 +22,7 @@ function pad(n: number) { return n.toString().padStart(2, "0"); }
 function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 
 function NewSos() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const planned = search.planned === 1;
@@ -30,18 +31,18 @@ function NewSos() {
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
 
-  // Defaults: urgent button -> today +2h; planned button -> tomorrow 18:00
+  // Defaults: urgent button -> today +2h; planned button -> tomorrow 18:00,
+  // snapped UP to the nearest valid slot for the initial city ("Uppsala").
   const defaultDate = useMemo(() => {
-    if (planned) {
-      const d = new Date(Date.now() + 86400000);
-      d.setHours(18, 0, 0, 0);
-      return d;
-    }
-    return new Date(Date.now() + 2 * 3600 * 1000);
+    const raw = planned
+      ? (() => { const d = new Date(Date.now() + 86400000); d.setHours(18, 0, 0, 0); return d; })()
+      : new Date(Date.now() + 2 * 3600 * 1000);
+    return snapToSlot(raw, "Uppsala", "up");
   }, [planned]);
   const [date, setDate] = useState<Date>(defaultDate);
   const [time, setTime] = useState<string>(toLocalTimeValue(defaultDate));
   const [courtId, setCourtId] = useState<string>("");
+  const [courtType, setCourtType] = useState<CourtType>("outdoor");
   const [format, setFormat] = useState<typeof SOS_FORMATS[number]["value"]>("singles");
   const [anyone, setAnyone] = useState(false);
   const [levelMin, setLevelMin] = useState(2);
@@ -71,6 +72,23 @@ function NewSos() {
       if (first) setCourtId(first.id);
       setLevelMin(Math.max(1, lv - 1));
       setLevelMax(Math.min(5, lv + 1));
+      // Default court_type from this user's most recent post
+      const { data: last } = await (supabase as any)
+        .from("sos_requests")
+        .select("court_type")
+        .eq("caller_id", u.user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const lastCt = (last as any)?.court_type as CourtType | undefined;
+      if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
+      // Snap initial time to the user's actual home-city granularity
+      setTime((prev) => {
+        const [h, m] = prev.split(":").map(Number);
+        const d = new Date();
+        d.setHours(h ?? 0, m ?? 0, 0, 0);
+        return toLocalTimeValue(snapToSlot(d, hc, "up"));
+      });
     })();
   }, []);
 
@@ -83,6 +101,16 @@ function NewSos() {
       if (first) setCourtId(first.id);
     }
   }, [city, courts, courtId]);
+
+  // When city changes, snap the selected time to a valid slot for that city.
+  useEffect(() => {
+    const [h, m] = time.split(":").map(Number);
+    const d = new Date();
+    d.setHours(h ?? 0, m ?? 0, 0, 0);
+    const snapped = toLocalTimeValue(snapToSlot(d, city, "nearest"));
+    if (snapped !== time) setTime(snapped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city]);
 
   const playAt = useMemo(() => {
     const base = new Date(date);
@@ -119,6 +147,7 @@ function NewSos() {
       kind: urgent ? "sos" : "open",
       auto_flare: urgent ? false : autoFlare,
       flared_at: urgent ? new Date().toISOString() : null,
+      court_type: courtType,
     };
     const { data, error } = await (supabase as any)
       .from("sos_requests")
@@ -150,13 +179,12 @@ function NewSos() {
 
       <Section label={t("sos.when")}>
         <DateChipPicker value={date} onChange={setDate} />
-        <div className="mt-2">
-          <input
-            type="time"
-            className="cinput"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
+        <div className="mt-3">
+          <div className="csection-label mb-1">{t("slot.label")}</div>
+          <SlotPicker city={city} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
+          <div className="mt-1 text-base font-semibold text-[var(--ink)]">
+            {cityGranularity(city) === 30 ? t("slot.help_stockholm") : t("slot.help_uppsala")}
+          </div>
         </div>
         <div className="mt-2">
           <span
@@ -181,6 +209,37 @@ function NewSos() {
           ))}
         </div>
         <CourtCombobox city={city} valueId={courtId} onChange={(id, c) => { setCourtId(id); if (c) setCourts((p) => p.some((x) => x.id === c.id) ? p : [...p, c]); }} />
+        <div className="mt-3">
+          <div className="csection-label mb-1">{t("ct.label")}</div>
+          <div
+            role="radiogroup"
+            aria-label={t("ct.label")}
+            className="grid grid-cols-2 gap-2"
+          >
+            {COURT_TYPES.map((ct) => {
+              const meta = courtTypeMeta(ct, lang);
+              const on = courtType === ct;
+              return (
+                <button
+                  key={ct}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setCourtType(ct)}
+                  className="rounded-2xl border-2 border-[var(--ink)] font-extrabold flex items-center justify-center gap-2"
+                  style={{
+                    minHeight: 56,
+                    fontSize: "1.125rem",
+                    background: on ? "var(--green-pop)" : "var(--cream2)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  <span>{meta.emoji}</span><span>{meta.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </Section>
 
       <Section label={t("sos.format")}>
