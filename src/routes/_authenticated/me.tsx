@@ -26,6 +26,7 @@ function MePage() {
   const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
   const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
   const [confirmSignout, setConfirmSignout] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
 
   async function loadBuddies(u: string) {
     const rows = await fetchMyBuddies(u);
@@ -64,6 +65,20 @@ function MePage() {
     } catch (e: any) { toast.error(e?.message ?? "Error"); }
   }
 
+  async function shareInvite() {
+    if (!inviteCode) return;
+    const link = `${window.location.origin}/auth?code=${inviteCode}`;
+    const msg = t("invite.message").replace("{link}", link).replace("{code}", inviteCode);
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({ text: msg });
+      } else {
+        await navigator.clipboard.writeText(msg);
+        toast.success(t("invite.copied"));
+      }
+    } catch { /* user dismissed the share sheet */ }
+  }
+
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -97,6 +112,10 @@ function MePage() {
       });
       loadBuddies(u.user.id);
       loadBuddyReqs(u.user.id);
+      try {
+        const { data: code } = await (supabase as any).rpc("ensure_my_invite_code");
+        if (code) setInviteCode(code as string);
+      } catch { /* invite RPC not deployed yet — block stays hidden */ }
     })();
   }, [navigate]);
 
@@ -130,6 +149,22 @@ function MePage() {
         <div className="font-extrabold">{t("me.language")}</div>
         <LangToggle />
       </div>
+
+      {inviteCode && (
+        <div className="ccard p-5 space-y-3">
+          <div className="font-display text-2xl">{t("invite.title")}</div>
+          <div className="text-base font-semibold text-[var(--ink)]">{t("invite.sub")}</div>
+          <div
+            className="font-extrabold text-center py-3 rounded-2xl border-2 border-[var(--ink)] tracking-widest"
+            style={{ background: "var(--cream2)", fontSize: "1.375rem" }}
+          >
+            {inviteCode}
+          </div>
+          <button className="cbtn cbtn-coral w-full" onClick={shareInvite}>
+            {t("invite.share")}
+          </button>
+        </div>
+      )}
 
       <div className="ccard p-4 space-y-3">
         <div className="font-display text-2xl">{t("buddy.my_buddies")}</div>

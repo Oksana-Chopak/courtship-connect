@@ -112,7 +112,7 @@ const en: Dict = {
   // Home
   "home.lets_play": "Let's play 🎾",
   "home.save_my_set": "Save my set 🚨",
-  "home.browse_players": "Browse players",
+  "home.browse_players": "Browse the singles 🎾",
   "home.your_sos": "Your active calls",
   "home.no_active": "No active calls. Quiet day on court.",
   "home.pending_check": "Did the game happen? 🎾",
@@ -203,6 +203,9 @@ const en: Dict = {
   "sos.broadcasting": "Broadcasting to {n} rescuers...",
   "sos.im_in": "I'm in! 🎾",
   "sos.matched": "It's a match. Literally.",
+  "sos.on_board": "On the board — waiting for a player 🎾",
+  "sos.cancelled": "Game cancelled.",
+  "sos.cancel_confirm": "Cancel this game? Players will stop seeing it.",
   "sos.cancel": "Cancel call",
   "sos.message_wa": "Message on WhatsApp 👋",
 
@@ -222,6 +225,11 @@ const en: Dict = {
   // Profile / wizard
   "me.title": "Your profile",
   "me.sub": "Tweak until it feels right.",
+  "invite.title": "Invite a friend 🎟",
+  "invite.sub": "Your personal code. Every friend you bring becomes a buddy 🤝",
+  "invite.share": "Share your invite",
+  "invite.message": "I'm inviting you to Courtship — Uppsala's invite-only app for finding tennis partners. Use code {code} to get in: {link} 🎾",
+  "invite.copied": "Copied — paste it anywhere 📋",
   "me.save": "Save changes",
   "me.updated": "Updated 🎾",
   "me.language": "Language",
@@ -293,7 +301,7 @@ const en: Dict = {
   "games.title": "Open games",
   "games.sub": "Planned hits looking for a partner.",
   "games.empty_title": "No open games yet.",
-  "games.empty_sub": "Post one — players will find it 🎾",
+  "games.empty_sub": "Post one — be someone's plus-one 🎾",
   "games.im_in": "I'm in! 🎾",
 
   // Community stats
@@ -418,7 +426,7 @@ const sv: Dict = {
 
   "home.lets_play": "Nu kör vi 🎾",
   "home.save_my_set": "Rädda mitt set 🚨",
-  "home.browse_players": "Bläddra bland spelare",
+  "home.browse_players": "Spana in singlarna 🎾",
   "home.your_sos": "Dina aktiva rop",
   "home.no_active": "Inga aktiva rop. Lugn dag på banan.",
   "home.pending_check": "Blev det av? 🎾",
@@ -504,6 +512,9 @@ const sv: Dict = {
   "sos.broadcasting": "Sänder ut till {n} räddare...",
   "sos.im_in": "Jag är med! 🎾",
   "sos.matched": "Det är en match. Bokstavligen.",
+  "sos.on_board": "På tavlan — väntar på en spelare 🎾",
+  "sos.cancelled": "Matchen avbruten.",
+  "sos.cancel_confirm": "Avbryt matchen? Spelare slutar se den.",
   "sos.cancel": "Avbryt ropet",
   "sos.message_wa": "Skriv på WhatsApp 👋",
 
@@ -520,6 +531,11 @@ const sv: Dict = {
 
   "me.title": "Din profil",
   "me.sub": "Justera tills det känns rätt.",
+  "invite.title": "Bjud in en vän 🎟",
+  "invite.sub": "Din personliga kod. Varje vän du tar med blir en buddy 🤝",
+  "invite.share": "Dela din inbjudan",
+  "invite.message": "Jag bjuder in dig till Courtship — Uppsalas inbjudningsapp för att hitta tennispartners. Använd koden {code}: {link} 🎾",
+  "invite.copied": "Kopierat — klistra in var som helst 📋",
   "me.save": "Spara ändringar",
   "me.updated": "Uppdaterad 🎾",
   "me.language": "Språk",
@@ -588,7 +604,7 @@ const sv: Dict = {
   "games.title": "Öppna matcher",
   "games.sub": "Planerade matcher som söker spelare.",
   "games.empty_title": "Inga öppna matcher än.",
-  "games.empty_sub": "Lägg upp en — spelare hittar den 🎾",
+  "games.empty_sub": "Lägg upp en — bli någons plus-en 🎾",
   "games.im_in": "Jag är med! 🎾",
 
   "stats.this_week_in": "Denna vecka i {city}",

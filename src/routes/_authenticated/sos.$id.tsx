@@ -169,12 +169,18 @@ function SosDetail() {
 
   // ACTIVE — caller view
   if (isCaller) {
+    const isOpen = sos.kind === "open";
     return (
       <div className="space-y-5">
         <Link to="/home" className="text-sm font-extrabold underline">← Home</Link>
-        <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
-          <div className="sos-dot text-5xl">🚨</div>
-          <div className="font-display text-3xl">{t("sos.broadcasting", { n: rescuerCount })}</div>
+        <div
+          className="ccard p-6 text-center space-y-3"
+          style={isOpen ? { background: "var(--green-pop)" } : { background: "var(--coral)", color: "#FFF6E8" }}
+        >
+          <div className={isOpen ? "text-5xl" : "sos-dot text-5xl"}>{isOpen ? "🎾" : "🚨"}</div>
+          <div className="font-display text-3xl">
+            {isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
+          </div>
           <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
         </div>
         <div><CourtStatusBadge status={sos.court_status} /></div>
@@ -182,12 +188,13 @@ function SosDetail() {
           className="cbtn cbtn-ghost w-full"
           disabled={busy}
           onClick={async () => {
+            if (typeof window !== "undefined" && !window.confirm(t("sos.cancel_confirm"))) return;
             setBusy(true);
             const { error } = await (supabase as any)
               .from("sos_requests").update({ status: "cancelled" }).eq("id", sos.id);
             setBusy(false);
             if (error) toast.error(error.message);
-            else { toast.success("Cancelled"); navigate({ to: "/home" }); }
+            else { toast.success(t("sos.cancelled")); navigate({ to: "/home" }); }
           }}
         >
           {t("sos.cancel")}
