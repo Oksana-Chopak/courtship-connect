@@ -469,6 +469,7 @@ export type Database = {
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
       }
+      ensure_my_invite_code: { Args: never; Returns: string }
       escalate_due_open_games: { Args: never; Returns: number }
       expire_old_sos: { Args: never; Returns: undefined }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
