@@ -97,12 +97,24 @@ export function cityGranularity(city: string): number {
 }
 
 /** All valid HH:MM slots for a city across the playable day. */
-export function generateSlots(city: string): string[] {
+export function generateSlots(city: string, forDate?: Date, now: Date = new Date()): string[] {
   const step = cityGranularity(city);
+  let minMinutes = COURT_DAY_START * 60;
+  // For today, only offer slots at least ~1h ahead (time to actually reach the court).
+  if (forDate) {
+    const d0 = new Date(forDate); d0.setHours(0, 0, 0, 0);
+    const n0 = new Date(now); n0.setHours(0, 0, 0, 0);
+    if (d0.getTime() === n0.getTime()) {
+      const LEAD_MIN = 60;
+      const nowMin = now.getHours() * 60 + now.getMinutes() + LEAD_MIN;
+      minMinutes = Math.ceil(nowMin / step) * step;
+    }
+  }
   const out: string[] = [];
   for (let h = COURT_DAY_START; h <= COURT_DAY_END; h++) {
     for (let m = 0; m < 60; m += step) {
       if (h === COURT_DAY_END && m !== 0) break;
+      if (h * 60 + m < minMinutes) continue;
       out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }

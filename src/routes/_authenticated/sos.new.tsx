@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
@@ -84,16 +84,12 @@ function NewSos() {
     }
   }, [city, courts, courtId]);
 
-  // When city changes, snap the selected time to a valid slot for that city.
+  // Keep the selected time valid for the chosen city + date; clear it if it falls outside the available slots.
   useEffect(() => {
     if (!time) return;
-    const [h, m] = time.split(":").map(Number);
-    const d = new Date();
-    d.setHours(h ?? 0, m ?? 0, 0, 0);
-    const snapped = toLocalTimeValue(snapToSlot(d, city, "nearest"));
-    if (snapped !== time) setTime(snapped);
+    if (!generateSlots(city, date).includes(time)) setTime("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [city]);
+  }, [city, date]);
 
   const playAt = useMemo(() => {
     if (!time) return null;
@@ -167,7 +163,7 @@ function NewSos() {
         <DateChipPicker value={date} onChange={setDate} />
         <div className="mt-3">
           <div className="csection-label mb-1">{t("slot.label")}</div>
-          <SlotPicker city={city} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
+          <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
           <div className="mt-1 text-base font-semibold text-[var(--ink)]">
             {cityGranularity(city) === 30 ? t("slot.help_stockholm") : t("slot.help_uppsala")}
           </div>

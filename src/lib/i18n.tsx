@@ -70,6 +70,9 @@ const en: Dict = {
   "board.seg_urgent": "Urgent",
   "board.seg_planned": "Planned",
   "board.others": "Open to everyone",
+  "board.your_games": "Your live games",
+  "board.live": "Live",
+  "board.claimed": "Matched",
 
   "home.my_rescues": "Sets you've saved",
 
@@ -311,6 +314,9 @@ const en: Dict = {
   "slot.label": "Time",
   "slot.help_uppsala": "Courts here book on the hour.",
   "slot.help_stockholm": "Courts here book on the hour or half-hour.",
+  "slot.pick": "Pick a time",
+  "slot.pick_title": "Pick a time",
+  "slot.none_today": "No slots left today — try tomorrow 🌙",
 };
 
 const sv: Dict = {
@@ -371,6 +377,9 @@ const sv: Dict = {
   "board.seg_urgent": "Akut",
   "board.seg_planned": "Planerat",
   "board.others": "Öppet för alla",
+  "board.your_games": "Dina matcher",
+  "board.live": "Aktiv",
+  "board.claimed": "Matchad",
 
   "home.my_rescues": "Set du räddat",
 
@@ -597,6 +606,9 @@ const sv: Dict = {
   "slot.label": "Tid",
   "slot.help_uppsala": "Banor här bokas på hela timmen.",
   "slot.help_stockholm": "Banor här bokas på hel eller halvtimme.",
+  "slot.pick": "Välj tid",
+  "slot.pick_title": "Välj en tid",
+  "slot.none_today": "Inga tider kvar idag — testa imorgon 🌙",
 };
 
 const DICTS: Record<Lang, Dict> = { en, sv };

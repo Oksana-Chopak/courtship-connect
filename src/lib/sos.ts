@@ -121,6 +121,34 @@ export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow
   })) as EligibleSosRow[];
 }
 
+export async function fetchMyActiveGames(): Promise<EligibleSosRow[]> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u?.user?.id;
+  if (!uid) return [];
+  const { data } = await (supabase as any)
+    .from("sos_requests")
+    .select("*")
+    .eq("caller_id", uid)
+    .in("status", ["active", "claimed"])
+    .gt("play_at", new Date().toISOString())
+    .order("play_at", { ascending: true });
+  const rows = (data as any[]) ?? [];
+  if (!rows.length) return [];
+  const courtIds = Array.from(new Set(rows.map((r) => r.court_id).filter(Boolean)));
+  const { data: cs } = await (supabase as any)
+    .from("courts").select("id,name,city,area")
+    .in("id", courtIds.length ? courtIds : ["00000000-0000-0000-0000-000000000000"]);
+  const courtMap = new Map<string, any>((cs as any[] | null)?.map((c) => [c.id, c]) ?? []);
+  return rows.map((r) => ({
+    ...r,
+    court_name: courtMap.get(r.court_id)?.name ?? null,
+    court_city: courtMap.get(r.court_id)?.city ?? null,
+    court_area: courtMap.get(r.court_id)?.area ?? null,
+    caller_name: null,
+    is_buddy: false,
+  })) as EligibleSosRow[];
+}
+
 export function formatLabel(f: string): string {
   if (f === "singles") return "Singles";
   if (f === "doubles_need1") return "Doubles · need 1";

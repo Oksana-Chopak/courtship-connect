@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEligibleSos, fetchOpenGames, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { useI18n } from "@/lib/i18n";
@@ -24,13 +24,14 @@ function BoardPage() {
   const navigate = Route.useNavigate();
   const [urgent, setUrgent] = useState<EligibleSosRow[]>([]);
   const [planned, setPlanned] = useState<EligibleSosRow[]>([]);
+  const [mine, setMine] = useState<EligibleSosRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ctFilter, setCtFilter] = useState<CourtType | "any">("any");
 
   const load = useCallback(async () => {
     await sweepExpired();
-    const [u, p] = await Promise.all([fetchEligibleSos(), fetchOpenGames()]);
-    setUrgent(u); setPlanned(p); setLoading(false);
+    const [u, p, m] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames()]);
+    setUrgent(u); setPlanned(p); setMine(m); setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ function BoardPage() {
   const rows = ctFilter === "any" ? all : all.filter((r) => r.court_type === ctFilter);
   const buddyRows = rows.filter((r) => r.is_buddy);
   const otherRows = rows.filter((r) => !r.is_buddy);
+  const mineSeg = mine.filter((r) => r.kind === (seg === "urgent" ? "sos" : "open"));
 
   function setSeg(next: Seg) {
     navigate({ search: { seg: next }, replace: true });
@@ -92,9 +94,32 @@ function BoardPage() {
         </Link>
       </div>
 
+      {mineSeg.length > 0 && (
+        <div className="space-y-3">
+          <div className="csection-label">📣 {t("board.your_games")}</div>
+          {mineSeg.map((r) => (
+            <Link
+              key={r.id}
+              to="/sos/$id"
+              params={{ id: r.id }}
+              className="ccard p-4 flex items-center justify-between"
+            >
+              <div>
+                <div className="font-display text-lg">{whenLabel(r.play_at)} · {r.court_name ?? "—"}</div>
+                <div className="text-base text-[var(--ink)] font-semibold">
+                  📍 {r.court_city ?? "—"} · {courtTypeMeta(r.court_type, lang).emoji}{" "}
+                  {r.status === "claimed" ? t("board.claimed") : t("board.live")}
+                </div>
+              </div>
+              <span className="text-2xl">›</span>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-10 text-[var(--ink)]">{t("rescue.listening")}</div>
-      ) : rows.length === 0 ? (
+      ) : rows.length === 0 && mineSeg.length === 0 ? (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">{seg === "urgent" ? "🌅" : "🎾"}</div>
           <div className="font-display text-xl mt-1">
