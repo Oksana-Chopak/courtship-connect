@@ -198,25 +198,9 @@ function Home() {
       <Link
         to="/sos/new"
         className="block ccard p-6 text-center"
-        style={{
-          background: "var(--coral)",
-          color: "#FFF6E8",
-          borderColor: "var(--ink)",
-        }}
-      >
-        <div className="sos-pulse rounded-full w-32 h-32 mx-auto flex items-center justify-center text-5xl mb-4">
-          🚨
-        </div>
-        <div className="font-display text-4xl leading-tight">{t("home.save_my_set")}</div>
-      </Link>
-
-      <Link
-        to="/sos/new"
-        search={{ planned: 1 }}
-        className="block ccard p-4 text-center"
         style={{ background: "var(--green-pop)", borderColor: "var(--ink)" }}
       >
-        <div className="font-display text-2xl">{t("home.post_a_game")}</div>
+        <div className="font-display text-4xl leading-tight">{t("home.new_match")}</div>
       </Link>
 
       <CommunityStatsWidget city={homeCity} />
