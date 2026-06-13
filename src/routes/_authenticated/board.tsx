@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta } from "@/lib/courtship";
+import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -18,13 +18,14 @@ export const Route = createFileRoute("/_authenticated/board")({
 });
 
 function BoardPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const search = Route.useSearch();
   const seg: Seg = search.seg ?? "urgent";
   const navigate = Route.useNavigate();
   const [urgent, setUrgent] = useState<EligibleSosRow[]>([]);
   const [planned, setPlanned] = useState<EligibleSosRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ctFilter, setCtFilter] = useState<CourtType | "any">("any");
 
   const load = useCallback(async () => {
     await sweepExpired();
@@ -41,7 +42,8 @@ function BoardPage() {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
-  const rows = seg === "urgent" ? urgent : planned;
+  const all = seg === "urgent" ? urgent : planned;
+  const rows = ctFilter === "any" ? all : all.filter((r) => r.court_type === ctFilter);
   const buddyRows = rows.filter((r) => r.is_buddy);
   const otherRows = rows.filter((r) => !r.is_buddy);
 
@@ -69,6 +71,19 @@ function BoardPage() {
         <SegBtn on={seg === "planned"} onClick={() => setSeg("planned")} tone="green" badge={planned.length}>
           🎾 {t("board.seg_planned")}
         </SegBtn>
+      </div>
+
+      {/* Indoor / Outdoor / Any filter */}
+      <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
+        <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
+        {COURT_TYPES.map((ct) => {
+          const meta = courtTypeMeta(ct, lang);
+          return (
+            <FilterChip key={ct} on={ctFilter === ct} onClick={() => setCtFilter(ct)}>
+              {meta.emoji} {meta.label}
+            </FilterChip>
+          );
+        })}
       </div>
 
       <div className="flex justify-end">
@@ -131,11 +146,32 @@ function SegBtn({ on, onClick, children, tone, badge }: { on: boolean; onClick: 
   );
 }
 
+function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      onClick={onClick}
+      className="rounded-full border-2 border-[var(--ink)] px-4 font-extrabold"
+      style={{
+        minHeight: 48,
+        fontSize: "1rem",
+        background: on ? "var(--green-pop)" : "var(--cream2)",
+        color: "var(--ink)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange: () => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const lmMin = levelMeta(sos.level_min);
   const lmMax = levelMeta(sos.level_max);
   const [busy, setBusy] = useState(false);
+  const ctMeta = courtTypeMeta(sos.court_type, lang);
 
   const inner = (
     <>
@@ -148,7 +184,9 @@ function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange:
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-tight">{whenLabel(sos.play_at)}</div>
-          <div className="font-extrabold truncate">📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"}</div>
+          <div className="font-extrabold truncate">
+            📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
+          </div>
           <div className="mt-2"><CourtStatusBadge status={sos.court_status} /></div>
           <div className="text-base text-[var(--ink)] mt-2">
             {formatLabel(sos.format)} · L
