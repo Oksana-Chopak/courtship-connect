@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, spotsNeeded, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
@@ -120,7 +120,6 @@ function NewSos() {
       play_at: playAt.toISOString(),
       court_id: courtId,
       format,
-      spots_needed: spotsNeeded(format),
       level_min: anyone ? 1 : levelMin,
       level_max: anyone ? 5 : levelMax,
       court_status: courtStatus,
