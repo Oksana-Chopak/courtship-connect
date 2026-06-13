@@ -16,6 +16,7 @@ export type SosRow = {
   kind: "sos" | "open";
   auto_flare: boolean;
   flared_at: string | null;
+  court_type: "indoor" | "outdoor";
 };
 
 export type CourtRow = { id: string; name: string; area: string | null; city: string };

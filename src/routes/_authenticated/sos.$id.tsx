@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
+import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/sos/$id")({
 });
 
 function SosDetail() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [sos, setSos] = useState<SosRow | null>(null);
@@ -87,6 +88,7 @@ function SosDetail() {
   const isCaller = sos.caller_id === me.id;
   const isClaimant = sos.claimed_by === me.id;
   const when = whenLabel(sos.play_at);
+  const ctMeta = courtTypeMeta(sos.court_type, lang);
 
   // CLAIMED match screen for both parties
   if (sos.status === "claimed" && (isCaller || isClaimant)) {
@@ -96,7 +98,7 @@ function SosDetail() {
         <div className="ccard p-5 text-center space-y-3" style={{ background: "var(--green-pop)" }}>
           <div className="text-5xl">🎾</div>
           <h1 className="font-display text-3xl">{t("sos.matched")}</h1>
-          <div className="font-extrabold">{when} · 📍 {courtCity} · {courtName}</div>
+          <div className="font-extrabold">{when} · 📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label}</div>
           <div><CourtStatusBadge status={sos.court_status} /></div>
         </div>
         {other && (
@@ -173,7 +175,7 @@ function SosDetail() {
         <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
           <div className="sos-dot text-5xl">🚨</div>
           <div className="font-display text-3xl">{t("sos.broadcasting", { n: rescuerCount })}</div>
-          <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
+          <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
         </div>
         <div><CourtStatusBadge status={sos.court_status} /></div>
         <button
@@ -206,7 +208,7 @@ function SosDetail() {
       <Link to="/rescue" className="text-sm font-extrabold underline">← Rescue board</Link>
       <div className="ccard p-5 space-y-3">
         <div className="font-display text-3xl">{when}</div>
-        <div className="font-extrabold">📍 {courtCity} · {courtName} · {formatLabel(sos.format)}</div>
+        <div className="font-extrabold">📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
         <div><CourtStatusBadge status={sos.court_status} /></div>
         <div className="text-sm">
           Level <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>

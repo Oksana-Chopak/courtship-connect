@@ -242,6 +242,7 @@ export type Database = {
           claimed_by: string | null
           court_id: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           flared_at: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
@@ -259,6 +260,7 @@ export type Database = {
           claimed_by?: string | null
           court_id?: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type?: Database["public"]["Enums"]["court_type_t"]
           created_at?: string
           flared_at?: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
@@ -276,6 +278,7 @@ export type Database = {
           claimed_by?: string | null
           court_id?: string | null
           court_status?: Database["public"]["Enums"]["court_status_t"]
+          court_type?: Database["public"]["Enums"]["court_type_t"]
           created_at?: string
           flared_at?: string | null
           format?: Database["public"]["Enums"]["sos_format_t"]
@@ -431,6 +434,7 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -453,6 +457,7 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -486,6 +491,7 @@ export type Database = {
     Enums: {
       buddy_optin_t: "yes" | "sometimes" | "no"
       court_status_t: "booked_paid" | "booked" | "will_book" | "public"
+      court_type_t: "indoor" | "outdoor"
       looking_for_t: "regular" | "dropin" | "both"
       sos_format_t: "singles" | "doubles_need1" | "doubles_need2"
       sos_status_t: "active" | "claimed" | "expired" | "cancelled"
@@ -619,6 +625,7 @@ export const Constants = {
     Enums: {
       buddy_optin_t: ["yes", "sometimes", "no"],
       court_status_t: ["booked_paid", "booked", "will_book", "public"],
+      court_type_t: ["indoor", "outdoor"],
       looking_for_t: ["regular", "dropin", "both"],
       sos_format_t: ["singles", "doubles_need1", "doubles_need2"],
       sos_status_t: ["active", "claimed", "expired", "cancelled"],

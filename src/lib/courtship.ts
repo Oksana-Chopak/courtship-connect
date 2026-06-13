@@ -82,6 +82,67 @@ export function toE164(raw: string, defaultPrefix = "+46"): string {
 export const CITIES = ["Uppsala", "Stockholm"] as const;
 export type City = (typeof CITIES)[number];
 
+/** Court booking granularity in minutes per city (one editable place). */
+export const BOOKING_GRANULARITY_MINUTES: Record<string, number> = {
+  Uppsala: 60,
+  Stockholm: 30,
+};
+export const DEFAULT_GRANULARITY_MINUTES = 60;
+/** Earliest / latest selectable slot of day (24h). */
+export const COURT_DAY_START = 7;  // 07:00
+export const COURT_DAY_END   = 22; // 22:00
+
+export function cityGranularity(city: string): number {
+  return BOOKING_GRANULARITY_MINUTES[city] ?? DEFAULT_GRANULARITY_MINUTES;
+}
+
+/** All valid HH:MM slots for a city across the playable day. */
+export function generateSlots(city: string): string[] {
+  const step = cityGranularity(city);
+  const out: string[] = [];
+  for (let h = COURT_DAY_START; h <= COURT_DAY_END; h++) {
+    for (let m = 0; m < 60; m += step) {
+      if (h === COURT_DAY_END && m !== 0) break;
+      out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+  return out;
+}
+
+/** Snap a Date's time to the nearest valid slot for the city (round mode). */
+export function snapToSlot(d: Date, city: string, mode: "nearest" | "up" = "nearest"): Date {
+  const step = cityGranularity(city);
+  const x = new Date(d);
+  const mins = x.getHours() * 60 + x.getMinutes();
+  const startMin = COURT_DAY_START * 60;
+  const endMin = COURT_DAY_END * 60;
+  let snapped: number;
+  if (mode === "up") {
+    snapped = Math.ceil(mins / step) * step;
+  } else {
+    snapped = Math.round(mins / step) * step;
+  }
+  if (snapped < startMin) snapped = startMin;
+  if (snapped > endMin) snapped = endMin;
+  x.setHours(Math.floor(snapped / 60), snapped % 60, 0, 0);
+  return x;
+}
+
+export const COURT_TYPES = ["indoor", "outdoor"] as const;
+export type CourtType = (typeof COURT_TYPES)[number];
+
+export function courtTypeMeta(t: CourtType, lang: "en" | "sv" = "en") {
+  const en: Record<CourtType, { label: string; emoji: string }> = {
+    indoor:  { label: "Indoor",  emoji: "🏠" },
+    outdoor: { label: "Outdoor", emoji: "☀️" },
+  };
+  const sv: Record<CourtType, { label: string; emoji: string }> = {
+    indoor:  { label: "Inne", emoji: "🏠" },
+    outdoor: { label: "Ute",  emoji: "☀️" },
+  };
+  return (lang === "sv" ? sv : en)[t];
+}
+
 export const COURT_STATUSES = [
   { value: "booked_paid", label: "Booked & paid 💸" },
   { value: "booked", label: "Booked" },

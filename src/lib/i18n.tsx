@@ -291,6 +291,18 @@ const en: Dict = {
   "stats.games_matched": "{n} games matched",
   "stats.new_buddies": "{n} new buddy pairs",
   "stats.all_time": "All-time: {n} games played in {city}",
+
+  // Court type (indoor / outdoor)
+  "ct.label": "Court type",
+  "ct.indoor": "Indoor",
+  "ct.outdoor": "Outdoor",
+  "ct.any": "Any",
+  "ct.filter_label": "Indoor / Outdoor",
+
+  // Time slot picker
+  "slot.label": "Time",
+  "slot.help_uppsala": "Courts here book on the hour.",
+  "slot.help_stockholm": "Courts here book on the hour or half-hour.",
 };
 
 const sv: Dict = {
@@ -559,6 +571,16 @@ const sv: Dict = {
   "stats.games_matched": "{n} matcher matchade",
   "stats.new_buddies": "{n} nya kompispar",
   "stats.all_time": "Totalt: {n} matcher spelade i {city}",
+
+  "ct.label": "Bantyp",
+  "ct.indoor": "Inne",
+  "ct.outdoor": "Ute",
+  "ct.any": "Alla",
+  "ct.filter_label": "Inne / Ute",
+
+  "slot.label": "Tid",
+  "slot.help_uppsala": "Banor här bokas på hela timmen.",
+  "slot.help_stockholm": "Banor här bokas på hel eller halvtimme.",
 };
 
 const DICTS: Record<Lang, Dict> = { en, sv };
