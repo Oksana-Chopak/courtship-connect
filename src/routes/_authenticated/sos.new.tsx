@@ -12,9 +12,6 @@ import { SlotPicker } from "@/components/SlotPicker";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    planned: s.planned === "1" || s.planned === 1 || s.planned === true ? 1 : undefined,
-  }),
   component: NewSos,
 });
 
@@ -24,23 +21,14 @@ function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMin
 function NewSos() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const search = Route.useSearch();
-  const planned = search.planned === 1;
   const [courts, setCourts] = useState<CourtFull[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
 
-  // Defaults: urgent button -> today +2h; planned button -> tomorrow 18:00,
-  // snapped UP to the nearest valid slot for the initial city ("Uppsala").
-  const defaultDate = useMemo(() => {
-    const raw = planned
-      ? (() => { const d = new Date(Date.now() + 86400000); d.setHours(18, 0, 0, 0); return d; })()
-      : new Date(Date.now() + 2 * 3600 * 1000);
-    return snapToSlot(raw, "Uppsala", "up");
-  }, [planned]);
-  const [date, setDate] = useState<Date>(defaultDate);
-  const [time, setTime] = useState<string>(toLocalTimeValue(defaultDate));
+  // Default date = Today; NO time preselected (user must pick a slot — prevents accidental instant send).
+  const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+  const [time, setTime] = useState<string>("");
   const [courtId, setCourtId] = useState<string>("");
   const [courtType, setCourtType] = useState<CourtType>("outdoor");
   const [format, setFormat] = useState<typeof SOS_FORMATS[number]["value"]>("singles");
@@ -51,6 +39,7 @@ function NewSos() {
   const [note, setNote] = useState("");
   const [autoFlare, setAutoFlare] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -82,13 +71,6 @@ function NewSos() {
         .maybeSingle();
       const lastCt = (last as any)?.court_type as CourtType | undefined;
       if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
-      // Snap initial time to the user's actual home-city granularity
-      setTime((prev) => {
-        const [h, m] = prev.split(":").map(Number);
-        const d = new Date();
-        d.setHours(h ?? 0, m ?? 0, 0, 0);
-        return toLocalTimeValue(snapToSlot(d, hc, "up"));
-      });
     })();
   }, []);
 
@@ -104,6 +86,7 @@ function NewSos() {
 
   // When city changes, snap the selected time to a valid slot for that city.
   useEffect(() => {
+    if (!time) return;
     const [h, m] = time.split(":").map(Number);
     const d = new Date();
     d.setHours(h ?? 0, m ?? 0, 0, 0);
@@ -113,16 +96,18 @@ function NewSos() {
   }, [city]);
 
   const playAt = useMemo(() => {
+    if (!time) return null;
     const base = new Date(date);
     const [h, m] = time.split(":").map(Number);
     base.setHours(h ?? 0, m ?? 0, 0, 0);
     return base;
   }, [date, time]);
 
-  const urgent = isUrgent(playAt);
+  const urgent = playAt ? isUrgent(playAt) : false;
+  const canSubmit = !!(playAt && courtId && courtType && format);
 
-  async function submit() {
-    if (!uid) return;
+  async function doSubmit() {
+    if (!uid || !playAt) return;
     if (!courtId) { toast.error("Pick a court"); return; }
     if (playAt.getTime() < Date.now()) { toast.error("That time's already gone ⏰"); return; }
     setBusy(true);
@@ -165,16 +150,17 @@ function NewSos() {
     }
   }
 
+  function onSubmitClick() {
+    if (!canSubmit) return;
+    if (urgent) { setShowConfirm(true); return; }
+    doSubmit();
+  }
+
   return (
     <div className="space-y-5">
       <Link to="/home" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
       <div>
-        <h1 className="font-display text-4xl">
-          {urgent ? t("post.new_title_urgent") : t("post.new_title_planned")}
-        </h1>
-        <p className="text-[var(--ink)] font-semibold">
-          {urgent ? t("post.sub_urgent") : t("post.sub_planned")}
-        </p>
+        <h1 className="font-display text-4xl">{t("post.new_title")}</h1>
       </div>
 
       <Section label={t("sos.when")}>
@@ -186,18 +172,19 @@ function NewSos() {
             {cityGranularity(city) === 30 ? t("slot.help_stockholm") : t("slot.help_uppsala")}
           </div>
         </div>
-        <div className="mt-2">
-          <span
-            className="inline-flex items-center font-extrabold rounded-full border-2 border-[var(--ink)] px-3 py-1 text-base"
+        {time && (
+          <div
+            className="mt-2 rounded-2xl border-2 border-[var(--ink)] px-3 py-2 font-semibold"
             style={{
               background: urgent ? "var(--coral)" : "var(--green-pop)",
               color: urgent ? "#FFF6E8" : "var(--ink)",
-              minHeight: 32,
+              fontSize: "1rem",
             }}
+            aria-live="polite"
           >
-            {urgent ? t("post.mode_urgent") : t("post.mode_planned")}
-          </span>
-        </div>
+            {urgent ? t("post.info_urgent") : t("post.info_planned")}
+          </div>
+        )}
       </Section>
 
       <Section label={t("sos.court")}>
@@ -306,12 +293,43 @@ function NewSos() {
       )}
 
       <button
-        disabled={busy}
-        onClick={submit}
+        disabled={busy || !canSubmit}
+        onClick={onSubmitClick}
         className={`cbtn w-full ${urgent ? "cbtn-coral" : "cbtn-green"}`}
       >
-        {busy ? "..." : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
+        {busy ? "..." : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
       </button>
+
+      {showConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="w-full sm:max-w-md ccard p-5 space-y-3"
+            style={{ background: "var(--cream)", borderColor: "var(--ink)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-display text-2xl">{t("post.confirm_title")}</div>
+            <button
+              disabled={busy}
+              onClick={() => { setShowConfirm(false); doSubmit(); }}
+              className="cbtn cbtn-coral w-full"
+            >
+              {t("post.confirm_send")}
+            </button>
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="cbtn cbtn-ghost w-full"
+            >
+              {t("post.confirm_cancel")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
