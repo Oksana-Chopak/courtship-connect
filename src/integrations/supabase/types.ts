@@ -252,6 +252,8 @@ export type Database = {
           level_min: number
           note: string | null
           play_at: string
+          spots_filled: number
+          spots_needed: number
           status: Database["public"]["Enums"]["sos_status_t"]
         }
         Insert: {
@@ -270,6 +272,8 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at: string
+          spots_filled?: number
+          spots_needed?: number
           status?: Database["public"]["Enums"]["sos_status_t"]
         }
         Update: {
@@ -288,6 +292,8 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at?: string
+          spots_filled?: number
+          spots_needed?: number
           status?: Database["public"]["Enums"]["sos_status_t"]
         }
         Relationships: [
@@ -494,7 +500,11 @@ export type Database = {
       court_status_t: "booked_paid" | "booked" | "will_book" | "public"
       court_type_t: "indoor" | "outdoor"
       looking_for_t: "regular" | "dropin" | "both"
-      sos_format_t: "singles" | "doubles_need1" | "doubles_need2"
+      sos_format_t:
+        | "singles"
+        | "doubles_need1"
+        | "doubles_need2"
+        | "doubles_need3"
       sos_status_t: "active" | "claimed" | "expired" | "cancelled"
       vibe_t: "chill" | "friendly" | "sweat"
     }
@@ -628,7 +638,12 @@ export const Constants = {
       court_status_t: ["booked_paid", "booked", "will_book", "public"],
       court_type_t: ["indoor", "outdoor"],
       looking_for_t: ["regular", "dropin", "both"],
-      sos_format_t: ["singles", "doubles_need1", "doubles_need2"],
+      sos_format_t: [
+        "singles",
+        "doubles_need1",
+        "doubles_need2",
+        "doubles_need3",
+      ],
       sos_status_t: ["active", "claimed", "expired", "cancelled"],
       vibe_t: ["chill", "friendly", "sweat"],
     },
