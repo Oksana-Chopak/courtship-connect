@@ -229,10 +229,10 @@ export function whenLabel(iso: string): string {
 }
 const RESCUER_TIERS = [
   { level: 1, name: "Set Saver", emoji: "🎾", at: 1 },
-  { level: 2, name: "Match Medic", emoji: "🚑", at: 5 },
-  { level: 3, name: "Court Hero", emoji: "🦸", at: 15 },
-  { level: 4, name: "Rescue Ace", emoji: "🎯", at: 30 },
-  { level: 5, name: "Living Legend", emoji: "🏆", at: 50 },
+  { level: 2, name: "Match Medic", emoji: "🚑", at: 3 },
+  { level: 3, name: "Court Hero", emoji: "🦸", at: 7 },
+  { level: 4, name: "Rescue Ace", emoji: "🎯", at: 12 },
+  { level: 5, name: "Living Legend", emoji: "🏆", at: 20 },
 ] as const;
 
 export function rescuerTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
