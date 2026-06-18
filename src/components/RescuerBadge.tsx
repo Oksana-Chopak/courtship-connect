@@ -4,7 +4,18 @@ import { useI18n } from "@/lib/i18n";
 export function RescuerBadge({ count, size = "sm", progress = false }: { count: number; size?: "sm" | "lg"; progress?: boolean }) {
   const { t } = useI18n();
   const tier = rescuerTier(count);
-  if (!tier) return null;
+  if (!tier) {
+    if (size === "lg") {
+      return (
+        <div className="ccard p-4">
+          <div className="csection-label">{t("tier.next_up")}</div>
+          <div className="font-display text-2xl mt-1">🎾 Set Saver</div>
+          <div className="text-sm text-[var(--ink)] mt-1">{t("tier.rescue_first")}</div>
+        </div>
+      );
+    }
+    return null;
+  }
   const toNext = tier.next != null ? tier.next - count : null;
   if (size === "lg") {
     return (

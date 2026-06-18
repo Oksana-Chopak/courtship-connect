@@ -76,7 +76,7 @@ function PlayerDetail() {
         </div>
 
         <div className="text-center">
-          <h1 className="font-display text-3xl">{p.name}</h1>
+          <h1 className="font-display text-3xl">{p.name}{p.last_name ? " " + p.last_name : ""}</h1>
           <div className="mt-1"><RescuerBadge count={p.rescues_count ?? 0} /></div>
           <div className="flex items-center justify-center gap-2 mt-1">
             <span className="w-3 h-3 rounded-full" style={{ background: lm.color }} />

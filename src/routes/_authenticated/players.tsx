@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/players")({
 type P = {
   id: string;
   name: string;
+  last_name: string | null;
   photo_url: string | null;
   level: number;
   formats: string[];
@@ -169,7 +170,7 @@ function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
       </div>
       <div className="flex items-center justify-between gap-1">
         <div className="font-display text-lg truncate flex items-center gap-1">
-          {p.name}
+          {p.name}{p.last_name ? " " + p.last_name : ""}
           {isBuddy && <span title="Buddy">🤝</span>}
         </div>
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />

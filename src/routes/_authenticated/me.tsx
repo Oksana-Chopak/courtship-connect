@@ -123,6 +123,7 @@ function MePage() {
       setRescues(d.rescues_count ?? 0);
       setInitial({
         name: d.name ?? "",
+        last_name: d.last_name ?? "",
         phone_e164: d.phone_e164 ?? "",
         photo_url: d.photo_url ?? "",
         level: d.level ?? 3,
@@ -160,7 +161,7 @@ function MePage() {
         <LangToggle className="shrink-0" />
       </div>
 
-      {rescues >= 1 && <RescuerBadge count={rescues} size="lg" progress />}
+      <RescuerBadge count={rescues} size="lg" progress />
 
       <GamesHistory />
 
