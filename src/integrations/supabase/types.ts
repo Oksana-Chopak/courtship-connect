@@ -534,6 +534,14 @@ export type Database = {
         Args: { _accept: boolean; _req_id: string }
         Returns: undefined
       }
+      top_rescuers_month: {
+        Args: never
+        Returns: {
+          name: string
+          rescues: number
+          user_id: string
+        }[]
+      }
       withdraw_claim: {
         Args: { _sos_id: string }
         Returns: {
