@@ -95,6 +95,38 @@ export type Database = {
         }
         Relationships: []
       }
+      event_attendees: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_requests: {
         Row: {
           capacity: number | null
@@ -107,8 +139,10 @@ export type Database = {
           id: string
           location: string
           price_sek: number | null
+          spots_taken: number
           starts_at: string
           status: string
+          swish_number: string | null
           title: string
         }
         Insert: {
@@ -122,8 +156,10 @@ export type Database = {
           id?: string
           location: string
           price_sek?: number | null
+          spots_taken?: number
           starts_at: string
           status?: string
+          swish_number?: string | null
           title: string
         }
         Update: {
@@ -137,8 +173,10 @@ export type Database = {
           id?: string
           location?: string
           price_sek?: number | null
+          spots_taken?: number
           starts_at?: string
           status?: string
+          swish_number?: string | null
           title?: string
         }
         Relationships: []
@@ -442,6 +480,28 @@ export type Database = {
         Returns: undefined
       }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_delete_invite_code: { Args: { _code: string }; Returns: undefined }
+      admin_invite_codes: {
+        Args: never
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          signups: number
+          uses_remaining: number
+        }[]
+      }
+      admin_players_list: {
+        Args: never
+        Returns: {
+          created_at: string
+          home_city: string
+          id: string
+          name: string
+          rescues_count: number
+          signup_code: string
+        }[]
+      }
       admin_set_court_hidden: {
         Args: { _court_id: string; _hidden: boolean }
         Returns: undefined
@@ -573,6 +633,15 @@ export type Database = {
         }
       }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
+      join_event: {
+        Args: { _event_id: string }
+        Returns: {
+          attendee_status: string
+          ok: boolean
+          reason: string
+        }[]
+      }
+      leave_event: { Args: { _event_id: string }; Returns: undefined }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       request_buddy: { Args: { _other: string }; Returns: undefined }
