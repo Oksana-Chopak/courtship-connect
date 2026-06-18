@@ -27,6 +27,7 @@ export type ProfileFormValues = {
   looking_for: "regular" | "dropin" | "both";
   home_courts: string;
   home_city: City;
+  home_cities: City[];
   buddy_optin: "yes" | "sometimes" | "no";
   buddy_radius_km: number;
   buddy_sos_optin: boolean;
@@ -43,6 +44,7 @@ export const emptyProfile: ProfileFormValues = {
   looking_for: "both",
   home_courts: "",
   home_city: "Uppsala",
+  home_cities: ["Uppsala"],
   buddy_optin: "sometimes",
   buddy_radius_km: 10,
   buddy_sos_optin: true,
@@ -360,17 +362,27 @@ export function ProfileWizard({
             </div>
             <div>
               <div className="csection-label mb-2">Home courts</div>
+              <div className="text-xs text-[var(--ink)] mb-2 -mt-1">Pick the cities you play in — tap both if you split your time.</div>
               <div className="flex gap-2 mb-3">
-                {CITIES.map((cy) => (
-                  <button
-                    key={cy}
-                    type="button"
-                    className={`cchip ${v.home_city === cy ? "cchip-on" : ""}`}
-                    onClick={() => set("home_city", cy)}
-                  >
-                    📍 {cy}
-                  </button>
-                ))}
+                {CITIES.map((cy) => {
+                  const on = (v.home_cities ?? []).includes(cy);
+                  return (
+                    <button
+                      key={cy}
+                      type="button"
+                      className={`cchip ${on ? "cchip-on" : ""}`}
+                      onClick={() => {
+                        const cur = v.home_cities ?? [];
+                        const next = on ? cur.filter((c) => c !== cy) : [...cur, cy];
+                        const cities = next.length ? next : cur;
+                        set("home_cities", cities);
+                        set("home_city", cities[0]);
+                      }}
+                    >
+                      📍 {cy}
+                    </button>
+                  );
+                })}
               </div>
               <CourtCombobox
                 city={v.home_city}

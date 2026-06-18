@@ -53,9 +53,13 @@ function Onboarding() {
                   (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) : null) ??
                   null;
               } catch {}
+              const { home_cities, ...rest } = v;
               const { error } = await supabase
                 .from("profiles" as any)
-                .insert({ id: uid, ...v, signup_code: signupCode });
+                .insert({ id: uid, ...rest, signup_code: signupCode });
+              if (!error) {
+                await supabase.from("profiles" as any).update({ home_cities }).eq("id", uid);
+              }
               setBusy(false);
               if (error) {
                 toast.error(error.message);

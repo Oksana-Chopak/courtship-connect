@@ -24,6 +24,7 @@ type P = {
   buddy_optin: string;
   home_courts: string | null;
   home_city: string | null;
+  home_cities: string[] | null;
   rescues_count: number | null;
 };
 
@@ -44,7 +45,7 @@ function Players() {
       if (u.user) setBuddyIds(await fetchBuddyIds(u.user.id));
       const { data } = await supabase
         .from("profiles_public" as any)
-        .select("id,name,photo_url,level,formats,play_times,vibe,buddy_optin,home_courts,home_city,rescues_count")
+        .select("*")
         .order("created_at", { ascending: false });
       setRows((data as any) ?? []);
       setLoading(false);
@@ -58,7 +59,7 @@ function Players() {
           (level == null || p.level === level) &&
           (!format || p.formats?.includes(format)) &&
           (!time || p.play_times?.includes(time)) &&
-          (!city || p.home_city === city) &&
+          (!city || (Array.isArray(p.home_cities) && p.home_cities.length ? p.home_cities.includes(city) : p.home_city === city)) &&
           (!buddiesOnly || p.buddy_optin === "yes"),
       ),
     [rows, level, format, time, city, buddiesOnly],

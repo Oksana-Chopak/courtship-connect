@@ -119,6 +119,7 @@ function MePage() {
         looking_for: d.looking_for ?? "both",
         home_courts: d.home_courts ?? "",
         home_city: d.home_city ?? "Uppsala",
+        home_cities: d.home_cities ?? [d.home_city ?? "Uppsala"],
         buddy_optin: d.buddy_optin ?? "sometimes",
         buddy_radius_km: d.buddy_radius_km ?? 10,
         buddy_sos_optin: d.buddy_sos_optin ?? true,
@@ -224,10 +225,14 @@ function MePage() {
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
+            const { home_cities, ...rest } = v;
             const { error } = await supabase
               .from("profiles" as any)
-              .update(v)
+              .update(rest)
               .eq("id", uid);
+            if (!error) {
+              await supabase.from("profiles" as any).update({ home_cities }).eq("id", uid);
+            }
             setBusy(false);
             if (error) {
               toast.error(error.message);
