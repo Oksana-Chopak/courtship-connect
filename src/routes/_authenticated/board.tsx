@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
+import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -31,12 +32,14 @@ function BoardPage() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
+  const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
 
   const load = useCallback(async () => {
     await sweepExpired();
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
+    setMyClaims(au.user ? await fetchMyUpcomingClaims(au.user.id) : []);
     setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att); setLoading(false);
   }, []);
 
@@ -49,6 +52,13 @@ function BoardPage() {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
+  async function onWithdraw(sos: EligibleSosRow) {
+    if (typeof window !== "undefined" && !window.confirm(t("home.cant_make_confirm"))) return;
+    const r = await withdrawClaim(sos.id);
+    if (!r.ok) { toast.error(r.reason); return; }
+    toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
+    load();
+  }
   const byTime = (a: EligibleSosRow, b: EligibleSosRow) => new Date(a.play_at).getTime() - new Date(b.play_at).getTime();
   const filt = (arr: EligibleSosRow[]) => (ctFilter === "any" ? arr : arr.filter((r) => r.court_type === ctFilter));
   // Buddies float to the top of each section, then everyone else — both sorted nearest-first.
@@ -67,6 +77,9 @@ function BoardPage() {
         <h1 className="font-display text-4xl">{t("board.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>
       </div>
+
+      <InstallBanner />
+      <StandaloneNotifPrompt />
 
       <AttentionStrip onChange={load} />
 
@@ -87,6 +100,21 @@ function BoardPage() {
         <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green">+ {t("board.new_game")}</Link>
       </div>
+
+      {myClaims.length > 0 && (
+        <div className="space-y-3">
+          <div className="csection-label">✅ {t("home.my_upcoming")}</div>
+          {myClaims.map((s) => (
+            <div key={s.id} className="ccard p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-display text-lg truncate">{whenLabel(s.play_at)} · {s.court_name ?? "—"}</div>
+                <div className="text-base text-[var(--ink)] font-semibold truncate">📍 {s.court_city ?? "—"}{s.caller_name ? ` · ${s.caller_name}` : ""}</div>
+              </div>
+              <button onClick={() => onWithdraw(s)} className="cbtn cbtn-ghost shrink-0">{t("home.cant_make_it")}</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {mineAll.length > 0 && (
         <div className="space-y-3">
