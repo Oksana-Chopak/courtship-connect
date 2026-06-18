@@ -7,11 +7,10 @@ import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
-type Seg = "urgent" | "planned";
-
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>): { seg?: Seg } => ({
+  // seg kept optional for backwards-compatible links; the board now shows one merged list.
+  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned" } => ({
     seg: s.seg === "planned" ? "planned" : s.seg === "urgent" ? "urgent" : undefined,
   }),
   component: BoardPage,
@@ -19,9 +18,6 @@ export const Route = createFileRoute("/_authenticated/board")({
 
 function BoardPage() {
   const { t, lang } = useI18n();
-  const search = Route.useSearch();
-  const seg: Seg = search.seg ?? "urgent";
-  const navigate = Route.useNavigate();
   const [urgent, setUrgent] = useState<EligibleSosRow[]>([]);
   const [planned, setPlanned] = useState<EligibleSosRow[]>([]);
   const [mine, setMine] = useState<EligibleSosRow[]>([]);
@@ -43,36 +39,23 @@ function BoardPage() {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
-  const all = seg === "urgent" ? urgent : planned;
-  const rows = ctFilter === "any" ? all : all.filter((r) => r.court_type === ctFilter);
-  const buddyRows = rows.filter((r) => r.is_buddy);
-  const otherRows = rows.filter((r) => !r.is_buddy);
-  const mineSeg = mine.filter((r) => r.kind === (seg === "urgent" ? "sos" : "open"));
-
-  function setSeg(next: Seg) {
-    navigate({ search: { seg: next }, replace: true });
-  }
+  const byTime = (a: EligibleSosRow, b: EligibleSosRow) => new Date(a.play_at).getTime() - new Date(b.play_at).getTime();
+  const filt = (arr: EligibleSosRow[]) => (ctFilter === "any" ? arr : arr.filter((r) => r.court_type === ctFilter));
+  // Buddies float to the top of each section, then everyone else — both sorted nearest-first.
+  const buddyFirst = (arr: EligibleSosRow[]) => [
+    ...arr.filter((r) => r.is_buddy).sort(byTime),
+    ...arr.filter((r) => !r.is_buddy).sort(byTime),
+  ];
+  const urgentRows = buddyFirst(filt(urgent));
+  const plannedRows = buddyFirst(filt(planned));
+  const mineAll = [...mine].sort(byTime);
+  const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">{t("board.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>
-      </div>
-
-      {/* Segmented control */}
-      <div
-        role="tablist"
-        aria-label={t("board.title")}
-        className="grid grid-cols-2 gap-1 p-1 border-2 border-[var(--ink)] rounded-full"
-        style={{ background: "var(--cream2)" }}
-      >
-        <SegBtn on={seg === "urgent"} onClick={() => setSeg("urgent")} tone="coral" badge={urgent.length}>
-          🚨 {t("board.seg_urgent")}
-        </SegBtn>
-        <SegBtn on={seg === "planned"} onClick={() => setSeg("planned")} tone="green" badge={planned.length}>
-          🎾 {t("board.seg_planned")}
-        </SegBtn>
       </div>
 
       {/* Indoor / Outdoor / Any filter */}
@@ -89,21 +72,14 @@ function BoardPage() {
       </div>
 
       <div className="flex justify-end">
-        <Link to="/sos/new" search={{ planned: seg === "planned" ? 1 : undefined }} className="cbtn cbtn-green">
-          + {seg === "urgent" ? t("home.save_my_set") : t("home.post_a_game")}
-        </Link>
+        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green">+ {t("board.new_game")}</Link>
       </div>
 
-      {mineSeg.length > 0 && (
+      {mineAll.length > 0 && (
         <div className="space-y-3">
           <div className="csection-label">📣 {t("board.your_games")}</div>
-          {mineSeg.map((r) => (
-            <Link
-              key={r.id}
-              to="/sos/$id"
-              params={{ id: r.id }}
-              className="ccard p-4 flex items-center justify-between"
-            >
+          {mineAll.map((r) => (
+            <Link key={r.id} to="/sos/$id" params={{ id: r.id }} className="ccard p-4 flex items-center justify-between">
               <div>
                 <div className="font-display text-lg">{whenLabel(r.play_at)} · {r.court_name ?? "—"}</div>
                 <div className="text-base text-[var(--ink)] font-semibold">
@@ -119,28 +95,24 @@ function BoardPage() {
 
       {loading ? (
         <div className="text-center py-10 text-[var(--ink)]">{t("rescue.listening")}</div>
-      ) : rows.length === 0 && mineSeg.length === 0 ? (
+      ) : nothing ? (
         <div className="ccard p-6 text-center">
-          <div className="text-3xl">{seg === "urgent" ? "🌅" : "🎾"}</div>
-          <div className="font-display text-xl mt-1">
-            {seg === "urgent" ? t("rescue.empty_title") : t("games.empty_title")}
-          </div>
-          <div className="text-base text-[var(--ink)] font-semibold mt-1">
-            {seg === "urgent" ? t("rescue.empty_sub") : t("games.empty_sub")}
-          </div>
+          <div className="text-3xl">🌅</div>
+          <div className="font-display text-xl mt-1">{t("rescue.empty_title")}</div>
+          <div className="text-base text-[var(--ink)] font-semibold mt-1">{t("rescue.empty_sub")}</div>
         </div>
       ) : (
-        <div className="space-y-5">
-          {buddyRows.length > 0 && (
+        <div className="space-y-6">
+          {urgentRows.length > 0 && (
             <div className="space-y-3">
-              <div className="csection-label">{t("buddy.from_buddies")}</div>
-              {buddyRows.map((r) => <Card key={r.id} sos={r} seg={seg} onChange={load} />)}
+              <div className="csection-label" style={{ color: "var(--coral)" }}>🚨 {t("board.seg_urgent")}</div>
+              {urgentRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
             </div>
           )}
-          {otherRows.length > 0 && (
+          {plannedRows.length > 0 && (
             <div className="space-y-3">
-              {buddyRows.length > 0 && <div className="csection-label">{t("board.others")}</div>}
-              {otherRows.map((r) => <Card key={r.id} sos={r} seg={seg} onChange={load} />)}
+              <div className="csection-label">🎾 {t("board.seg_planned")}</div>
+              {plannedRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
             </div>
           )}
         </div>
@@ -149,54 +121,23 @@ function BoardPage() {
   );
 }
 
-function SegBtn({ on, onClick, children, tone, badge }: { on: boolean; onClick: () => void; children: React.ReactNode; tone: "coral" | "green"; badge?: number }) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={on}
-      onClick={onClick}
-      className="rounded-full font-extrabold flex items-center justify-center gap-2"
-      style={{
-        minHeight: 48,
-        fontSize: "1.0625rem",
-        background: on ? (tone === "coral" ? "var(--coral)" : "var(--green-pop)") : "transparent",
-        color: on && tone === "coral" ? "#FFF6E8" : "var(--ink)",
-        border: on ? "2px solid var(--ink)" : "none",
-      }}
-    >
-      {children}
-      {badge && badge > 0 ? <span className="text-base">({badge})</span> : null}
-    </button>
-  );
-}
-
 function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={on}
-      onClick={onClick}
+    <button type="button" role="radio" aria-checked={on} onClick={onClick}
       className="rounded-full border-2 border-[var(--ink)] px-4 font-extrabold"
-      style={{
-        minHeight: 48,
-        fontSize: "1rem",
-        background: on ? "var(--green-pop)" : "var(--cream2)",
-        color: "var(--ink)",
-      }}
-    >
+      style={{ minHeight: 48, fontSize: "1rem", background: on ? "var(--green-pop)" : "var(--cream2)", color: "var(--ink)" }}>
       {children}
     </button>
   );
 }
 
-function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange: () => void }) {
+function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) {
   const { t, lang } = useI18n();
   const lmMin = levelMeta(sos.level_min);
   const lmMax = levelMeta(sos.level_max);
   const [busy, setBusy] = useState(false);
   const ctMeta = courtTypeMeta(sos.court_type, lang);
+  const isUrgent = sos.kind === "sos";
 
   const inner = (
     <>
@@ -225,7 +166,7 @@ function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange:
     </>
   );
 
-  if (seg === "urgent") {
+  if (isUrgent) {
     return (
       <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
         style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}>
@@ -239,9 +180,7 @@ function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange:
   return (
     <div className="ccard p-4">
       {inner}
-      <button
-        className="cbtn cbtn-green w-full mt-3"
-        disabled={busy}
+      <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
         onClick={async () => {
           setBusy(true);
           const r = await claimSos(sos.id);
@@ -249,8 +188,7 @@ function Card({ sos, seg, onChange }: { sos: EligibleSosRow; seg: Seg; onChange:
           if (!r.ok) toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
           else toast.success("You're in 🎾");
           onChange();
-        }}
-      >
+        }}>
         {t("games.im_in")}
       </button>
     </div>
