@@ -96,11 +96,7 @@ function MePage() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       setUid(u.user.id);
-      const { data } = await supabase
-        .from("profiles" as any)
-        .select("*")
-        .eq("id", u.user.id)
-        .maybeSingle();
+      const { data } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
       if (!data) {
         navigate({ to: "/onboarding" });
         return;

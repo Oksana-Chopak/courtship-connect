@@ -27,11 +27,7 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
       try { setCourts(await fetchCourtsForPicker()); } catch { /* ignore */ }
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
-      const { data } = await supabase
-        .from("profiles" as any)
-        .select("phone_e164")
-        .eq("id", u.user.id)
-        .maybeSingle();
+      const { data } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
       if ((data as any)?.phone_e164) setContact((data as any).phone_e164);
     })();
   }, []);
