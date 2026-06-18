@@ -9,6 +9,7 @@ import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/eve
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
+import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -33,11 +34,16 @@ function BoardPage() {
   const [meId, setMeId] = useState<string | null>(null);
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
+  const [cityForStats, setCityForStats] = useState("Uppsala");
 
   const load = useCallback(async () => {
     await sweepExpired();
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
+    if (au.user) {
+      const { data: prof } = await (supabase as any).from("profiles").select("home_city").eq("id", au.user.id).maybeSingle();
+      setCityForStats((prof as any)?.home_city ?? "Uppsala");
+    }
     const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
     setMyClaims(au.user ? await fetchMyUpcomingClaims(au.user.id) : []);
     setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att); setLoading(false);
@@ -171,6 +177,8 @@ function BoardPage() {
           )}
         </div>
       )}
+
+      <CommunityStatsWidget city={cityForStats} />
     </div>
   );
 }
