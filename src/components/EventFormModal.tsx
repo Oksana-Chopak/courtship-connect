@@ -17,6 +17,7 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
   const [format, setFormat] = useState("");
   const [capacity, setCapacity] = useState("");
   const [price, setPrice] = useState("");
+  const [swish, setSwish] = useState("");
   const [description, setDescription] = useState("");
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,6 +51,7 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
         format: format.trim() || null,
         capacity: capacity ? Math.max(1, parseInt(capacity, 10)) : null,
         price_sek: price ? Math.max(0, parseInt(price, 10)) : null,
+        swish_number: swish.trim() || null,
         description: description.trim() || null,
         contact: contact.trim() || null,
       });
@@ -139,6 +141,10 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
             <input className="cinput" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("ev.f_price_ph")} />
           </Field>
         </div>
+
+        <Field label={t("ev.f_swish")}>
+          <input className="cinput" value={swish} onChange={(e) => setSwish(e.target.value)} placeholder={t("ev.f_swish_ph")} />
+        </Field>
 
         <Field label={t("ev.f_desc")}>
           <textarea className="cinput" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("ev.f_desc_ph")} />

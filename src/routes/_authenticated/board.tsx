@@ -5,8 +5,8 @@ import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, formatLabel, swee
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
-import { fetchApprovedEvents, type EventRow } from "@/lib/events";
-import { shortCourtName } from "@/lib/courts";
+import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
+import { EventCard } from "@/components/EventCard";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -28,11 +28,15 @@ function BoardPage() {
   const [ctFilter, setCtFilter] = useState<CourtType | "any">("any");
   const [events, setEvents] = useState<EventRow[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [meId, setMeId] = useState<string | null>(null);
+  const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     await sweepExpired();
-    const [u, p, m, ev] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents()]);
-    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setLoading(false);
+    const { data: au } = await supabase.auth.getUser();
+    setMeId(au.user?.id ?? null);
+    const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
+    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att); setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -103,16 +107,7 @@ function BoardPage() {
         <div className="space-y-3">
           <div className="csection-label">🎉 {t("board.events")}</div>
           {events.map((e) => (
-            <div key={e.id} className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
-              <div className="font-display text-2xl leading-tight">{e.title}</div>
-              <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
-              {(e.price_sek || e.capacity) && (
-                <div className="text-base text-[var(--ink)] mt-1">🎟 {e.price_sek ? t("ev.price_kr", { n: e.price_sek }) : t("ev.free")}{e.capacity ? ` · ${t("ev.spots_n", { n: e.capacity })}` : ""}</div>
-              )}
-              {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
-              {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
-              {e.contact && <div className="text-base text-[var(--ink)] mt-1">✉️ {e.contact}</div>}
-            </div>
+            <EventCard key={e.id} e={e} meId={meId} myStatus={myAttendance[e.id]} onChange={load} />
           ))}
         </div>
       )}

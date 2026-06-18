@@ -1,0 +1,129 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { whenLabel } from "@/lib/courtship";
+import { shortCourtName } from "@/lib/courts";
+import {
+  joinEvent,
+  leaveEvent,
+  fetchEventAttendees,
+  markAttendeePaid,
+  type EventRow,
+  type Attendee,
+} from "@/lib/events";
+import { useI18n } from "@/lib/i18n";
+
+export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
+  const { t } = useI18n();
+  const isHost = !!meId && e.host_id === meId;
+  const isPaid = (e.price_sek ?? 0) > 0;
+  const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
+  const full = left === 0;
+  const [busy, setBusy] = useState(false);
+  const [attendees, setAttendees] = useState<Attendee[] | null>(null);
+
+  useEffect(() => {
+    if (isHost) fetchEventAttendees(e.id).then(setAttendees).catch(() => {});
+  }, [isHost, e.id, e.spots_taken]);
+
+  async function join() {
+    setBusy(true);
+    const r = await joinEvent(e.id);
+    setBusy(false);
+    if (!r.ok) {
+      const m =
+        r.reason === "full" ? t("ev.full_label")
+        : r.reason === "already_in" ? t("ev.already_in")
+        : r.reason === "past" ? t("ev.past")
+        : r.reason;
+      toast.error(m);
+      return;
+    }
+    toast.success(isPaid ? t("ev.booked_pay") : t("ev.joined"));
+    onChange();
+  }
+
+  async function leave() {
+    setBusy(true);
+    try { await leaveEvent(e.id); toast.success(t("ev.left")); onChange(); }
+    catch (er: any) { toast.error(er?.message ?? "Error"); }
+    finally { setBusy(false); }
+  }
+
+  async function markPaid(aid: string) {
+    try {
+      await markAttendeePaid(aid);
+      setAttendees((p) => (p ? p.map((a) => (a.id === aid ? { ...a, status: "paid" } : a)) : p));
+      toast.success(t("ev.marked_paid"));
+    } catch (er: any) { toast.error(er?.message ?? "Error"); }
+  }
+
+  return (
+    <div className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
+      <div className="font-display text-2xl leading-tight">{e.title}</div>
+      <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
+      <div className="text-base text-[var(--ink)] mt-1">
+        🎟 {isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}
+        {e.capacity != null ? ` · ${full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number })}` : ""}
+      </div>
+      {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
+      {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
+
+      {isHost ? (
+        <div className="mt-3 space-y-2">
+          <div className="csection-label">{t("ev.attendees")} · {e.spots_taken}</div>
+          {attendees && attendees.length > 0 ? (
+            attendees.map((a) => (
+              <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
+                <div className="font-extrabold truncate">{a.name}</div>
+                {a.status === "paid" ? (
+                  <span className="text-sm font-extrabold">✓ {t("ev.paid")}</span>
+                ) : a.status === "booked" ? (
+                  <button className="cbtn cbtn-green text-sm" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
+                ) : (
+                  <span className="text-sm text-[var(--ink)]">{t("ev.interested")}</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-[var(--ink)]">{t("ev.no_attendees")}</div>
+          )}
+        </div>
+      ) : myStatus ? (
+        <div className="mt-3 space-y-2">
+          {myStatus === "booked" ? <SwishBox e={e} /> : <div className="font-extrabold">✓ {t("ev.youre_in")}</div>}
+          <button className="cbtn cbtn-ghost w-full" disabled={busy} onClick={leave}>{t("ev.leave")}</button>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <button className="cbtn cbtn-coral w-full" disabled={busy || full} onClick={join}>
+            {full ? t("ev.full_label") : isPaid ? t("ev.book_spot", { n: e.price_sek as number }) : t("ev.express_interest")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SwishBox({ e }: { e: EventRow }) {
+  const { t } = useI18n();
+  const number = e.swish_number ?? "";
+  function copy(text: string) {
+    if (!text) return;
+    navigator.clipboard?.writeText(text).then(() => toast.success(t("ev.copied"))).catch(() => {});
+  }
+  return (
+    <div className="ccard p-3 space-y-1" style={{ background: "var(--cream2)" }}>
+      <div className="font-extrabold">{t("ev.pay_title")}</div>
+      <div className="text-sm text-[var(--ink)]">💰 {t("ev.price_kr", { n: e.price_sek ?? 0 })}</div>
+      {number ? (
+        <button type="button" className="font-extrabold text-lg tracking-wide text-left" onClick={() => copy(number)}>
+          📱 {number} <span className="text-sm">📋</span>
+        </button>
+      ) : (
+        <div className="text-sm text-[var(--ink)]">{t("ev.no_swish")}</div>
+      )}
+      <div className="text-sm text-[var(--ink)]">✏️ {t("ev.pay_msg", { msg: e.title })}</div>
+      <div className="text-xs text-[var(--ink)] opacity-80">{t("ev.pay_confirm_note")}</div>
+    </div>
+  );
+}
