@@ -253,13 +253,13 @@ function MePage() {
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
-            const { home_cities, ...rest } = v;
+            const { home_cities, last_name, ...rest } = v;
             const { error } = await supabase
               .from("profiles" as any)
               .update(rest)
               .eq("id", uid);
             if (!error) {
-              await supabase.from("profiles" as any).update({ home_cities }).eq("id", uid);
+              await supabase.from("profiles" as any).update({ home_cities, last_name }).eq("id", uid);
             }
             setBusy(false);
             if (error) {

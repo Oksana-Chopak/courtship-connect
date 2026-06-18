@@ -53,14 +53,14 @@ function Onboarding() {
                   (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) : null) ??
                   null;
               } catch {}
-              const { home_cities, ...rest } = v;
+              const { home_cities, last_name, ...rest } = v;
               const payload: any = { id: uid, ...rest };
               if (signupCode) payload.signup_code = signupCode;
               const { error } = await supabase
                 .from("profiles" as any)
                 .upsert(payload, { onConflict: "id" });
               if (!error) {
-                await supabase.from("profiles" as any).update({ home_cities }).eq("id", uid);
+                await supabase.from("profiles" as any).update({ home_cities, last_name }).eq("id", uid);
               }
               setBusy(false);
               if (error) {
