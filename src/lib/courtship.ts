@@ -227,3 +227,19 @@ export function whenLabel(iso: string): string {
   if (sameDay(d, tomorrow)) return `Tomorrow ${hhmm}`;
   return d.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
+const RESCUER_TIERS = [
+  { level: 1, name: "Set Saver", emoji: "🎾", at: 1 },
+  { level: 2, name: "Match Medic", emoji: "🚑", at: 5 },
+  { level: 3, name: "Court Hero", emoji: "🦸", at: 15 },
+  { level: 4, name: "Rescue Ace", emoji: "🎯", at: 30 },
+  { level: 5, name: "Living Legend", emoji: "🏆", at: 50 },
+] as const;
+
+export function rescuerTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
+  if (!count || count < 1) return null;
+  let idx = 0;
+  for (let i = 0; i < RESCUER_TIERS.length; i++) if (count >= RESCUER_TIERS[i].at) idx = i;
+  const cur = RESCUER_TIERS[idx];
+  const nx = idx < RESCUER_TIERS.length - 1 ? RESCUER_TIERS[idx + 1] : null;
+  return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
+}

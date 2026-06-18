@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/courtship";
+import { RescuerBadge } from "@/components/RescuerBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -76,6 +77,7 @@ function PlayerDetail() {
 
         <div className="text-center">
           <h1 className="font-display text-3xl">{p.name}</h1>
+          <div className="mt-1"><RescuerBadge count={p.rescues_count ?? 0} /></div>
           <div className="flex items-center justify-center gap-2 mt-1">
             <span className="w-3 h-3 rounded-full" style={{ background: lm.color }} />
             <span className="font-extrabold">{lm.name}</span>

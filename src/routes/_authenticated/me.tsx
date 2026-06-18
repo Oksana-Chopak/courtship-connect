@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
 import { LangToggle, useI18n } from "@/lib/i18n";
+import { RescuerBadge } from "@/components/RescuerBadge";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
   type BuddyRow, type BuddyRequest,
@@ -20,6 +21,7 @@ function MePage() {
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
+  const [rescues, setRescues] = useState(0);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
@@ -103,6 +105,7 @@ function MePage() {
       }
       const d = data as any;
       setIsAdmin(!!d.is_admin);
+      setRescues(d.rescues_count ?? 0);
       setInitial({
         name: d.name ?? "",
         phone_e164: d.phone_e164 ?? "",
@@ -140,6 +143,8 @@ function MePage() {
         </div>
         <LangToggle className="shrink-0" />
       </div>
+
+      {rescues >= 1 && <RescuerBadge count={rescues} size="lg" progress />}
 
       {buddyReqs.length > 0 && (
         <div className="ccard p-4 space-y-3">

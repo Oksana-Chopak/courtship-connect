@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
+import { RescuerBadge } from "@/components/RescuerBadge";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Home — Courtship" }] }),
@@ -208,6 +209,7 @@ function Home() {
       <div className="ccard p-4 text-center">
         <div className="csection-label">{t("home.my_rescues")}</div>
         <div className="font-display text-3xl mt-1">🚑 {rescues}</div>
+        <div className="mt-2 flex justify-center"><RescuerBadge count={rescues} /></div>
       </div>
 
       <style>{`

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, CITIES, type City } from "@/lib/courtship";
+import { RescuerBadge } from "@/components/RescuerBadge";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
 import { fetchBuddyIds } from "@/lib/buddies";
@@ -22,6 +23,7 @@ type P = {
   buddy_optin: string;
   home_courts: string | null;
   home_city: string | null;
+  rescues_count: number | null;
 };
 
 function Players() {
@@ -41,7 +43,7 @@ function Players() {
       if (u.user) setBuddyIds(await fetchBuddyIds(u.user.id));
       const { data } = await supabase
         .from("profiles_public" as any)
-        .select("id,name,photo_url,level,formats,play_times,vibe,buddy_optin,home_courts,home_city")
+        .select("id,name,photo_url,level,formats,play_times,vibe,buddy_optin,home_courts,home_city,rescues_count")
         .order("created_at", { ascending: false });
       setRows((data as any) ?? []);
       setLoading(false);
@@ -169,6 +171,9 @@ function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
       <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]">{lm.name}</span></div>
+      {(p.rescues_count ?? 0) >= 1 && (
+        <div className="mt-1"><RescuerBadge count={p.rescues_count ?? 0} /></div>
+      )}
       {p.home_city && (
         <div className="text-xs font-extrabold mt-1">📍 {p.home_city}</div>
       )}
