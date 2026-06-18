@@ -222,6 +222,7 @@ export type Database = {
           created_at: string
           formats: string[]
           ghost_badge: boolean
+          home_cities: string[] | null
           home_city: string
           home_courts: string | null
           id: string
@@ -244,6 +245,7 @@ export type Database = {
           created_at?: string
           formats?: string[]
           ghost_badge?: boolean
+          home_cities?: string[] | null
           home_city?: string
           home_courts?: string | null
           id: string
@@ -266,6 +268,7 @@ export type Database = {
           created_at?: string
           formats?: string[]
           ghost_badge?: boolean
+          home_cities?: string[] | null
           home_city?: string
           home_courts?: string | null
           id?: string
@@ -363,6 +366,7 @@ export type Database = {
           created_at: string | null
           formats: string[] | null
           ghost_badge: boolean | null
+          home_cities: string[] | null
           home_city: string | null
           home_courts: string | null
           id: string | null
@@ -380,6 +384,7 @@ export type Database = {
           created_at?: string | null
           formats?: string[] | null
           ghost_badge?: boolean | null
+          home_cities?: string[] | null
           home_city?: string | null
           home_courts?: string | null
           id?: string | null
@@ -397,6 +402,7 @@ export type Database = {
           created_at?: string | null
           formats?: string[] | null
           ghost_badge?: boolean | null
+          home_cities?: string[] | null
           home_city?: string | null
           home_courts?: string | null
           id?: string | null
