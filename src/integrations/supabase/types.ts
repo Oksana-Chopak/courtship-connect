@@ -95,6 +95,51 @@ export type Database = {
         }
         Relationships: []
       }
+      event_requests: {
+        Row: {
+          city: string | null
+          contact: string | null
+          created_at: string
+          description: string | null
+          format: string | null
+          host_id: string
+          id: string
+          location: string
+          price_sek: number | null
+          starts_at: string
+          status: string
+          title: string
+        }
+        Insert: {
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          description?: string | null
+          format?: string | null
+          host_id: string
+          id?: string
+          location: string
+          price_sek?: number | null
+          starts_at: string
+          status?: string
+          title: string
+        }
+        Update: {
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          description?: string | null
+          format?: string | null
+          host_id?: string
+          id?: string
+          location?: string
+          price_sek?: number | null
+          starts_at?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           archived_by: string[]
