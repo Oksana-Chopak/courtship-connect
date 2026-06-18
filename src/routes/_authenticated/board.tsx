@@ -7,6 +7,7 @@ import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { EventCard } from "@/components/EventCard";
+import { AttentionStrip } from "@/components/AttentionStrip";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -66,6 +67,8 @@ function BoardPage() {
         <h1 className="font-display text-4xl">{t("board.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>
       </div>
+
+      <AttentionStrip onChange={load} />
 
       {/* Indoor / Outdoor / Any filter */}
       <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
