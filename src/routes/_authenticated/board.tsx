@@ -72,7 +72,7 @@ function BoardPage() {
     ...arr.filter((r) => r.is_buddy).sort(byTime),
     ...arr.filter((r) => !r.is_buddy).sort(byTime),
   ];
-  const urgentRows = buddyFirst(filt(urgent));
+  const urgentRows = buddyFirst(urgent);
   const plannedRows = buddyFirst(filt(planned));
   const mineAll = [...mine].sort(byTime);
   const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0 && events.length === 0;
@@ -89,23 +89,27 @@ function BoardPage() {
 
       <AttentionStrip onChange={load} />
 
-      {/* Indoor / Outdoor / Any filter */}
-      <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
-        <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
-        {COURT_TYPES.map((ct) => {
-          const meta = courtTypeMeta(ct, lang);
-          return (
-            <FilterChip key={ct} on={ctFilter === ct} onClick={() => setCtFilter(ct)}>
-              {meta.emoji} {meta.label}
-            </FilterChip>
-          );
-        })}
-      </div>
+      {/* HERO — Save My Set: the killer feature, always front & center */}
+      <Link
+        to="/sos/new"
+        search={{ planned: undefined }}
+        className="block ccard p-5 text-center"
+        style={{ background: "var(--coral)", borderColor: "var(--ink)", color: "#FFF6E8" }}
+      >
+        <div className="font-display text-3xl leading-tight">{t("hero.rescue_title")}</div>
+        <div className="text-base font-semibold mt-1" style={{ opacity: 0.95 }}>{t("hero.rescue_sub")}</div>
+        <div className="mt-3 inline-block px-5 py-2 rounded-full font-display text-2xl" style={{ background: "#FFF6E8", color: "var(--coral)" }}>
+          🚨 {t("hero.rescue_cta")}
+        </div>
+      </Link>
 
-      <div className="flex justify-end gap-2">
-        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
-        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green">+ {t("board.new_game")}</Link>
-      </div>
+      {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
+      {!loading && urgentRows.length > 0 && (
+        <div className="space-y-3">
+          <div className="csection-label" style={{ color: "var(--coral)" }}>🚨 {t("board.seg_urgent")}</div>
+          {urgentRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
+        </div>
+      )}
 
       {myClaims.length > 0 && (
         <div className="space-y-3">
@@ -153,28 +157,33 @@ function BoardPage() {
         <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
       )}
 
-      {loading ? (
-        <div className="text-center py-10 text-[var(--ink)]">{t("rescue.listening")}</div>
-      ) : nothing ? (
+      {/* Plan ahead + browse open games */}
+      <div className="flex justify-end gap-2">
+        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
+        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-ghost">📅 {t("board.plan_game")}</Link>
+      </div>
+      <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
+        <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
+        {COURT_TYPES.map((ct) => {
+          const meta = courtTypeMeta(ct, lang);
+          return (
+            <FilterChip key={ct} on={ctFilter === ct} onClick={() => setCtFilter(ct)}>
+              {meta.emoji} {meta.label}
+            </FilterChip>
+          );
+        })}
+      </div>
+      {!loading && plannedRows.length > 0 && (
+        <div className="space-y-3">
+          <div className="csection-label">🎾 {t("board.seg_planned")}</div>
+          {plannedRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
+        </div>
+      )}
+      {nothing && (
         <div className="ccard p-6 text-center">
           <div className="text-3xl">🌅</div>
           <div className="font-display text-xl mt-1">{t("rescue.empty_title")}</div>
           <div className="text-base text-[var(--ink)] font-semibold mt-1">{t("rescue.empty_sub")}</div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {urgentRows.length > 0 && (
-            <div className="space-y-3">
-              <div className="csection-label" style={{ color: "var(--coral)" }}>🚨 {t("board.seg_urgent")}</div>
-              {urgentRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
-            </div>
-          )}
-          {plannedRows.length > 0 && (
-            <div className="space-y-3">
-              <div className="csection-label">🎾 {t("board.seg_planned")}</div>
-              {plannedRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
-            </div>
-          )}
         </div>
       )}
 
