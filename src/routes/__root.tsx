@@ -81,8 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Courtship — Tennis partners in Uppsala" },
       { name: "description", content: "It's a match. Literally. Find a hitting partner in Uppsala." },
-      { property: "og:title", content: "Courtship" },
-      { property: "og:description", content: "Tennis partner matching for Uppsala. Invite-only beta." },
+      { property: "og:title", content: "Courtship — Tennis partners in Uppsala" },
+      { property: "og:description", content: "It's a match. Literally. Find a hitting partner in Uppsala." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -90,6 +90,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Courtship" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "twitter:title", content: "Courtship — Tennis partners in Uppsala" },
+      { name: "twitter:description", content: "It's a match. Literally. Find a hitting partner in Uppsala." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1e2c840a-4a73-46dd-ba4d-ab07f5565666/id-preview-04ba4097--9e9a2736-990f-4d64-b080-d920745c77bf.lovable.app-1781811722211.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1e2c840a-4a73-46dd-ba4d-ab07f5565666/id-preview-04ba4097--9e9a2736-990f-4d64-b080-d920745c77bf.lovable.app-1781811722211.png" },
     ],
     links: [
       {
