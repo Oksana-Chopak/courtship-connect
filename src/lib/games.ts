@@ -49,3 +49,18 @@ export async function archiveGame(gameId: string) {
   const { error } = await (supabase as any).rpc("archive_game", { _game_id: gameId });
   if (error) throw new Error(error.message);
 }
+
+/** Past games involving this user (played, not no-show, not archived by them), newest first. */
+export async function fetchMyGameHistory(uid: string, limit = 20): Promise<GameRow[]> {
+  const { data } = await (supabase as any)
+    .from("games")
+    .select("*")
+    .or(`player_a.eq.${uid},player_b.eq.${uid}`)
+    .lte("played_at", new Date().toISOString())
+    .is("reported_noshow", null)
+    .order("played_at", { ascending: false })
+    .limit(limit);
+  return ((data as GameRow[]) ?? []).filter(
+    (g) => !(Array.isArray(g.archived_by) && g.archived_by.includes(uid)),
+  );
+}

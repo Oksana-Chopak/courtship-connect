@@ -5,6 +5,8 @@ import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/component
 import { toast } from "sonner";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
+import { CommunityStatsWidget } from "@/components/CommunityStats";
+import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
   type BuddyRow, type BuddyRequest,
@@ -145,6 +147,9 @@ function MePage() {
       </div>
 
       {rescues >= 1 && <RescuerBadge count={rescues} size="lg" progress />}
+
+      <CommunityStatsWidget city={initial.home_city} />
+      <GamesHistory />
 
       {buddyReqs.length > 0 && (
         <div className="ccard p-4 space-y-3">
