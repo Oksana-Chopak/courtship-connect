@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
+import { EventFormModal } from "@/components/EventFormModal";
+import { fetchApprovedEvents, type EventRow } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -23,11 +25,13 @@ function BoardPage() {
   const [mine, setMine] = useState<EligibleSosRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ctFilter, setCtFilter] = useState<CourtType | "any">("any");
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
 
   const load = useCallback(async () => {
     await sweepExpired();
-    const [u, p, m] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames()]);
-    setUrgent(u); setPlanned(p); setMine(m); setLoading(false);
+    const [u, p, m, ev] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents()]);
+    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -49,7 +53,7 @@ function BoardPage() {
   const urgentRows = buddyFirst(filt(urgent));
   const plannedRows = buddyFirst(filt(planned));
   const mineAll = [...mine].sort(byTime);
-  const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0;
+  const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0 && events.length === 0;
 
   return (
     <div className="space-y-5">
@@ -71,7 +75,8 @@ function BoardPage() {
         })}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green">+ {t("board.new_game")}</Link>
       </div>
 
@@ -91,6 +96,25 @@ function BoardPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {events.length > 0 && (
+        <div className="space-y-3">
+          <div className="csection-label">🎉 {t("board.events")}</div>
+          {events.map((e) => (
+            <div key={e.id} className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
+              <div className="font-display text-2xl leading-tight">{e.title}</div>
+              <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{e.location}</div>
+              {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
+              {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
+              {e.contact && <div className="text-base text-[var(--ink)] mt-1">✉️ {e.contact}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showEventForm && (
+        <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
       )}
 
       {loading ? (

@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, type AdminCourt } from "@/lib/courts";
+import { fetchPendingEvents, setEventStatus, type EventRow } from "@/lib/events";
+import { whenLabel } from "@/lib/courtship";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Courtship" }] }),
@@ -42,6 +44,7 @@ function AdminPage() {
   const [newCode, setNewCode] = useState("");
   const [newUses, setNewUses] = useState("10");
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
+  const [pendingEvents, setPendingEvents] = useState<EventRow[]>([]);
 
   async function load() {
     const { data: codeRows } = await (supabase as any)
@@ -54,6 +57,7 @@ function AdminPage() {
     setDash(d as Dashboard);
     setAllowed(true);
     try { setAdminCourts(await adminListCustomCourts()); } catch {}
+    try { setPendingEvents(await fetchPendingEvents()); } catch {}
   }
 
   useEffect(() => { load(); }, []);
@@ -96,6 +100,15 @@ function AdminPage() {
 
   const cities = dash ? Object.keys(dash.by_city ?? {}) : [];
 
+  async function approveEvent(id: string) {
+    try { await setEventStatus(id, "approved"); setPendingEvents((p) => p.filter((e) => e.id !== id)); toast.success(t("admin.ev_approved")); }
+    catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
+  async function rejectEvent(id: string) {
+    try { await setEventStatus(id, "rejected"); setPendingEvents((p) => p.filter((e) => e.id !== id)); toast.success(t("admin.ev_rejected")); }
+    catch (e: any) { toast.error(e?.message ?? "Error"); }
+  }
+
   async function toggleCourtHidden(c: AdminCourt) {
     try {
       await adminSetCourtHidden(c.id, !c.hidden);
@@ -121,6 +134,29 @@ function AdminPage() {
         <div className="csection-label">{t("admin.tag")}</div>
         <h1 className="font-display text-4xl mt-1">{t("admin.title")}</h1>
       </div>
+
+      {pendingEvents.length > 0 && (
+        <div>
+          <div className="csection-label mb-2">🎉 {t("admin.pending_events")}</div>
+          <div className="space-y-2">
+            {pendingEvents.map((e) => (
+              <div key={e.id} className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>
+                <div className="font-display text-xl leading-tight">{e.title}</div>
+                <div className="text-sm text-[var(--ink)] font-semibold">
+                  {whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{e.location}
+                </div>
+                {e.format && <div className="text-sm text-[var(--ink)]">{e.format}</div>}
+                {e.description && <div className="text-sm italic text-[var(--ink)]">"{e.description}"</div>}
+                {e.contact && <div className="text-sm text-[var(--ink)]">✉️ {e.contact}</div>}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => approveEvent(e.id)} className="cbtn cbtn-green flex-1">{t("admin.ev_approve")}</button>
+                  <button onClick={() => rejectEvent(e.id)} className="cbtn cbtn-ghost flex-1">{t("admin.ev_reject")}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hero fill rate */}
       <div className="ccard p-5 text-center" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
