@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, CITIES, type City } from "@/lib/courtship";
 import { RescuerBadge } from "@/components/RescuerBadge";
+import { TopRescuers } from "@/components/TopRescuers";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
 import { fetchBuddyIds } from "@/lib/buddies";
@@ -69,6 +70,8 @@ function Players() {
         <h1 className="font-display text-4xl">{t("players.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
+
+      <TopRescuers />
 
       <div className="space-y-2">
         <FilterRow label={t("city.label")}>
