@@ -12,7 +12,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Invite = { code: string; uses_remaining: number; active: boolean; created_at: string };
+type Invite = { code: string; uses_remaining: number; active: boolean; created_at: string; signups?: number };
+type PlayerRow = { id: string; name: string; home_city: string | null; signup_code: string | null; rescues_count: number; created_at: string };
 type CityStats = {
   sos_created_week: number;
   sos_claimed_week: number;
@@ -45,19 +46,24 @@ function AdminPage() {
   const [newUses, setNewUses] = useState("10");
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
   const [pendingEvents, setPendingEvents] = useState<EventRow[]>([]);
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
 
   async function load() {
-    const { data: codeRows } = await (supabase as any)
-      .from("invite_codes")
-      .select("code,uses_remaining,active,created_at")
-      .order("created_at", { ascending: false });
-    setCodes((codeRows as Invite[]) ?? []);
+    const cr = await (supabase as any).rpc("admin_invite_codes");
+    if (!cr.error && Array.isArray(cr.data)) {
+      setCodes(cr.data as Invite[]);
+    } else {
+      const { data } = await (supabase as any)
+        .from("invite_codes").select("code,uses_remaining,active,created_at").order("created_at", { ascending: false });
+      setCodes(((data as Invite[]) ?? []).map((c) => ({ ...c, signups: 0 })));
+    }
     const { data: d, error } = await (supabase as any).rpc("admin_dashboard");
     if (error) { setAllowed(false); return; }
     setDash(d as Dashboard);
     setAllowed(true);
     try { setAdminCourts(await adminListCustomCourts()); } catch {}
     try { setPendingEvents(await fetchPendingEvents()); } catch {}
+    try { const { data: pl } = await (supabase as any).rpc("admin_players_list"); if (Array.isArray(pl)) setPlayers(pl as PlayerRow[]); } catch {}
   }
 
   useEffect(() => { load(); }, []);
@@ -84,6 +90,14 @@ function AdminPage() {
     if (error) { toast.error(error.message); return; }
     toast.success(t("admin.created_ok"));
     setNewCode(""); setNewUses("10"); setNewOwnerEmail("");
+    load();
+  }
+
+  async function removeCode(code: string) {
+    if (typeof window !== "undefined" && !window.confirm(`Delete code ${code}? This can't be undone.`)) return;
+    const { error } = await (supabase as any).rpc("admin_delete_invite_code", { _code: code });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Code deleted");
     load();
   }
 
@@ -212,23 +226,49 @@ function AdminPage() {
           {codes.length === 0 ? (
             <div className="ccard p-4 text-center text-[var(--ink)]">No codes yet.</div>
           ) : codes.map((c) => (
-            <div key={c.code} className="ccard p-3 flex items-center justify-between gap-3">
+            <div key={c.code} className="ccard p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-display text-lg tracking-widest">{c.code}</div>
-                <div className="text-base text-[var(--ink)]">
-                  {c.uses_remaining} uses left · {c.active ? "active" : "deactivated"}
-                </div>
+                <div className="font-display text-base tracking-wide truncate">{c.code}</div>
+                <div className="text-sm text-[var(--ink)]">{c.uses_remaining} uses left · {c.signups ?? 0} joined</div>
               </div>
-              <button
-                onClick={() => toggle(c.code, !c.active)}
-                className={`cbtn ${c.active ? "cbtn-ghost" : "cbtn-green"}`}
-              >
-                {c.active ? t("admin.deactivate") : t("admin.reactivate")}
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => toggle(c.code, !c.active)}
+                  className="inline-flex items-center gap-1.5 text-sm font-extrabold px-2.5 py-1 rounded-full"
+                  style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
+                  title={c.active ? "Active — tap to deactivate" : "Off — tap to activate"}
+                >
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: c.active ? "var(--green-pop)" : "#c9c4bb" }} />
+                  {c.active ? "Active" : "Off"}
+                </button>
+                <button type="button" onClick={() => removeCode(c.code)} className="text-base px-2 py-1 opacity-60" title="Delete code">🗑</button>
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {players.length > 0 && (
+        <div>
+          <div className="csection-label mb-2">👥 All players · {players.length}</div>
+          <div className="space-y-2">
+            {players.map((p) => (
+              <div key={p.id} className="ccard p-3 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-extrabold truncate">{p.name || "—"}</div>
+                  <div className="text-sm text-[var(--ink)] truncate">📍 {p.home_city ?? "—"} · joined {new Date(p.created_at).toLocaleDateString()}</div>
+                </div>
+                {p.signup_code ? (
+                  <span className="text-sm font-extrabold shrink-0 px-2 py-0.5 rounded-full" style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>{p.signup_code}</span>
+                ) : (
+                  <span className="text-sm shrink-0 opacity-50">no code</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="csection-label mb-2">{t("admin.courts_title")}</div>

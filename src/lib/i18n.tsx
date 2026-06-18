@@ -879,19 +879,15 @@ export function useI18n(): Ctx {
 export function LangToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useI18n();
   return (
-    <div
-      role="group"
-      aria-label="Language"
-      className={`inline-flex items-center rounded-full border-2 border-[var(--ink)] bg-[var(--cream2)] p-1 ${className}`}
-    >
+    <div role="group" aria-label="Language" className={`inline-flex items-center gap-0.5 ${className}`}>
       {(["sv", "en"] as Lang[]).map((l) => (
         <button
           key={l}
           type="button"
           onClick={() => setLang(l)}
           aria-pressed={lang === l}
-          className={`min-h-11 min-w-12 px-4 rounded-full font-extrabold uppercase ${
-            lang === l ? "bg-[var(--green-pop)] text-[var(--ink)]" : "text-[var(--ink)]"
+          className={`px-2.5 py-1 rounded-full text-sm font-extrabold uppercase ${
+            lang === l ? "bg-[var(--green-pop)] text-[var(--ink)]" : "text-[var(--ink)] opacity-50"
           }`}
         >
           {l === "sv" ? "SV" : "EN"}
