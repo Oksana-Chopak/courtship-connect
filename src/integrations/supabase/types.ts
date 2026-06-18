@@ -600,6 +600,7 @@ export type Database = {
           phone: string
         }[]
       }
+      get_event_swish: { Args: { _event_id: string }; Returns: string }
       get_my_full_profile: {
         Args: never
         Returns: {
