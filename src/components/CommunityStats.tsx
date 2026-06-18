@@ -28,6 +28,7 @@ export function CommunityStatsWidget({ city }: { city: string }) {
 
   if (!s) return null;
   const allZero = s.sets_saved === 0 && s.games_matched === 0 && s.new_buddies === 0;
+  if (allZero) return null;
 
   return (
     <div className="ccard p-4 space-y-2">

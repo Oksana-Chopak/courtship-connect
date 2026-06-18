@@ -29,6 +29,8 @@ function MePage() {
   const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
   const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
   const [confirmSignout, setConfirmSignout] = useState(false);
+  const [editingCode, setEditingCode] = useState(false);
+  const [codeDraft, setCodeDraft] = useState("");
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
   async function loadBuddies(u: string) {
@@ -88,6 +90,22 @@ function MePage() {
       } catch { /* ignore */ }
     }
     toast.success(copied ? t("invite.copied") : t("invite.share"));
+  }
+
+  function copyCode() {
+    if (!inviteCode) return;
+    navigator.clipboard?.writeText(inviteCode).then(() => toast.success(t("invite.copied"))).catch(() => {});
+  }
+  async function saveCode() {
+    const c = codeDraft.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    if (c.length < 3) { toast.error(t("invite.too_short")); return; }
+    const { data, error } = await (supabase as any).rpc("set_my_invite_code", { _new: c });
+    if (error) {
+      const m = String(error.message || "");
+      toast.error(m.includes("taken") ? t("invite.taken") : m.includes("too_short") ? t("invite.too_short") : t("invite.edit_fail"));
+      return;
+    }
+    if (data) { setInviteCode(data as string); setEditingCode(false); toast.success(t("invite.saved")); }
   }
 
   useEffect(() => {
@@ -167,11 +185,26 @@ function MePage() {
             <div className="font-extrabold text-lg">{t("invite.title")}</div>
             <div className="text-sm text-[var(--ink)]">{t("invite.sub")}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 font-extrabold tracking-widest text-center py-2 rounded-xl"
-              style={{ background: "var(--cream2)" }}>{inviteCode}</code>
-            <button className="cbtn cbtn-coral shrink-0" onClick={shareInvite}>{t("invite.share")}</button>
-          </div>
+          {editingCode ? (
+            <div className="flex items-center gap-2">
+              <input
+                className="cinput flex-1 font-extrabold tracking-widest uppercase"
+                value={codeDraft}
+                onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+                placeholder="YOURCODE"
+              />
+              <button className="cbtn cbtn-green shrink-0 px-3" onClick={saveCode}>✓</button>
+              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => setEditingCode(false)}>✕</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 font-extrabold tracking-widest text-center py-2 rounded-xl"
+                style={{ background: "var(--cream2)" }}>{inviteCode}</code>
+              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={copyCode} aria-label={t("invite.copy")} title={t("invite.copy")}>📋</button>
+              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => { setCodeDraft(inviteCode); setEditingCode(true); }} aria-label={t("invite.edit")} title={t("invite.edit")}>✏️</button>
+            </div>
+          )}
+          <button className="cbtn cbtn-coral w-full" onClick={shareInvite}>🔗 {t("invite.cta")}</button>
         </div>
       )}
 
