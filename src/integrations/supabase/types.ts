@@ -532,6 +532,45 @@ export type Database = {
       ensure_my_invite_code: { Args: never; Returns: string }
       escalate_due_open_games: { Args: never; Returns: number }
       expire_old_sos: { Args: never; Returns: undefined }
+      get_contact_phone: {
+        Args: { _target: string }
+        Returns: {
+          name: string
+          phone: string
+        }[]
+      }
+      get_my_full_profile: {
+        Args: never
+        Returns: {
+          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km: number
+          buddy_sos_optin: boolean
+          created_at: string
+          formats: string[]
+          ghost_badge: boolean
+          home_cities: string[] | null
+          home_city: string
+          home_courts: string | null
+          id: string
+          is_admin: boolean
+          lang: string
+          level: number
+          looking_for: Database["public"]["Enums"]["looking_for_t"]
+          name: string
+          phone_e164: string
+          photo_url: string | null
+          play_times: string[]
+          rescues_count: number
+          signup_code: string | null
+          vibe: Database["public"]["Enums"]["vibe_t"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
