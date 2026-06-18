@@ -93,7 +93,7 @@ function AdminPage() {
       <div className="space-y-4">
         <h1 className="font-display text-3xl">Members only 🚪</h1>
         <p className="text-[var(--ink)] font-semibold">This page is for club admins.</p>
-        <Link to="/home" className="cbtn cbtn-coral inline-flex">Back home</Link>
+        <Link to="/board" className="cbtn cbtn-coral inline-flex">Back home</Link>
       </div>
     );
   }

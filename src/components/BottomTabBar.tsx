@@ -42,7 +42,6 @@ export function BottomTabBar() {
   }, []);
 
   const tabs: Tab[] = [
-    { to: "/home", icon: "🏠", label: t("tabs.home"), match: (p) => p === "/home" },
     { to: "/board", icon: "📋", label: t("tabs.board"), match: (p) => p.startsWith("/board") || p.startsWith("/rescue") || p.startsWith("/games") || p.startsWith("/sos"), badge: boardBadge },
     { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") },
     { to: "/me", icon: "🙂", label: t("tabs.profile"), match: (p) => p === "/me" || p.startsWith("/admin"), badge: profileBadge },
@@ -54,7 +53,7 @@ export function BottomTabBar() {
       className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-[var(--ink)]"
       style={{ background: "var(--cream2)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="grid grid-cols-4 max-w-md mx-auto">
+      <ul className="grid grid-cols-3 max-w-md mx-auto">
         {tabs.map((tab) => {
           const active = tab.match(path);
           return (

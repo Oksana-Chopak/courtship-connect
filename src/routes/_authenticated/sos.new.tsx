@@ -154,7 +154,7 @@ function NewSos() {
 
   return (
     <div className="space-y-5">
-      <Link to="/home" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
+      <Link to="/board" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
       <div>
         <h1 className="font-display text-4xl">{t("post.new_title")}</h1>
       </div>

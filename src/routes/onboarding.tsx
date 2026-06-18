@@ -68,7 +68,7 @@ function Onboarding() {
                   await Notification.requestPermission();
                 }
               } catch {}
-              navigate({ to: "/home" });
+              navigate({ to: "/board" });
             }}
           />
         </div>

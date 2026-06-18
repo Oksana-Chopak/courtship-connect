@@ -118,7 +118,7 @@ function SosDetail() {
     setBusy(false);
     if (!r.ok) { toast.error(r.reason); return; }
     toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
-    navigate({ to: "/home" });
+    navigate({ to: "/board" });
   }
 
   // ENDED
@@ -138,7 +138,7 @@ function SosDetail() {
   if (iJoined && !isCaller) {
     return (
       <div className="space-y-5">
-        <Link to="/home" className="text-sm font-extrabold underline">← Home</Link>
+        <Link to="/board" className="text-sm font-extrabold underline">← Home</Link>
         <div className="ccard p-5 text-center space-y-3" style={{ background: "var(--green-pop)" }}>
           <div className="text-5xl">🎾</div>
           <h1 className="font-display text-3xl">{t("sos.youre_in")}</h1>
@@ -171,7 +171,7 @@ function SosDetail() {
     const full = sos.status === "claimed";
     return (
       <div className="space-y-5">
-        <Link to="/home" className="text-sm font-extrabold underline">← Home</Link>
+        <Link to="/board" className="text-sm font-extrabold underline">← Home</Link>
         <div
           className="ccard p-6 text-center space-y-3"
           style={full || isOpen ? { background: "var(--green-pop)" } : { background: "var(--coral)", color: "#FFF6E8" }}
@@ -210,7 +210,7 @@ function SosDetail() {
               const { error } = await (supabase as any).from("sos_requests").update({ status: "cancelled" }).eq("id", sos.id);
               setBusy(false);
               if (error) toast.error(error.message);
-              else { toast.success(t("sos.cancelled")); navigate({ to: "/home" }); }
+              else { toast.success(t("sos.cancelled")); navigate({ to: "/board" }); }
             }}
           >
             {t("sos.cancel")}

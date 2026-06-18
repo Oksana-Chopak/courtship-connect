@@ -52,7 +52,7 @@ function AuthPage() {
           return;
         }
         const has = await userHasProfile(data.session.user.id);
-        navigate({ to: has ? "/home" : "/onboarding" });
+        navigate({ to: has ? "/board" : "/onboarding" });
       }
     });
   }, [navigate]);
@@ -93,7 +93,7 @@ function AuthPage() {
           return;
         }
         const has = await userHasProfile(data.user.id);
-        navigate({ to: has ? "/home" : "/onboarding" });
+        navigate({ to: has ? "/board" : "/onboarding" });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Something went wrong");
