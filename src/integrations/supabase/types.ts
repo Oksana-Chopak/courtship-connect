@@ -650,6 +650,7 @@ export type Database = {
         Args: { _accept: boolean; _req_id: string }
         Returns: undefined
       }
+      set_my_invite_code: { Args: { _new: string }; Returns: string }
       top_rescuers_month: {
         Args: never
         Returns: {
