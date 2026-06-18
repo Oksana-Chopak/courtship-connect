@@ -17,13 +17,18 @@ export const Route = createFileRoute("/auth")({
 });
 
 async function checkInvite(code: string) {
-  const { data, error } = await supabase
+  const c = code.trim().toUpperCase();
+  // Validate via SECURITY DEFINER RPC so anon (signing-up) users can check a code
+  // without read access to the invite_codes table.
+  const { data, error } = await (supabase as any).rpc("check_invite_code", { _code: c });
+  if (!error && typeof data === "boolean") return data;
+  // Fallback if the RPC isn't deployed yet
+  const { data: row } = await (supabase as any)
     .from("invite_codes" as any)
-    .select("code, uses_remaining, active")
-    .eq("code", code.trim().toUpperCase())
+    .select("uses_remaining, active")
+    .eq("code", c)
     .maybeSingle();
-  if (error) return false;
-  const d = data as any;
+  const d = row as any;
   return !!d && d.uses_remaining > 0 && d.active !== false;
 }
 
