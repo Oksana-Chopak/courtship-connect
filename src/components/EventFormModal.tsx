@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { createEventRequest } from "@/lib/events";
+import { fetchCourtsForPicker, shortCourtName, type CourtFull } from "@/lib/courts";
 import { CITIES } from "@/lib/courtship";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -10,14 +11,19 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [city, setCity] = useState<string | null>(null);
+  const [courts, setCourts] = useState<CourtFull[]>([]);
   const [location, setLocation] = useState("");
+  const [customLoc, setCustomLoc] = useState(false);
   const [format, setFormat] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
+      try { setCourts(await fetchCourtsForPicker()); } catch { /* ignore */ }
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data } = await supabase
@@ -29,6 +35,7 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
     })();
   }, []);
 
+  const cityCourts = courts.filter((c) => !city || c.city === city);
   const valid = !!(title.trim() && startsAt && location.trim());
 
   async function submit() {
@@ -41,6 +48,8 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
         city,
         location: location.trim(),
         format: format.trim() || null,
+        capacity: capacity ? Math.max(1, parseInt(capacity, 10)) : null,
+        price_sek: price ? Math.max(0, parseInt(price, 10)) : null,
         description: description.trim() || null,
         contact: contact.trim() || null,
       });
@@ -73,9 +82,11 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
         <Field label={t("ev.f_title")}>
           <input className="cinput" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("ev.f_title_ph")} />
         </Field>
+
         <Field label={t("ev.f_when")}>
           <input className="cinput" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
         </Field>
+
         <Field label={t("ev.f_city")}>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={`cchip ${city === null ? "cchip-on" : ""}`} onClick={() => setCity(null)}>
@@ -88,15 +99,51 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
             ))}
           </div>
         </Field>
+
         <Field label={t("ev.f_location")}>
-          <input className="cinput" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("ev.f_location_ph")} />
+          {!customLoc ? (
+            <div className="flex flex-wrap gap-2">
+              {cityCourts.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`cchip ${location === c.name ? "cchip-on" : ""}`}
+                  onClick={() => setLocation(c.name)}
+                >
+                  {shortCourtName(c.name)}
+                </button>
+              ))}
+              <button type="button" className="cchip" onClick={() => { setCustomLoc(true); setLocation(""); }}>
+                ✏️ {t("ev.loc_other")}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <input className="cinput" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("ev.f_location_ph")} />
+              <button type="button" className="text-sm font-extrabold underline" onClick={() => { setCustomLoc(false); setLocation(""); }}>
+                ← {t("ev.loc_back")}
+              </button>
+            </div>
+          )}
         </Field>
+
         <Field label={t("ev.f_format")}>
           <input className="cinput" value={format} onChange={(e) => setFormat(e.target.value)} placeholder={t("ev.f_format_ph")} />
         </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t("ev.f_capacity")}>
+            <input className="cinput" type="number" min="1" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder={t("ev.f_capacity_ph")} />
+          </Field>
+          <Field label={t("ev.f_price")}>
+            <input className="cinput" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("ev.f_price_ph")} />
+          </Field>
+        </div>
+
         <Field label={t("ev.f_desc")}>
           <textarea className="cinput" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("ev.f_desc_ph")} />
         </Field>
+
         <Field label={t("ev.f_contact")}>
           <input className="cinput" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={t("ev.f_contact_ph")} />
         </Field>

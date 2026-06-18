@@ -10,6 +10,7 @@ export type EventRow = {
   format: string | null;
   description: string | null;
   contact: string | null;
+  capacity: number | null;
   price_sek: number | null;
   status: string;
   created_at: string;
@@ -21,6 +22,8 @@ export async function createEventRequest(input: {
   city: string | null;
   location: string;
   format: string | null;
+  capacity: number | null;
+  price_sek: number | null;
   description: string | null;
   contact: string | null;
 }): Promise<void> {

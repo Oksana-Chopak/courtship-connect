@@ -58,3 +58,9 @@ export async function adminUpdateCourt(id: string, name: string, area: string) {
   const { error } = await (supabase as any).rpc("admin_update_court", { _court_id: id, _name: name, _area: area });
   if (error) throw new Error(error.message);
 }
+
+export function shortCourtName(name: string): string {
+  if (/USIF/i.test(name)) return "USIF";
+  if (/UTK/i.test(name)) return "UTK";
+  return name;
+}

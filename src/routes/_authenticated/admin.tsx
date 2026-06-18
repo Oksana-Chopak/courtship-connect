@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, type AdminCourt } from "@/lib/courts";
+import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, shortCourtName, type AdminCourt } from "@/lib/courts";
 import { fetchPendingEvents, setEventStatus, type EventRow } from "@/lib/events";
 import { whenLabel } from "@/lib/courtship";
 
@@ -143,8 +143,11 @@ function AdminPage() {
               <div key={e.id} className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>
                 <div className="font-display text-xl leading-tight">{e.title}</div>
                 <div className="text-sm text-[var(--ink)] font-semibold">
-                  {whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{e.location}
+                  {whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}
                 </div>
+                {(e.price_sek || e.capacity) && (
+                  <div className="text-sm text-[var(--ink)]">🎟 {e.price_sek ? t("ev.price_kr", { n: e.price_sek }) : t("ev.free")}{e.capacity ? ` · ${t("ev.spots_n", { n: e.capacity })}` : ""}</div>
+                )}
                 {e.format && <div className="text-sm text-[var(--ink)]">{e.format}</div>}
                 {e.description && <div className="text-sm italic text-[var(--ink)]">"{e.description}"</div>}
                 {e.contact && <div className="text-sm text-[var(--ink)]">✉️ {e.contact}</div>}

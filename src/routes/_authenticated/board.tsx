@@ -6,6 +6,7 @@ import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtTy
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, type EventRow } from "@/lib/events";
+import { shortCourtName } from "@/lib/courts";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -104,7 +105,10 @@ function BoardPage() {
           {events.map((e) => (
             <div key={e.id} className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
               <div className="font-display text-2xl leading-tight">{e.title}</div>
-              <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{e.location}</div>
+              <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
+              {(e.price_sek || e.capacity) && (
+                <div className="text-base text-[var(--ink)] mt-1">🎟 {e.price_sek ? t("ev.price_kr", { n: e.price_sek }) : t("ev.free")}{e.capacity ? ` · ${t("ev.spots_n", { n: e.capacity })}` : ""}</div>
+              )}
               {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
               {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
               {e.contact && <div className="text-base text-[var(--ink)] mt-1">✉️ {e.contact}</div>}
