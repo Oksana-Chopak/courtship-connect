@@ -11,7 +11,6 @@ export type EventRow = {
   capacity: number | null;
   spots_taken: number;
   price_sek: number | null;
-  swish_number: string | null;
   description: string | null;
   contact: string | null;
   status: string;
@@ -113,4 +112,10 @@ export async function markAttendeePaid(attendeeId: string): Promise<void> {
     .update({ status: "paid" })
     .eq("id", attendeeId);
   if (error) throw error;
+}
+
+export async function fetchEventSwish(eventId: string): Promise<string | null> {
+  const { data, error } = await (supabase as any).rpc("get_event_swish", { _event_id: eventId });
+  if (error) return null;
+  return (data as string | null) ?? null;
 }

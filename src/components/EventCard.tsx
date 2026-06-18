@@ -7,6 +7,7 @@ import {
   leaveEvent,
   fetchEventAttendees,
   markAttendeePaid,
+  fetchEventSwish,
   type EventRow,
   type Attendee,
 } from "@/lib/events";
@@ -106,7 +107,12 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
 
 function SwishBox({ e }: { e: EventRow }) {
   const { t } = useI18n();
-  const number = e.swish_number ?? "";
+  const [number, setNumber] = useState<string>("");
+  useEffect(() => {
+    let cancelled = false;
+    fetchEventSwish(e.id).then((v) => { if (!cancelled) setNumber(v ?? ""); });
+    return () => { cancelled = true; };
+  }, [e.id]);
   function copy(text: string) {
     if (!text) return;
     navigator.clipboard?.writeText(text).then(() => toast.success(t("ev.copied"))).catch(() => {});
