@@ -20,7 +20,7 @@ function AuthedShell() {
     <div className="terry-bg min-h-screen font-body text-[var(--ink)]">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)]">
         <div className="max-w-md mx-auto px-5 py-3 flex items-center justify-between">
-          <Link to="/home" className="font-display text-2xl">
+          <Link to="/board" className="font-display text-2xl">
             Courtship
           </Link>
         </div>
