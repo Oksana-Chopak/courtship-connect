@@ -7,6 +7,7 @@ import { LangToggle, useI18n } from "@/lib/i18n";
 
 const search = z.object({
   mode: z.enum(["signup", "login"]).optional().default("signup"),
+  code: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -36,12 +37,12 @@ async function userHasProfile(id: string) {
 }
 
 function AuthPage() {
-  const { mode } = Route.useSearch();
+  const { mode, code } = Route.useSearch();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [invite, setInvite] = useState("");
+  const [invite, setInvite] = useState((code ?? "").toUpperCase());
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
