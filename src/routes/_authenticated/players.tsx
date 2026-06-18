@@ -177,6 +177,9 @@ function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
           {p.play_times.slice(0, 2).map((t) => (
             <span key={t} className="cchip-mini">{t.replace(/Weekday |Weekend /, "")}</span>
           ))}
+          {p.play_times.length > 2 && (
+            <span className="cchip-mini">+{p.play_times.length - 2}</span>
+          )}
         </div>
       )}
     </Link>

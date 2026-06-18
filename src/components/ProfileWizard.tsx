@@ -79,12 +79,16 @@ export function ProfileWizard({
   userId,
   onSubmit,
   submitLabel = "Finish my profile",
+  savedState = false,
+  savedLabel = "Saved ✓",
   busy,
 }: {
   initial: ProfileFormValues;
   userId: string;
   onSubmit: (v: ProfileFormValues) => void | Promise<void>;
   submitLabel?: string;
+  savedState?: boolean;
+  savedLabel?: string;
   busy?: boolean;
 }) {
   const [step, setStep] = useState(0);
@@ -143,6 +147,10 @@ export function ProfileWizard({
   }
 
   const lm = levelMeta(v.level);
+  const norm = (x: ProfileFormValues) =>
+    JSON.stringify({ ...x, formats: [...(x.formats || [])].sort(), play_times: [...(x.play_times || [])].sort() });
+  const dirty = norm(v) !== norm(initial);
+  const saved = savedState && step === 4 && !dirty;
 
   return (
     <div>
@@ -433,15 +441,18 @@ export function ProfileWizard({
 
       <button
         type="button"
-        disabled={busy || uploading}
+        disabled={busy || uploading || saved}
         onClick={next}
-        className="cbtn cbtn-coral w-full mt-6"
+        className={saved ? "cbtn w-full mt-6" : "cbtn cbtn-coral w-full mt-6"}
+        style={saved ? { background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", cursor: "default" } : undefined}
       >
         {busy
           ? "Saving..."
           : step < 4
             ? "Next"
-            : submitLabel}
+            : saved
+              ? savedLabel
+              : submitLabel}
       </button>
     </div>
   );

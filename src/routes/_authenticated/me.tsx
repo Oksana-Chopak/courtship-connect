@@ -69,14 +69,22 @@ function MePage() {
     if (!inviteCode) return;
     const link = `${window.location.origin}/auth?code=${inviteCode}`;
     const msg = t("invite.message").replace("{link}", link).replace("{code}", inviteCode);
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
-        await (navigator as any).share({ text: msg });
-      } else {
-        await navigator.clipboard.writeText(msg);
-        toast.success(t("invite.copied"));
-      }
-    } catch { /* user dismissed the share sheet */ }
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try { await (navigator as any).share({ text: msg }); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    let copied = false;
+    try { await navigator.clipboard.writeText(msg); copied = true; } catch { /* fall back */ }
+    if (!copied && typeof document !== "undefined") {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = msg; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        copied = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch { /* ignore */ }
+    }
+    toast.success(copied ? t("invite.copied") : t("invite.share"));
   }
 
   useEffect(() => {
@@ -125,9 +133,12 @@ function MePage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-4xl">{t("me.title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("me.sub")}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-4xl">{t("me.title")}</h1>
+          <p className="text-[var(--ink)] font-semibold">{t("me.sub")}</p>
+        </div>
+        <LangToggle className="shrink-0" />
       </div>
 
       {buddyReqs.length > 0 && (
@@ -145,24 +156,17 @@ function MePage() {
         </div>
       )}
 
-      <div className="ccard p-4 flex items-center justify-between">
-        <div className="font-extrabold">{t("me.language")}</div>
-        <LangToggle />
-      </div>
-
       {inviteCode && (
-        <div className="ccard p-5 space-y-3">
-          <div className="font-display text-2xl">{t("invite.title")}</div>
-          <div className="text-base font-semibold text-[var(--ink)]">{t("invite.sub")}</div>
-          <div
-            className="font-extrabold text-center py-3 rounded-2xl border-2 border-[var(--ink)] tracking-widest"
-            style={{ background: "var(--cream2)", fontSize: "1.375rem" }}
-          >
-            {inviteCode}
+        <div className="ccard p-4 space-y-2">
+          <div>
+            <div className="font-extrabold text-lg">{t("invite.title")}</div>
+            <div className="text-sm text-[var(--ink)]">{t("invite.sub")}</div>
           </div>
-          <button className="cbtn cbtn-coral w-full" onClick={shareInvite}>
-            {t("invite.share")}
-          </button>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 font-extrabold tracking-widest text-center py-2 rounded-xl"
+              style={{ background: "var(--cream2)" }}>{inviteCode}</code>
+            <button className="cbtn cbtn-coral shrink-0" onClick={shareInvite}>{t("invite.share")}</button>
+          </div>
         </div>
       )}
 
@@ -205,6 +209,8 @@ function MePage() {
           initial={initial ?? emptyProfile}
           userId={uid}
           submitLabel={t("me.save")}
+          savedState
+          savedLabel={t("me.saved")}
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
@@ -217,6 +223,7 @@ function MePage() {
               toast.error(error.message);
               return;
             }
+            setInitial(v);
             toast.success(t("me.updated"));
           }}
         />
