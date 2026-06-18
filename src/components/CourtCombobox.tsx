@@ -17,7 +17,8 @@ export function CourtCombobox({
   const [courts, setCourts] = useState<CourtFull[]>([]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [adding, setAdding] = useState<{ name: string } | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addName, setAddName] = useState("");
   const [area, setArea] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -41,14 +42,17 @@ export function CourtCombobox({
   const seeded = filtered.filter((c) => !c.is_custom);
   const custom = filtered.filter((c) => c.is_custom);
 
-  async function doAdd(name: string) {
+  async function doAdd() {
+    const name = addName.trim();
+    if (name.length < 2) { toast.error(t("court.name_too_short")); return; }
     if (busy) return;
     setBusy(true);
     try {
       const created = await addCustomCourt({ name, area: area || null, city });
       setCourts((p) => [...p, created]);
       onChange(created.id, created);
-      setAdding(null);
+      setAddOpen(false);
+      setAddName("");
       setArea("");
       setQuery("");
       setOpen(false);
@@ -97,11 +101,21 @@ export function CourtCombobox({
           {showAddRow && (
             <button
               type="button"
-              onClick={() => setAdding({ name: query.trim() })}
+              onClick={() => { setAddName(query.trim()); setAddOpen(true); }}
               className="w-full text-left flex items-center px-3 rounded-xl hover:bg-[var(--green-pop)]"
               style={{ minHeight: 56, fontSize: "1.0625rem", fontWeight: 800, color: "var(--ink)" }}
             >
               ➕ {t("court.add_as_new", { name: query.trim() })}
+            </button>
+          )}
+          {!showAddRow && (
+            <button
+              type="button"
+              onClick={() => { setAddName(query.trim()); setAddOpen(true); }}
+              className="w-full text-left flex items-center px-3 rounded-xl hover:bg-[var(--green-pop)]"
+              style={{ minHeight: 56, fontSize: "1.0625rem", fontWeight: 800, color: "var(--ink)" }}
+            >
+              ➕ {t("court.add_other")}
             </button>
           )}
           <div className="text-center pt-2 pb-1">
@@ -116,17 +130,20 @@ export function CourtCombobox({
         </div>
       )}
 
-      {adding && (
+      {addOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
           style={{ background: "rgba(43,33,24,0.45)" }}
-          onClick={() => !busy && setAdding(null)}
+          onClick={() => !busy && setAddOpen(false)}
         >
           <div className="ccard p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
             <div>
               <div className="csection-label">{t("court.add_dialog_title")}</div>
-              <div className="font-display text-2xl mt-1">"{adding.name}"</div>
-              <div className="text-base font-semibold text-[var(--ink)] mt-1">📍 {city}</div>
+              <div className="text-base font-semibold text-[var(--ink)] mt-2">📍 {city}</div>
+            </div>
+            <div>
+              <div className="csection-label mb-1">{t("court.name_label")}</div>
+              <input className="cinput" value={addName} onChange={(e) => setAddName(e.target.value)} placeholder={t("court.name_placeholder")} maxLength={80} autoFocus />
             </div>
             <div>
               <div className="csection-label mb-1">{t("court.area_label")}</div>
@@ -134,8 +151,8 @@ export function CourtCombobox({
             </div>
             <div className="text-base font-semibold text-[var(--ink)]">{t("court.add_help")}</div>
             <div className="flex gap-2">
-              <button onClick={() => !busy && setAdding(null)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
-              <button onClick={() => doAdd(adding.name)} disabled={busy} className="cbtn cbtn-green flex-1">{busy ? "..." : t("court.add_cta")}</button>
+              <button onClick={() => !busy && setAddOpen(false)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
+              <button onClick={doAdd} disabled={busy} className="cbtn cbtn-green flex-1">{busy ? "..." : t("court.add_cta")}</button>
             </div>
           </div>
         </div>

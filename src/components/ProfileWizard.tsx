@@ -224,14 +224,15 @@ export function ProfileWizard({
             </p>
 
             <div className="w-full">
-              <div className="csection-label mb-1">First name</div>
+              <div className="csection-label mb-1">Your name</div>
               <input
                 className="cinput"
                 value={v.name}
                 maxLength={40}
                 onChange={(e) => set("name", e.target.value)}
-                placeholder="e.g. Björn"
+                placeholder="e.g. Björn K."
               />
+              <div className="text-sm text-[var(--ink)] mt-1 opacity-70">First name + last initial — so players can tell you apart 🎾</div>
             </div>
 
             <div className="w-full">

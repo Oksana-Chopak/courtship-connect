@@ -167,6 +167,10 @@ const en: Dict = {
   "court.cancel": "Cancel",
   "court.add_cta": "Add court",
   "court.added": "Court added 🎾",
+  "court.add_other": "Add a court not listed",
+  "court.name_label": "Court name",
+  "court.name_placeholder": "e.g. Gränby Tennis",
+  "court.name_too_short": "Name too short",
   "court.close": "Close",
 
   "admin.courts_title": "Custom courts",
@@ -574,6 +578,10 @@ const sv: Dict = {
   "court.cancel": "Avbryt",
   "court.add_cta": "Lägg till bana",
   "court.added": "Bana tillagd 🎾",
+  "court.add_other": "Lägg till en bana som saknas",
+  "court.name_label": "Bananamn",
+  "court.name_placeholder": "t.ex. Gränby Tennis",
+  "court.name_too_short": "Namnet för kort",
   "court.close": "Stäng",
 
   "admin.courts_title": "Egna banor",

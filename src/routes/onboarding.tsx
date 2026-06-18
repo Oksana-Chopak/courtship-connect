@@ -54,9 +54,11 @@ function Onboarding() {
                   null;
               } catch {}
               const { home_cities, ...rest } = v;
+              const payload: any = { id: uid, ...rest };
+              if (signupCode) payload.signup_code = signupCode;
               const { error } = await supabase
                 .from("profiles" as any)
-                .insert({ id: uid, ...rest, signup_code: signupCode });
+                .upsert(payload, { onConflict: "id" });
               if (!error) {
                 await supabase.from("profiles" as any).update({ home_cities }).eq("id", uid);
               }
