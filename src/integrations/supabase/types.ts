@@ -97,6 +97,7 @@ export type Database = {
       }
       event_requests: {
         Row: {
+          capacity: number | null
           city: string | null
           contact: string | null
           created_at: string
@@ -111,6 +112,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          capacity?: number | null
           city?: string | null
           contact?: string | null
           created_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           title: string
         }
         Update: {
+          capacity?: number | null
           city?: string | null
           contact?: string | null
           created_at?: string
