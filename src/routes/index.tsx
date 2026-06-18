@@ -6,9 +6,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Courtship — It's a match. Literally." },
-      { name: "description", content: "Tennis partner matching for Uppsala. Invite-only beta." },
+      { name: "description", content: "Tennis partner matching for Uppsala & Stockholm. Invite-only beta." },
       { property: "og:title", content: "Courtship" },
-      { property: "og:description", content: "Find your hitting partner in Uppsala." },
+      { property: "og:description", content: "Find your hitting partner in Uppsala & Stockholm." },
     ],
   }),
   component: Index,

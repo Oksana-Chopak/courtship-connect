@@ -11,7 +11,7 @@ const en: Dict = {
   // Brand / shared
   "brand.tagline": "It's a match. Literally.",
   "brand.subtitle": "Find your tennis one-night stand.",
-  "brand.uppsala_beta": "Uppsala · Invite-only beta",
+  "brand.uppsala_beta": "Uppsala & Stockholm · Invite-only beta",
   "lang.switch_label": "Language",
 
   // Index / landing
@@ -411,7 +411,7 @@ const en: Dict = {
 const sv: Dict = {
   "brand.tagline": "Det är en match. Bokstavligen.",
   "brand.subtitle": "Hitta en spelpartner för ikväll.",
-  "brand.uppsala_beta": "Uppsala · Endast med inbjudan",
+  "brand.uppsala_beta": "Uppsala & Stockholm · Endast med inbjudan",
   "lang.switch_label": "Språk",
 
   "index.match_a": "Det är en match.",
