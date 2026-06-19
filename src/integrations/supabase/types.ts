@@ -254,11 +254,14 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          fav_shot: string | null
           formats: string[]
+          games_played: number
           ghost_badge: boolean
           home_cities: string[] | null
           home_city: string
@@ -278,11 +281,14 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_t"]
         }
         Insert: {
+          bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          fav_shot?: string | null
           formats?: string[]
+          games_played?: number
           ghost_badge?: boolean
           home_cities?: string[] | null
           home_city?: string
@@ -302,11 +308,14 @@ export type Database = {
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Update: {
+          bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          fav_shot?: string | null
           formats?: string[]
+          games_played?: number
           ghost_badge?: boolean
           home_cities?: string[] | null
           home_city?: string
@@ -402,10 +411,13 @@ export type Database = {
     Views: {
       profiles_public: {
         Row: {
+          bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"] | null
           buddy_radius_km: number | null
           created_at: string | null
+          fav_shot: string | null
           formats: string[] | null
+          games_played: number | null
           ghost_badge: boolean | null
           home_cities: string[] | null
           home_city: string | null
@@ -421,10 +433,13 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_t"] | null
         }
         Insert: {
+          bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
           buddy_radius_km?: number | null
           created_at?: string | null
+          fav_shot?: string | null
           formats?: string[] | null
+          games_played?: number | null
           ghost_badge?: boolean | null
           home_cities?: string[] | null
           home_city?: string | null
@@ -440,10 +455,13 @@ export type Database = {
           vibe?: Database["public"]["Enums"]["vibe_t"] | null
         }
         Update: {
+          bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
           buddy_radius_km?: number | null
           created_at?: string | null
+          fav_shot?: string | null
           formats?: string[] | null
+          games_played?: number | null
           ghost_badge?: boolean | null
           home_cities?: string[] | null
           home_city?: string | null
@@ -610,11 +628,14 @@ export type Database = {
       get_my_full_profile: {
         Args: never
         Returns: {
+          bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          fav_shot: string | null
           formats: string[]
+          games_played: number
           ghost_badge: boolean
           home_cities: string[] | null
           home_city: string
