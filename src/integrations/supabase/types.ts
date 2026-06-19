@@ -470,12 +470,29 @@ export type Database = {
       admin_players_list: {
         Args: never
         Returns: {
+          bio: string
+          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km: number
+          buddy_sos_optin: boolean
           created_at: string
+          fav_shot: string
+          formats: string[]
+          games_played: number
+          ghost_badge: boolean
+          home_cities: string[]
           home_city: string
+          home_courts: string
           id: string
+          is_admin: boolean
+          last_name: string
+          level: number
+          looking_for: Database["public"]["Enums"]["looking_for_t"]
           name: string
+          phone_e164: string
+          play_times: string[]
           rescues_count: number
           signup_code: string
+          vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
       }
       admin_set_court_hidden: {
