@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchPendingPostGameChecks, confirmGame, reportNoshow, archiveGame, type GameRow } from "@/lib/games";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 
@@ -61,22 +62,22 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
 
   async function onConfirm(g: GameRow) {
     try { await confirmGame(g.id); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); }
-    catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
+    catch (e: any) { oops(e); }
   }
   async function onNoshow(g: GameRow) {
     try { await reportNoshow(g.id); toast.success(t("home.reported_noshow")); setPending((p) => p.filter((x) => x.id !== g.id)); }
-    catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
+    catch (e: any) { oops(e); }
   }
   async function onArchive(g: GameRow) {
     try { await archiveGame(g.id); toast.success(t("home.archived")); setPending((p) => p.filter((x) => x.id !== g.id)); }
-    catch (e: any) { toast.error(e?.message ?? "Couldn't update"); }
+    catch (e: any) { oops(e); }
   }
   async function fireFlare(sosId: string) {
     const { error } = await (supabase as any)
       .from("sos_requests")
       .update({ kind: "sos", flared_at: new Date().toISOString() })
       .eq("id", sosId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { oops(error); return; }
     toast.success(t("post.flare_fired"));
     setFlarePrompts((p) => p.filter((x) => x.id !== sosId));
     onChange?.();

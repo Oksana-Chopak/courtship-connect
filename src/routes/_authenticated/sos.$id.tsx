@@ -9,6 +9,7 @@ import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
@@ -108,7 +109,7 @@ function SosDetail() {
     try {
       const { phone } = await getPhone({ data: { targetId } });
       window.open(whatsappClaimLink(phone, me!.name, when, courtName || "the court"), "_blank");
-    } catch (e: any) { toast.error(e?.message ?? "Couldn't open WhatsApp"); }
+    } catch (e: any) { oops(e); }
   }
 
   async function doWithdraw() {
@@ -209,7 +210,7 @@ function SosDetail() {
               setBusy(true);
               const { error } = await (supabase as any).from("sos_requests").update({ status: "cancelled" }).eq("id", sos.id);
               setBusy(false);
-              if (error) toast.error(error.message);
+              if (error) oops(error);
               else { toast.success(t("sos.cancelled")); navigate({ to: "/board" }); }
             }}
           >

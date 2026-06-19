@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
 const search = z.object({
@@ -82,7 +83,7 @@ function CheckEmail() {
       setSecondsLeft(COOLDOWN_SECONDS);
       toast.success(t("ce.resent_ok"));
     } catch (err: any) {
-      toast.error(err?.message ?? "Couldn't resend right now.");
+      oops(err);
     } finally {
       setSending(false);
     }

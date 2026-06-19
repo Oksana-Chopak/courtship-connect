@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
 const SIGNUP_CODE_KEY = "courtship.signup_code";
@@ -65,7 +66,7 @@ function Onboarding() {
               }
               setBusy(false);
               if (error) {
-                toast.error(error.message);
+                oops(error);
                 return;
               }
               try { localStorage.removeItem(SIGNUP_CODE_KEY); } catch {}

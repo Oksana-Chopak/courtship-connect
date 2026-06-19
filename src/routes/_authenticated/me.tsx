@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { GamesHistory } from "@/components/GamesHistory";
@@ -67,7 +68,7 @@ function MePage() {
       await respondBuddyRequest(req.id, accept);
       setBuddyReqs((p) => p.filter((x) => x.id !== req.id));
       toast.success(accept ? t("buddy.accepted") : t("buddy.declined"));
-    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    } catch (e: any) { oops(e); }
   }
 
   async function shareInvite() {
@@ -233,7 +234,7 @@ function MePage() {
                     await removeBuddy(b.other_id);
                     setBuddies((p) => p.filter((x) => x.id !== b.id));
                     toast.success(t("buddy.removed"));
-                  } catch (e: any) { toast.error(e?.message ?? "Error"); }
+                  } catch (e: any) { oops(e); }
                 }}
               >
                 {t("buddy.remove")}
@@ -264,7 +265,7 @@ function MePage() {
             }
             setBusy(false);
             if (error) {
-              toast.error(error.message);
+              oops(error);
               return;
             }
             setInitial(v);

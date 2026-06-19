@@ -7,6 +7,7 @@ import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/co
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 import {
   isBuddyWith,
@@ -58,7 +59,7 @@ function PlayerDetail() {
       const { phone, name } = await getPhone({ data: { targetId: id } });
       window.open(whatsappLink(phone, name), "_blank");
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't open WhatsApp");
+      oops(e);
     } finally {
       setBusy(false);
     }
@@ -110,7 +111,7 @@ function PlayerDetail() {
                     await removeBuddy(id);
                     setBuddyState("none");
                     toast.success(t("buddy.removed"));
-                  } catch (e: any) { toast.error(e?.message ?? "Error"); }
+                  } catch (e: any) { oops(e); }
                   setBusy(false);
                 }}
                 className="cbtn cbtn-ghost w-full"
@@ -128,7 +129,7 @@ function PlayerDetail() {
                     await requestBuddy(id);
                     setBuddyState("pending");
                     toast.success(t("buddy.request_sent"));
-                  } catch (e: any) { toast.error(e?.message ?? "Error"); }
+                  } catch (e: any) { oops(e); }
                   setBusy(false);
                 }}
                 className="cbtn cbtn-coral w-full"

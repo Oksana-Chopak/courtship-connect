@@ -5,6 +5,7 @@ import { activeSosCount } from "@/lib/sos";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
 import { CourtCombobox } from "@/components/CourtCombobox";
@@ -136,7 +137,7 @@ function NewSos() {
       .select("id")
       .single();
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { oops(error); return; }
     if (urgent) {
       toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });

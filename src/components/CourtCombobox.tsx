@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { addCustomCourt, fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 
 /** Searchable, accessible court picker with "Add your own" action. */
 export function CourtCombobox({
@@ -58,7 +59,7 @@ export function CourtCombobox({
       setOpen(false);
       toast.success(t("court.added"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't add court");
+      oops(e);
     } finally {
       setBusy(false);
     }

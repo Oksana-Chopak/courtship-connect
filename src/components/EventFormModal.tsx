@@ -4,6 +4,7 @@ import { createEventRequest } from "@/lib/events";
 import { fetchCourtsForPicker, shortCourtName, type CourtFull } from "@/lib/courts";
 import { CITIES } from "@/lib/courtship";
 import { toast } from "sonner";
+import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
 export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitted?: () => void }) {
@@ -55,7 +56,7 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
       onSubmitted?.();
       onClose();
     } catch (e: any) {
-      toast.error(e?.message ?? "Error");
+      oops(e);
     } finally {
       setBusy(false);
     }
