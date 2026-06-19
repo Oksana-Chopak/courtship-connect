@@ -547,6 +547,7 @@ export type Database = {
         Returns: undefined
       }
       archive_game: { Args: { _game_id: string }; Returns: undefined }
+      cancel_sos: { Args: { _sos_id: string }; Returns: undefined }
       check_invite_code: { Args: { _code: string }; Returns: boolean }
       claim_sos: {
         Args: { _sos_id: string }
