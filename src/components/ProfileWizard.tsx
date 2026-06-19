@@ -26,6 +26,8 @@ export type ProfileFormValues = {
   play_times: string[];
   vibe: "chill" | "friendly" | "sweat";
   looking_for: "regular" | "dropin" | "both";
+  bio: string;
+  fav_shot: string;
   home_courts: string;
   home_city: City;
   home_cities: City[];
@@ -44,6 +46,8 @@ export const emptyProfile: ProfileFormValues = {
   play_times: [],
   vibe: "friendly",
   looking_for: "both",
+  bio: "",
+  fav_shot: "",
   home_courts: "",
   home_city: "Uppsala",
   home_cities: ["Uppsala"],
@@ -372,6 +376,27 @@ export function ProfileWizard({
                   </button>
                 ))}
               </div>
+            </div>
+            <div>
+              <div className="csection-label mb-1">A little about you <span className="opacity-50 font-normal">(optional)</span></div>
+              <textarea
+                className="cinput"
+                value={v.bio}
+                maxLength={200}
+                rows={3}
+                onChange={(e) => set("bio", e.target.value)}
+                placeholder="New in town and keen to rally. Evenings work best 🎾"
+              />
+            </div>
+            <div>
+              <div className="csection-label mb-1">Favourite shot <span className="opacity-50 font-normal">(optional)</span></div>
+              <input
+                className="cinput"
+                value={v.fav_shot}
+                maxLength={40}
+                onChange={(e) => set("fav_shot", e.target.value)}
+                placeholder="e.g. Backhand slice"
+              />
             </div>
             <div>
               <div className="csection-label mb-2">Home courts</div>

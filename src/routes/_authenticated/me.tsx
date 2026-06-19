@@ -125,6 +125,8 @@ function MePage() {
       setInitial({
         name: d.name ?? "",
         last_name: d.last_name ?? "",
+        bio: d.bio ?? "",
+        fav_shot: d.fav_shot ?? "",
         phone_e164: d.phone_e164 ?? "",
         photo_url: d.photo_url ?? "",
         level: d.level ?? 3,
@@ -254,14 +256,14 @@ function MePage() {
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
-            const { home_cities, last_name, ...rest } = v;
+            const { home_cities, last_name, bio, fav_shot, ...rest } = v;
             const { error } = await supabase
               .from("profiles" as any)
               .update(rest)
               .eq("id", uid)
               .select("id");
             if (!error) {
-              await supabase.from("profiles" as any).update({ home_cities, last_name }).eq("id", uid).select("id");
+              await supabase.from("profiles" as any).update({ home_cities, last_name, bio, fav_shot }).eq("id", uid).select("id");
             }
             setBusy(false);
             if (error) {

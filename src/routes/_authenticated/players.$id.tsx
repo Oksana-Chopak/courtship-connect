@@ -91,6 +91,17 @@ function PlayerDetail() {
           )}
         </div>
 
+        {(p.bio || p.fav_shot) && (
+          <div className="space-y-2">
+            {p.bio && <p className="text-base text-[var(--ink)] text-center">{p.bio}</p>}
+            {p.fav_shot && (
+              <div className="text-center">
+                <span className="inline-block text-sm font-extrabold px-2.5 py-1 rounded-full" style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>🎾 {p.fav_shot}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           disabled={busy}
           onClick={openWhatsapp}
