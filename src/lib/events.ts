@@ -119,3 +119,9 @@ export async function fetchEventSwish(eventId: string): Promise<string | null> {
   if (error) return null;
   return (data as string | null) ?? null;
 }
+
+export async function fetchEventContact(eventId: string): Promise<string | null> {
+  const { data, error } = await (supabase as any).rpc("get_event_contact", { _event_id: eventId });
+  if (error) return null;
+  return (data as string | null) ?? null;
+}

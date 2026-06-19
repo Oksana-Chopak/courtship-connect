@@ -4,8 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, shortCourtName, type AdminCourt } from "@/lib/courts";
-import { fetchPendingEvents, setEventStatus, type EventRow } from "@/lib/events";
+import { fetchPendingEvents, setEventStatus, fetchEventContact, type EventRow } from "@/lib/events";
 import { whenLabel } from "@/lib/courtship";
+
+function EventContactLine({ eventId }: { eventId: string }) {
+  const [contact, setContact] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchEventContact(eventId).then((v) => { if (!cancelled) setContact(v); });
+    return () => { cancelled = true; };
+  }, [eventId]);
+  if (!contact) return null;
+  return <div className="text-sm text-[var(--ink)]">✉️ {contact}</div>;
+}
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Courtship" }] }),
@@ -164,7 +175,7 @@ function AdminPage() {
                 )}
                 {e.format && <div className="text-sm text-[var(--ink)]">{e.format}</div>}
                 {e.description && <div className="text-sm italic text-[var(--ink)]">"{e.description}"</div>}
-                {e.contact && <div className="text-sm text-[var(--ink)]">✉️ {e.contact}</div>}
+                <EventContactLine eventId={e.id} />
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => approveEvent(e.id)} className="cbtn cbtn-green flex-1">{t("admin.ev_approve")}</button>
                   <button onClick={() => rejectEvent(e.id)} className="cbtn cbtn-ghost flex-1">{t("admin.ev_reject")}</button>
