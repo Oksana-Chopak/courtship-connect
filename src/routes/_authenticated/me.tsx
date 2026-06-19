@@ -257,9 +257,10 @@ function MePage() {
             const { error } = await supabase
               .from("profiles" as any)
               .update(rest)
-              .eq("id", uid);
+              .eq("id", uid)
+              .select("id");
             if (!error) {
-              await supabase.from("profiles" as any).update({ home_cities, last_name }).eq("id", uid);
+              await supabase.from("profiles" as any).update({ home_cities, last_name }).eq("id", uid).select("id");
             }
             setBusy(false);
             if (error) {

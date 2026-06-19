@@ -161,7 +161,16 @@ function RootComponent() {
       <I18nProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
-        <Toaster position="top-center" richColors />
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+          expand
+          duration={8000}
+          toastOptions={{
+            style: { fontSize: "1.05rem", fontWeight: 600, padding: "16px 18px", minHeight: "64px" },
+          }}
+        />
       </I18nProvider>
     </QueryClientProvider>
   );

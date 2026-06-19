@@ -879,7 +879,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (!data.user) return;
-      await supabase.from("profiles" as any).update({ lang: l }).eq("id", data.user.id);
+      await supabase.from("profiles" as any).update({ lang: l }).eq("id", data.user.id).select("id");
       await supabase.auth.updateUser({ data: { lang: l } });
     })();
   }, []);
