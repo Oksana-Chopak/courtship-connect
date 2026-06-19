@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
 const KEY = "courtship.getstarted.dismissed";
@@ -13,6 +14,23 @@ export function GetStarted() {
       return false;
     }
   });
+  const [inviteDone, setInviteDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("my_invite_uses");
+        if (!cancelled) setInviteDone((Number(data) || 0) > 0);
+      } catch {
+        /* RPC not deployed yet — step stays actionable */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (hidden) return null;
   const dismiss = () => {
     try {
@@ -34,10 +52,17 @@ export function GetStarted() {
           <span>✅</span>
           <span>{t("gs.step1")}</span>
         </div>
-        <Link to="/me" className="flex items-center gap-2 text-base font-extrabold underline">
-          <span>🎾</span>
-          <span>{t("gs.step2")}</span>
-        </Link>
+        {inviteDone ? (
+          <div className="flex items-center gap-2 text-base font-semibold">
+            <span>✅</span>
+            <span>{t("gs.step2")}</span>
+          </div>
+        ) : (
+          <Link to="/me" className="flex items-center gap-2 text-base font-extrabold underline">
+            <span>🎾</span>
+            <span>{t("gs.step2")}</span>
+          </Link>
+        )}
         <Link to="/sos/new" search={{ planned: undefined }} className="flex items-center gap-2 text-base font-extrabold underline">
           <span>📅</span>
           <span>{t("gs.step3")}</span>
