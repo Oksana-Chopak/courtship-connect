@@ -91,9 +91,9 @@ function AdminPage() {
     if (!code) { toast.error("Code required"); return; }
     let ownerId: string | null = null;
     if (newOwnerEmail.trim()) {
-      const { data: u } = await (supabase as any)
-        .from("profiles_public").select("id").ilike("name", `%${newOwnerEmail.trim()}%`).limit(1).maybeSingle();
-      ownerId = (u as any)?.id ?? null;
+      const { data: u } = await (supabase as any).rpc("players_directory");
+      const q = newOwnerEmail.trim().toLowerCase();
+      ownerId = ((u as any[]) ?? []).find((p) => (p.name ?? "").toLowerCase().includes(q))?.id ?? null;
     }
     const { error } = await (supabase as any).rpc("admin_create_invite_code", {
       _code: code, _owner_id: ownerId, _uses: Number(newUses) || 1,

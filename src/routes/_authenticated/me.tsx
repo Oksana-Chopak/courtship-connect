@@ -40,10 +40,7 @@ function MePage() {
     const rows = await fetchMyBuddies(u);
     const others = rows.map((b) => (b.user_low === u ? b.user_high : b.user_low));
     if (!others.length) { setBuddies([]); return; }
-    const { data } = await (supabase as any)
-      .from("profiles_public")
-      .select("id,name,photo_url,home_city")
-      .in("id", others);
+    const { data } = await (supabase as any).rpc("players_directory", { _ids: others });
     const byId = new Map<string, any>((data as any[] | null)?.map((d) => [d.id, d]) ?? []);
     setBuddies(rows.map((b) => {
       const oid = b.user_low === u ? b.user_high : b.user_low;
@@ -57,8 +54,7 @@ function MePage() {
     setBuddyReqs(reqs);
     if (reqs.length) {
       const ids = reqs.map((r) => r.from_id);
-      const { data: names } = await (supabase as any)
-        .from("profiles_public").select("id,name").in("id", ids);
+      const { data: names } = await (supabase as any).rpc("players_directory", { _ids: ids });
       const m: Record<string, string> = {};
       (names as any[] | null)?.forEach((n) => { m[n.id] = n.name; });
       setRequesterNames(m);

@@ -34,7 +34,7 @@ async function checkInvite(code: string) {
 
 async function userHasProfile(id: string) {
   const { data } = await supabase
-    .from("profiles_public" as any)
+    .from("profiles" as any)
     .select("id")
     .eq("id", id)
     .maybeSingle();

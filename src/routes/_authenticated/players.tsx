@@ -46,10 +46,7 @@ function Players() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (u.user) setBuddyIds(await fetchBuddyIds(u.user.id));
-      const { data } = await supabase
-        .from("profiles_public" as any)
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await (supabase as any).rpc("players_directory");
       setRows((data as any) ?? []);
       setLoading(false);
     })();

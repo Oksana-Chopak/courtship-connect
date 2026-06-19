@@ -83,13 +83,13 @@ function SosDetail() {
     if (isCaller) {
       if (!gamePlayerBs.length) { setClaimers([]); return; }
       (async () => {
-        const { data } = await supabase.from("profiles_public" as any).select("id,name,photo_url").in("id", gamePlayerBs);
+        const { data } = await (supabase as any).rpc("players_directory", { _ids: gamePlayerBs });
         setClaimers(((data as any[]) ?? []).map((d) => ({ id: d.id, name: d.name, photo_url: d.photo_url })));
       })();
     } else if (iJoined) {
       (async () => {
-        const { data } = await supabase.from("profiles_public" as any).select("id,name,photo_url,level,vibe").eq("id", sos.caller_id).maybeSingle();
-        setOther(data);
+        const { data } = await (supabase as any).rpc("players_directory", { _ids: [sos.caller_id] });
+        setOther((data as any[])?.[0] ?? null);
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

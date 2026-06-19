@@ -41,12 +41,8 @@ function PlayerDetail() {
           else if (await hasOutgoingRequest(u.user.id, id)) setBuddyState("pending");
         }
       }
-      const { data } = await supabase
-        .from("profiles_public" as any)
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      setP(data);
+      const { data } = await (supabase as any).rpc("players_directory", { _ids: [id] });
+      setP((data as any[])?.[0] ?? null);
     })();
   }, [id]);
 

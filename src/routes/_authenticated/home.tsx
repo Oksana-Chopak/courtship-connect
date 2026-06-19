@@ -51,7 +51,7 @@ function Home() {
         const otherIds = Array.from(new Set(pendingRows.map((g) => (g.player_a === u.user!.id ? g.player_b : g.player_a))));
         const [{ data: sosRows }, { data: pubs }] = await Promise.all([
           sosIds.length ? (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds) : Promise.resolve({ data: [] }),
-          (supabase as any).from("profiles_public").select("id,name").in("id", otherIds),
+          (supabase as any).rpc("players_directory", { _ids: otherIds }),
         ]);
         const courtIds = Array.from(new Set(((sosRows as any[]) ?? []).map((s) => s.court_id).filter(Boolean)));
         const { data: cs } = courtIds.length

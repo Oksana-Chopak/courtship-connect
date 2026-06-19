@@ -109,7 +109,7 @@ export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow
   const callerIds = Array.from(new Set(rows.map((r) => r.caller_id)));
   const [{ data: cs }, { data: ps }] = await Promise.all([
     (supabase as any).from("courts").select("id,name,city,area").in("id", courtIds.length ? courtIds : ["00000000-0000-0000-0000-000000000000"]),
-    (supabase as any).from("profiles_public").select("id,name").in("id", callerIds),
+    (supabase as any).rpc("players_directory", { _ids: callerIds }),
   ]);
   const courtMap = new Map<string, any>((cs as any[] | null)?.map((c) => [c.id, c]) ?? []);
   const callerMap = new Map<string, string>((ps as any[] | null)?.map((p) => [p.id, p.name]) ?? []);

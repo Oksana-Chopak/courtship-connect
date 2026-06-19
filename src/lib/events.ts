@@ -101,7 +101,7 @@ export async function fetchEventAttendees(eventId: string): Promise<Attendee[]> 
   const rows = (data as any[]) ?? [];
   if (!rows.length) return [];
   const ids = rows.map((r) => r.user_id);
-  const { data: pubs } = await (supabase as any).from("profiles_public").select("id,name").in("id", ids);
+  const { data: pubs } = await (supabase as any).rpc("players_directory", { _ids: ids });
   const nameById = new Map<string, string>(((pubs as any[]) ?? []).map((p) => [p.id, p.name]));
   return rows.map((r) => ({ id: r.id, user_id: r.user_id, status: r.status, name: nameById.get(r.user_id) ?? "Player" }));
 }
