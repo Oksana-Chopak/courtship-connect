@@ -266,6 +266,7 @@ export type Database = {
           id: string
           is_admin: boolean
           lang: string
+          last_name: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -289,6 +290,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           lang?: string
+          last_name?: string | null
           level: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name: string
@@ -312,6 +314,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           lang?: string
+          last_name?: string | null
           level?: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           name?: string
@@ -408,6 +411,7 @@ export type Database = {
           home_city: string | null
           home_courts: string | null
           id: string | null
+          last_name: string | null
           level: number | null
           looking_for: Database["public"]["Enums"]["looking_for_t"] | null
           name: string | null
@@ -426,6 +430,7 @@ export type Database = {
           home_city?: string | null
           home_courts?: string | null
           id?: string | null
+          last_name?: string | null
           level?: number | null
           looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
           name?: string | null
@@ -444,6 +449,7 @@ export type Database = {
           home_city?: string | null
           home_courts?: string | null
           id?: string | null
+          last_name?: string | null
           level?: number | null
           looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
           name?: string | null
@@ -616,6 +622,7 @@ export type Database = {
           id: string
           is_admin: boolean
           lang: string
+          last_name: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           name: string
