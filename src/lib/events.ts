@@ -12,7 +12,6 @@ export type EventRow = {
   spots_taken: number;
   price_sek: number | null;
   description: string | null;
-  contact: string | null;
   status: string;
   created_at: string;
 };
@@ -33,10 +32,19 @@ export async function createEventRequest(input: {
 }): Promise<void> {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) throw new Error("Not signed in");
-  const { error } = await (supabase as any)
+  const { swish_number, contact, ...ev } = input;
+  const { data, error } = await (supabase as any)
     .from("event_requests")
-    .insert({ ...input, host_id: u.user.id, status: "pending" });
+    .insert({ ...ev, host_id: u.user.id, status: "pending" })
+    .select("id")
+    .single();
   if (error) throw error;
+  if (swish_number || contact) {
+    const { error: e2 } = await (supabase as any)
+      .from("event_private")
+      .insert({ event_id: (data as any).id, swish_number, contact });
+    if (e2) throw e2;
+  }
 }
 
 export async function fetchApprovedEvents(): Promise<EventRow[]> {
