@@ -262,15 +262,7 @@ function MePage() {
           busy={busy}
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
-            const { home_cities, last_name, bio, fav_shot, ...rest } = v;
-            const { error } = await supabase
-              .from("profiles" as any)
-              .update(rest)
-              .eq("id", uid)
-              .select("id");
-            if (!error) {
-              await supabase.from("profiles" as any).update({ home_cities, last_name, bio, fav_shot }).eq("id", uid).select("id");
-            }
+            const { error } = await (supabase as any).rpc("save_my_profile", { _data: v });
             setBusy(false);
             if (error) {
               oops(error);

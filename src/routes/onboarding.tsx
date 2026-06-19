@@ -54,19 +54,15 @@ function Onboarding() {
                   (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) : null) ??
                   null;
               } catch {}
-              const { home_cities, last_name, bio, fav_shot, ...rest } = v;
-              const payload: any = { id: uid, ...rest };
-              if (signupCode) payload.signup_code = signupCode;
-              const { error } = await supabase
-                .from("profiles" as any)
-                .upsert(payload, { onConflict: "id" })
-                .select("id");
-              if (!error) {
-                await supabase.from("profiles" as any).update({ home_cities, last_name, bio, fav_shot }).eq("id", uid).select("id");
-              }
+              const { error } = await (supabase as any).rpc("save_my_profile", {
+                _data: { ...v, signup_code: signupCode ?? "" },
+              });
               setBusy(false);
               if (error) {
-                oops(error);
+                const m = String(error.message || "");
+                if (m.includes("invite_required")) toast.error(t("inv.required"));
+                else if (m.includes("invite_invalid")) toast.error(t("inv.invalid"));
+                else oops(error);
                 return;
               }
               try { localStorage.removeItem(SIGNUP_CODE_KEY); } catch {}

@@ -247,7 +247,7 @@ export function ProfileWizard({
                 value={v.last_name}
                 maxLength={40}
                 onChange={(e) => set("last_name", e.target.value)}
-                placeholder="e.g. Andersson"
+                placeholder="e.g. Borg"
               />
             </div>
 
