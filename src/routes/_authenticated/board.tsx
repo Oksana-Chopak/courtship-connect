@@ -9,6 +9,7 @@ import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/eve
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
+import { GetStarted } from "@/components/GetStarted";
 import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -35,14 +36,18 @@ function BoardPage() {
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
   const [cityForStats, setCityForStats] = useState("Uppsala");
+  const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     await sweepExpired();
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     if (au.user) {
-      const { data: prof } = await (supabase as any).from("profiles").select("home_city").eq("id", au.user.id).maybeSingle();
-      setCityForStats((prof as any)?.home_city ?? "Uppsala");
+      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played").eq("id", au.user.id).maybeSingle();
+      if (!pe && prof) {
+        setCityForStats((prof as any).home_city ?? "Uppsala");
+        setGamesPlayed((prof as any).games_played ?? 0);
+      }
     }
     const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
     setMyClaims(au.user ? await fetchMyUpcomingClaims(au.user.id) : []);
@@ -79,6 +84,7 @@ function BoardPage() {
 
   return (
     <div className="space-y-5">
+      {gamesPlayed === 0 && <GetStarted />}
       <div>
         <h1 className="font-display text-4xl">{t("board.title")}</h1>
         <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>

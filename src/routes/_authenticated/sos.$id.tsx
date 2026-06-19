@@ -179,9 +179,10 @@ function SosDetail() {
         >
           <div className={full || isOpen ? "text-5xl" : "sos-dot text-5xl"}>{full ? "🎾" : isOpen ? "🎾" : "🚨"}</div>
           <div className="font-display text-3xl">
-            {full ? t("sos.group_set") : isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
+            {full ? (isOpen ? t("sos.group_set") : t("sos.rescued_title")) : isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
           </div>
           <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
+          {full && !isOpen && <div className="font-extrabold">{t("sos.rescued_sub")}</div>}
           {multi && (
             <div className="font-extrabold">{t("sos.joined_count", { filled: spotsFilled, needed: spotsNeeded })}</div>
           )}
