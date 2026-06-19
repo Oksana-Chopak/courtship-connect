@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
+import { ActivityBadge } from "@/components/ActivityBadge";
 import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
@@ -24,6 +25,7 @@ function MePage() {
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
   const [rescues, setRescues] = useState(0);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
@@ -122,6 +124,7 @@ function MePage() {
       const d = data as any;
       setIsAdmin(!!d.is_admin);
       setRescues(d.rescues_count ?? 0);
+      setGamesPlayed(d.games_played ?? 0);
       setInitial({
         name: d.name ?? "",
         last_name: d.last_name ?? "",
@@ -164,7 +167,10 @@ function MePage() {
         <LangToggle className="shrink-0" />
       </div>
 
-      <RescuerBadge count={rescues} size="lg" progress />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <RescuerBadge count={rescues} size="lg" progress />
+        <ActivityBadge count={gamesPlayed} size="lg" progress />
+      </div>
 
       <GamesHistory />
 

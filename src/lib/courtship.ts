@@ -243,3 +243,20 @@ export function rescuerTier(count: number): { level: number; name: string; emoji
   const nx = idx < RESCUER_TIERS.length - 1 ? RESCUER_TIERS[idx + 1] : null;
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
+
+const ACTIVITY_TIERS = [
+  { level: 1, name: "Rookie", emoji: "🎾", at: 1 },
+  { level: 2, name: "Regular", emoji: "🟢", at: 5 },
+  { level: 3, name: "Local", emoji: "🔥", at: 15 },
+  { level: 4, name: "Veteran", emoji: "⭐", at: 30 },
+  { level: 5, name: "Courtmaster", emoji: "👑", at: 50 },
+] as const;
+
+export function activityTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
+  if (!count || count < 1) return null;
+  let idx = 0;
+  for (let i = 0; i < ACTIVITY_TIERS.length; i++) if (count >= ACTIVITY_TIERS[i].at) idx = i;
+  const cur = ACTIVITY_TIERS[idx];
+  const nx = idx < ACTIVITY_TIERS.length - 1 ? ACTIVITY_TIERS[idx + 1] : null;
+  return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
+}

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, CITIES, type City } from "@/lib/courtship";
 import { RescuerBadge } from "@/components/RescuerBadge";
+import { ActivityBadge } from "@/components/ActivityBadge";
 import { TopRescuers } from "@/components/TopRescuers";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
@@ -27,6 +28,7 @@ type P = {
   home_city: string | null;
   home_cities: string[] | null;
   rescues_count: number | null;
+  games_played: number | null;
 };
 
 function Players() {
@@ -185,8 +187,11 @@ function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
       <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]">{lm.name}</span></div>
-      {(p.rescues_count ?? 0) >= 1 && (
-        <div className="mt-1"><RescuerBadge count={p.rescues_count ?? 0} /></div>
+      {((p.rescues_count ?? 0) >= 1 || (p.games_played ?? 0) >= 1) && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {(p.rescues_count ?? 0) >= 1 && <RescuerBadge count={p.rescues_count ?? 0} />}
+          {(p.games_played ?? 0) >= 1 && <ActivityBadge count={p.games_played ?? 0} />}
+        </div>
       )}
       {p.home_city && (
         <div className="text-xs font-extrabold mt-1">📍 {p.home_city}</div>
