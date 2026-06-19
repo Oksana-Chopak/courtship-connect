@@ -228,6 +228,8 @@ const en: Dict = {
   // Empty states
   "empty.directory": "No players match. Lower your standards 😉 — try widening the filters.",
   "empty.directory_cta": "Clear filters",
+  "empty.dir_new": "Bring a friend to the courts 🎾",
+  "empty.dir_new_cta": "Invite a friend",
   "empty.buddies": "No buddies yet. Play one game and this fills itself 🤝",
   "empty.history": "Your court history starts with one tap on that big red button.",
   "empty.buddy_inbox": "No requests. You're either very popular or very new 😄",
@@ -303,6 +305,7 @@ const en: Dict = {
   "rescue.title": "Rescue board",
   "rescue.empty_title": "All quiet on the courts.",
   "rescue.empty_sub": "Be the first to send a flare 🚨",
+  "claim.in": "You're in! 🎾 Say hi 👋",
   "rescue.listening": "Listening...",
 
   // Players
@@ -638,6 +641,8 @@ const sv: Dict = {
 
   "empty.directory": "Inga spelare matchar. Sänk kraven 😉 — vidga filtren.",
   "empty.directory_cta": "Rensa filter",
+  "empty.dir_new": "Ta med en vän till banorna 🎾",
+  "empty.dir_new_cta": "Bjud in en vän",
   "empty.buddies": "Inga kompisar än. Spela en match och det fyller sig självt 🤝",
   "empty.history": "Din banhistorik börjar med en tryckning på den stora röda knappen.",
   "empty.buddy_inbox": "Inga förfrågningar. Du är antingen mycket populär eller mycket ny 😄",
@@ -709,6 +714,7 @@ const sv: Dict = {
   "rescue.title": "Räddningstavlan",
   "rescue.empty_title": "Tyst på banorna.",
   "rescue.empty_sub": "Var först att skicka ett nödrop 🚨",
+  "claim.in": "Du är med! 🎾 Säg hej 👋",
   "rescue.listening": "Lyssnar...",
 
   "players.title": "Spelare",

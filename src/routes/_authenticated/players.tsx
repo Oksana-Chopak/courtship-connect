@@ -65,6 +65,7 @@ function Players() {
       ),
     [rows, level, format, time, city, buddiesOnly],
   );
+  const hasFilters = level != null || format != null || time != null || city != null || buddiesOnly;
 
   return (
     <div className="space-y-5">
@@ -119,16 +120,24 @@ function Players() {
       {loading ? (
         <div className="text-center py-10 text-[var(--ink)]">{t("players.warming")}</div>
       ) : filtered.length === 0 ? (
-        <div className="ccard p-6 text-center space-y-3">
-          <div className="text-4xl">🎾</div>
-          <div className="font-display text-2xl mt-1 leading-tight">{t("empty.directory")}</div>
-          <button
-            className="cbtn cbtn-coral inline-flex"
-            onClick={() => { setLevel(null); setFormat(null); setTime(null); setCity(null); setBuddiesOnly(false); }}
-          >
-            {t("empty.directory_cta")}
-          </button>
-        </div>
+        hasFilters ? (
+          <div className="ccard p-6 text-center space-y-3">
+            <div className="text-4xl">🎾</div>
+            <div className="font-display text-2xl leading-tight">{t("empty.directory")}</div>
+            <button
+              className="cbtn cbtn-coral inline-flex"
+              onClick={() => { setLevel(null); setFormat(null); setTime(null); setCity(null); setBuddiesOnly(false); }}
+            >
+              {t("empty.directory_cta")}
+            </button>
+          </div>
+        ) : (
+          <div className="ccard p-6 text-center space-y-3">
+            <div className="text-4xl">🌱</div>
+            <div className="font-display text-2xl leading-tight">{t("empty.dir_new")}</div>
+            <Link to="/me" className="cbtn cbtn-coral inline-flex">{t("empty.dir_new_cta")}</Link>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((p) => (

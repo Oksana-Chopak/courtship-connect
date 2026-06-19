@@ -272,7 +272,7 @@ function SosDetail() {
             await load();
             return;
           }
-          toast.success("You're in 🎾");
+          toast.success(t("claim.in"));
           await load();
         }}
       >

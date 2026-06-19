@@ -180,10 +180,14 @@ function BoardPage() {
         </div>
       )}
       {nothing && (
-        <div className="ccard p-6 text-center">
+        <div className="ccard p-6 text-center space-y-3">
           <div className="text-3xl">🌅</div>
-          <div className="font-display text-xl mt-1">{t("rescue.empty_title")}</div>
-          <div className="text-base text-[var(--ink)] font-semibold mt-1">{t("rescue.empty_sub")}</div>
+          <div className="font-display text-xl">{t("rescue.empty_title")}</div>
+          <div className="text-base text-[var(--ink)] font-semibold">{t("rescue.empty_sub")}</div>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
+            <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral">📅 {t("board.plan_game")}</Link>
+            <Link to="/me" className="cbtn cbtn-ghost">🎾 {t("empty.dir_new_cta")}</Link>
+          </div>
         </div>
       )}
 
@@ -257,7 +261,7 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
           const r = await claimSos(sos.id);
           setBusy(false);
           if (!r.ok) toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
-          else toast.success("You're in 🎾");
+          else toast.success(t("claim.in"));
           onChange();
         }}>
         {t("games.im_in")}
