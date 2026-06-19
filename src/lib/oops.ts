@@ -3,7 +3,7 @@ import { toast } from "sonner";
 // OPTIONAL: set this to your support WhatsApp number (e.g. "+46701234567") to give
 // users a one-tap "Message us" button on errors. Leave empty to fall back to
 // "Copy details" (copies the error so the user can paste it with a screenshot).
-export const SUPPORT_WA: string = "";
+export const SUPPORT_WA: string = "+46700266274";
 
 type Copy = {
   titles: string[];
