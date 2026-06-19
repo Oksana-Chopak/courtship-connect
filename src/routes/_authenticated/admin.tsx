@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, shortCourtName, type AdminCourt } from "@/lib/courts";
 import { fetchPendingEvents, setEventStatus, fetchEventContact, type EventRow } from "@/lib/events";
-import { whenLabel } from "@/lib/courtship";
+import { whenLabel, levelMeta, vibeEmoji, VIBES } from "@/lib/courtship";
 
 function EventContactLine({ eventId }: { eventId: string }) {
   const [contact, setContact] = useState<string | null>(null);
@@ -24,7 +24,16 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 type Invite = { code: string; uses_remaining: number; active: boolean; created_at: string; signups?: number };
-type PlayerRow = { id: string; name: string; home_city: string | null; signup_code: string | null; rescues_count: number; created_at: string };
+type PlayerRow = {
+  id: string; name: string; last_name: string | null; phone_e164: string | null;
+  level: number | null; formats: string[] | null; play_times: string[] | null;
+  vibe: string | null; looking_for: string | null; home_courts: string | null;
+  home_city: string | null; home_cities: string[] | null;
+  buddy_optin: string | null; buddy_radius_km: number | null; buddy_sos_optin: boolean | null;
+  bio: string | null; fav_shot: string | null; games_played: number | null;
+  rescues_count: number; ghost_badge: boolean | null; is_admin: boolean | null;
+  signup_code: string | null; created_at: string;
+};
 type CityStats = {
   sos_created_week: number;
   sos_claimed_week: number;
@@ -264,19 +273,47 @@ function AdminPage() {
         <div>
           <div className="csection-label mb-2">👥 All players · {players.length}</div>
           <div className="space-y-2">
-            {players.map((p) => (
-              <div key={p.id} className="ccard p-3 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="font-extrabold truncate">{p.name || "—"}</div>
-                  <div className="text-sm text-[var(--ink)] truncate">📍 {p.home_city ?? "—"} · joined {new Date(p.created_at).toLocaleDateString()}</div>
+            {players.map((p) => {
+              const lvl = p.level ? levelMeta(p.level) : null;
+              const city = (p.home_cities && p.home_cities.length > 0 ? p.home_cities.join(" · ") : p.home_city) || null;
+              const hasPlay = (p.formats && p.formats.length > 0) || (p.play_times && p.play_times.length > 0);
+              return (
+                <div key={p.id} className="ccard p-3 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-extrabold truncate">
+                        {[p.name, p.last_name].filter(Boolean).join(" ") || "—"}
+                        {p.is_admin ? <span className="ml-1.5 text-xs font-extrabold text-[var(--coral)]">ADMIN</span> : null}
+                      </div>
+                      {(lvl || p.vibe || p.looking_for) ? (
+                        <div className="text-sm text-[var(--ink)]/60 truncate">
+                          {lvl ? <span className="font-bold" style={{ color: lvl.color }}>{lvl.name}</span> : null}
+                          {p.vibe ? <> · {vibeEmoji(p.vibe)} {VIBES.find((v) => v.value === p.vibe)?.label ?? ""}</> : null}
+                          {p.looking_for ? <> · {p.looking_for}</> : null}
+                        </div>
+                      ) : null}
+                    </div>
+                    {p.signup_code ? (
+                      <span className="text-xs font-extrabold shrink-0 px-2 py-0.5 rounded-full" style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>{p.signup_code}</span>
+                    ) : (
+                      <span className="text-xs shrink-0 text-[var(--ink)]/40">no code</span>
+                    )}
+                  </div>
+                  {hasPlay ? (
+                    <div className="text-sm text-[var(--ink)]/60">
+                      {[p.formats && p.formats.length > 0 ? p.formats.join(" · ") : null, p.play_times && p.play_times.length > 0 ? p.play_times.join(" · ") : null].filter(Boolean).join(" · ")}
+                    </div>
+                  ) : null}
+                  {city ? <div className="text-sm text-[var(--ink)]/60">📍 {city}{p.home_courts ? ` · ${p.home_courts}` : ""}</div> : null}
+                  {p.phone_e164 ? <div className="text-sm text-[var(--ink)]/60">📞 {p.phone_e164}</div> : null}
+                  {p.bio ? <div className="text-sm italic text-[var(--ink)]/60">"{p.bio}"</div> : null}
+                  {p.fav_shot ? <div className="text-sm text-[var(--ink)]/60">🎾 {p.fav_shot}</div> : null}
+                  <div className="text-xs text-[var(--ink)]/40">
+                    🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · buddy ${p.buddy_radius_km ?? 10}km` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-                {p.signup_code ? (
-                  <span className="text-sm font-extrabold shrink-0 px-2 py-0.5 rounded-full" style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>{p.signup_code}</span>
-                ) : (
-                  <span className="text-sm shrink-0 opacity-50">no code</span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
