@@ -218,14 +218,17 @@ export function timeUntil(iso: string): string {
 }
 
 export function whenLabel(iso: string): string {
+  let lang = "en";
+  try { lang = (typeof localStorage !== "undefined" && localStorage.getItem("courtship.lang")) || "en"; } catch { /* ignore */ }
+  const loc = lang === "sv" ? "sv-SE" : "en-GB";
   const d = new Date(iso);
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 86400000);
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  const hhmm = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (sameDay(d, today)) return `Today ${hhmm}`;
-  if (sameDay(d, tomorrow)) return `Tomorrow ${hhmm}`;
-  return d.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  const hhmm = d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+  if (sameDay(d, today)) return `${lang === "sv" ? "Idag" : "Today"} ${hhmm}`;
+  if (sameDay(d, tomorrow)) return `${lang === "sv" ? "Imorgon" : "Tomorrow"} ${hhmm}`;
+  return d.toLocaleString(loc, { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 const RESCUER_TIERS = [
   { level: 1, name: "Set Saver", emoji: "🎾", at: 1 },

@@ -212,7 +212,6 @@ export function ProfileWizard({
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={pickPhoto}
               className="hidden"
             />

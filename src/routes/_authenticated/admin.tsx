@@ -54,7 +54,7 @@ type Dashboard = {
 };
 
 function AdminPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [codes, setCodes] = useState<Invite[]>([]);
@@ -309,7 +309,7 @@ function AdminPage() {
                   {p.bio ? <div className="text-sm italic text-[var(--ink)]/60">"{p.bio}"</div> : null}
                   {p.fav_shot ? <div className="text-sm text-[var(--ink)]/60">🎾 {p.fav_shot}</div> : null}
                   <div className="text-xs text-[var(--ink)]/40">
-                    🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · buddy ${p.buddy_radius_km ?? 10}km` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString()}
+                    🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · buddy ${p.buddy_radius_km ?? 10}km` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB")}
                   </div>
                 </div>
               );
