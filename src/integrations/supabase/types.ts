@@ -127,11 +127,36 @@ export type Database = {
           },
         ]
       }
+      event_private: {
+        Row: {
+          contact: string | null
+          event_id: string
+          swish_number: string | null
+        }
+        Insert: {
+          contact?: string | null
+          event_id: string
+          swish_number?: string | null
+        }
+        Update: {
+          contact?: string | null
+          event_id?: string
+          swish_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_private_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "event_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_requests: {
         Row: {
           capacity: number | null
           city: string | null
-          contact: string | null
           created_at: string
           description: string | null
           format: string | null
@@ -142,13 +167,11 @@ export type Database = {
           spots_taken: number
           starts_at: string
           status: string
-          swish_number: string | null
           title: string
         }
         Insert: {
           capacity?: number | null
           city?: string | null
-          contact?: string | null
           created_at?: string
           description?: string | null
           format?: string | null
@@ -159,13 +182,11 @@ export type Database = {
           spots_taken?: number
           starts_at: string
           status?: string
-          swish_number?: string | null
           title: string
         }
         Update: {
           capacity?: number | null
           city?: string | null
-          contact?: string | null
           created_at?: string
           description?: string | null
           format?: string | null
@@ -176,7 +197,6 @@ export type Database = {
           spots_taken?: number
           starts_at?: string
           status?: string
-          swish_number?: string | null
           title?: string
         }
         Relationships: []
@@ -409,75 +429,7 @@ export type Database = {
       }
     }
     Views: {
-      profiles_public: {
-        Row: {
-          bio: string | null
-          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"] | null
-          buddy_radius_km: number | null
-          created_at: string | null
-          fav_shot: string | null
-          formats: string[] | null
-          games_played: number | null
-          ghost_badge: boolean | null
-          home_cities: string[] | null
-          home_city: string | null
-          home_courts: string | null
-          id: string | null
-          last_name: string | null
-          level: number | null
-          looking_for: Database["public"]["Enums"]["looking_for_t"] | null
-          name: string | null
-          photo_url: string | null
-          play_times: string[] | null
-          rescues_count: number | null
-          vibe: Database["public"]["Enums"]["vibe_t"] | null
-        }
-        Insert: {
-          bio?: string | null
-          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
-          buddy_radius_km?: number | null
-          created_at?: string | null
-          fav_shot?: string | null
-          formats?: string[] | null
-          games_played?: number | null
-          ghost_badge?: boolean | null
-          home_cities?: string[] | null
-          home_city?: string | null
-          home_courts?: string | null
-          id?: string | null
-          last_name?: string | null
-          level?: number | null
-          looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
-          name?: string | null
-          photo_url?: string | null
-          play_times?: string[] | null
-          rescues_count?: number | null
-          vibe?: Database["public"]["Enums"]["vibe_t"] | null
-        }
-        Update: {
-          bio?: string | null
-          buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"] | null
-          buddy_radius_km?: number | null
-          created_at?: string | null
-          fav_shot?: string | null
-          formats?: string[] | null
-          games_played?: number | null
-          ghost_badge?: boolean | null
-          home_cities?: string[] | null
-          home_city?: string | null
-          home_courts?: string | null
-          id?: string | null
-          last_name?: string | null
-          level?: number | null
-          looking_for?: Database["public"]["Enums"]["looking_for_t"] | null
-          name?: string | null
-          photo_url?: string | null
-          play_times?: string[] | null
-          rescues_count?: number | null
-          vibe?: Database["public"]["Enums"]["vibe_t"] | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       _add_buddy: {
@@ -673,6 +625,31 @@ export type Database = {
         }[]
       }
       leave_event: { Args: { _event_id: string }; Returns: undefined }
+      players_directory: {
+        Args: { _ids?: string[] }
+        Returns: {
+          bio: string
+          buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
+          buddy_radius_km: number
+          created_at: string
+          fav_shot: string
+          formats: string[]
+          games_played: number
+          ghost_badge: boolean
+          home_cities: string[]
+          home_city: string
+          home_courts: string
+          id: string
+          last_name: string
+          level: number
+          looking_for: Database["public"]["Enums"]["looking_for_t"]
+          name: string
+          photo_url: string
+          play_times: string[]
+          rescues_count: number
+          vibe: Database["public"]["Enums"]["vibe_t"]
+        }[]
+      }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       request_buddy: { Args: { _other: string }; Returns: undefined }
