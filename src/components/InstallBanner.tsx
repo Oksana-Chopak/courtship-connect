@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
 const DISMISS_KEY = "courtship.install.dismissed_at";
@@ -43,6 +44,13 @@ export function InstallBanner() {
     setIosOpen(false);
   }
 
+  function copyLink() {
+    try {
+      navigator.clipboard?.writeText(window.location.origin);
+      toast.success(t("install.link_copied"));
+    } catch {}
+  }
+
   async function install() {
     if (deferred) {
       try {
@@ -75,6 +83,11 @@ export function InstallBanner() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4" onClick={() => setIosOpen(false)}>
           <div className="ccard p-5 max-w-md w-full space-y-4 bg-[var(--cream)]" onClick={(e) => e.stopPropagation()}>
             <div className="font-display text-3xl">{t("install.ios_title")}</div>
+            <div className="ccard p-3 space-y-2" style={{ background: "var(--cream2)", borderColor: "var(--coral)" }}>
+              <div className="font-extrabold">{t("install.ios_safari_warn")}</div>
+              <div className="text-sm text-[var(--ink)]">{t("install.ios_safari_sub")}</div>
+              <button onClick={copyLink} className="cbtn cbtn-coral w-full">{t("install.copy_link")}</button>
+            </div>
             <ol className="space-y-3 text-lg font-semibold">
               <li><span className="font-display text-2xl mr-2">1.</span>{t("install.ios_step1")}</li>
               <li><span className="font-display text-2xl mr-2">2.</span>{t("install.ios_step2")}</li>
