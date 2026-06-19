@@ -209,7 +209,7 @@ function SosDetail() {
             onClick={async () => {
               if (typeof window !== "undefined" && !window.confirm(t("sos.cancel_confirm"))) return;
               setBusy(true);
-              const { error } = await (supabase as any).from("sos_requests").update({ status: "cancelled" }).eq("id", sos.id);
+              const { error } = await (supabase as any).rpc("cancel_sos", { _sos_id: sos.id });
               setBusy(false);
               if (error) oops(error);
               else { toast.success(t("sos.cancelled")); navigate({ to: "/board" }); }
