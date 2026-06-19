@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
+import { myInviteLink, shareMessage } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
@@ -122,6 +123,16 @@ function SosDetail() {
     navigate({ to: "/board" });
   }
 
+  async function shareSos() {
+    const link = await myInviteLink();
+    const msg = t(sos!.kind === "open" ? "share.game_msg" : "share.sos_msg", {
+      when,
+      court: courtName || courtCity || "the court",
+      link,
+    });
+    await shareMessage(msg, t("share.copied"));
+  }
+
   // ENDED
   if (sos.status === "expired" || sos.status === "cancelled") {
     return (
@@ -202,6 +213,9 @@ function SosDetail() {
           </div>
         )}
 
+        {!full && (
+          <button className="cbtn cbtn-green w-full" onClick={shareSos}>{t("share.button")}</button>
+        )}
         {!full && (
           <button
             className="cbtn cbtn-ghost w-full"
