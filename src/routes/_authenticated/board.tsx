@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
@@ -214,6 +214,7 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
 
 function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const lmMin = levelMeta(sos.level_min);
   const lmMax = levelMeta(sos.level_max);
   const [busy, setBusy] = useState(false);
@@ -266,9 +267,12 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
           setBusy(true);
           const r = await claimSos(sos.id);
           setBusy(false);
-          if (!r.ok) toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
-          else toast.success(t("claim.in"));
-          onChange();
+          if (!r.ok) {
+            toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
+            return;
+          }
+          // Complete the flow: land on the contact screen (host + Message on WhatsApp), not a 2s toast
+          navigate({ to: "/sos/$id", params: { id: sos.id } });
         }}>
         {t("games.im_in")}
       </button>
