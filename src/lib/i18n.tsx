@@ -433,6 +433,9 @@ const en: Dict = {
   "stats.sets_saved": "{n} sets saved",
   "stats.games_matched": "{n} games matched",
   "stats.new_buddies": "{n} new buddy pairs",
+  "stats.sets_saved_one": "{n} set saved",
+  "stats.games_matched_one": "{n} game matched",
+  "stats.new_buddies_one": "{n} new buddy pair",
   "stats.all_time": "All-time: {n} games played in {city}",
 
   // Court type (indoor / outdoor)
@@ -859,6 +862,9 @@ const sv: Dict = {
   "stats.sets_saved": "{n} set räddade",
   "stats.games_matched": "{n} matcher matchade",
   "stats.new_buddies": "{n} nya kompispar",
+  "stats.sets_saved_one": "{n} set räddat",
+  "stats.games_matched_one": "{n} match matchad",
+  "stats.new_buddies_one": "{n} nytt kompispar",
   "stats.all_time": "Totalt: {n} matcher spelade i {city}",
 
   "ct.label": "Bantyp",
