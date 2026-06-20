@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { consumeNext } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
@@ -72,6 +73,11 @@ function Onboarding() {
                   await Notification.requestPermission();
                 }
               } catch {}
+              const _n = consumeNext();
+              if (_n) {
+                window.location.href = _n;
+                return;
+              }
               navigate({ to: "/board" });
             }}
           />

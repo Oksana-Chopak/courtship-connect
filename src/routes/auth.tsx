@@ -4,10 +4,12 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LangToggle, useI18n } from "@/lib/i18n";
+import { rememberNext, consumeNext } from "@/lib/share";
 
 const search = z.object({
   mode: z.enum(["signup", "login"]).optional().default("signup"),
   code: z.string().optional(),
+  next: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -42,8 +44,16 @@ async function userHasProfile(id: string) {
 }
 
 function AuthPage() {
-  const { mode, code } = Route.useSearch();
+  const { mode, code, next } = Route.useSearch();
   const navigate = useNavigate();
+  const landOrBoard = () => {
+    const n = consumeNext();
+    if (n) {
+      window.location.href = n;
+      return;
+    }
+    navigate({ to: "/board" });
+  };
   const { t, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +61,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    rememberNext(next);
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         if (!data.session.user.email_confirmed_at) {
@@ -58,7 +69,8 @@ function AuthPage() {
           return;
         }
         const has = await userHasProfile(data.session.user.id);
-        navigate({ to: has ? "/board" : "/onboarding" });
+        if (has) landOrBoard();
+        else navigate({ to: "/onboarding" });
       }
     });
   }, [navigate]);
@@ -99,7 +111,8 @@ function AuthPage() {
           return;
         }
         const has = await userHasProfile(data.user.id);
-        navigate({ to: has ? "/board" : "/onboarding" });
+        if (has) landOrBoard();
+        else navigate({ to: "/onboarding" });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Something went wrong");

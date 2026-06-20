@@ -124,7 +124,7 @@ function SosDetail() {
   }
 
   async function shareSos() {
-    const link = await myInviteLink();
+    const link = await myInviteLink("/sos/" + sos!.id);
     const msg = t(sos!.kind === "open" ? "share.game_msg" : "share.sos_msg", {
       when,
       court: courtName || courtCity || "the court",
