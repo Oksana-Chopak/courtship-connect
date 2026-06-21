@@ -92,12 +92,23 @@ export async function withdrawClaim(sosId: string): Promise<{ ok: boolean; re_fl
 
 /** SOS / open games I claimed and that haven't started yet. */
 export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow[]> {
+  const nowIso = new Date().toISOString();
+  // "Claims I made" = games where I'm player_b (the claimer). sos_requests.claimed_by
+  // only stores the LAST claimer, so for partially-filled doubles (status still
+  // 'active') it silently dropped me from my own upcoming list. Derive from games.
+  const { data: gs } = await (supabase as any)
+    .from("games")
+    .select("sos_id")
+    .eq("player_b", uid)
+    .gt("played_at", nowIso);
+  const sosIds = Array.from(new Set(((gs as any[]) ?? []).map((g) => g.sos_id).filter(Boolean)));
+  if (!sosIds.length) return [];
   const { data } = await (supabase as any)
     .from("sos_requests")
     .select("*")
-    .eq("claimed_by", uid)
-    .eq("status", "claimed")
-    .gt("play_at", new Date().toISOString())
+    .in("id", sosIds)
+    .in("status", ["active", "claimed"])
+    .gt("play_at", nowIso)
     .order("play_at", { ascending: true });
   const rows = (data as any[]) ?? [];
   if (!rows.length) return [];
