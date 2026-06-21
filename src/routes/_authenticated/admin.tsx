@@ -121,7 +121,7 @@ function AdminPage() {
     load();
   }
 
-  if (allowed === null) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
+  if (allowed === null) return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
   if (allowed === false) {
     return (
       <div className="space-y-4">

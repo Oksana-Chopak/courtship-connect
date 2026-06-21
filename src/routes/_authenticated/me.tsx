@@ -150,7 +150,7 @@ function MePage() {
   }, [navigate]);
 
   if (!initial || !uid) {
-    return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
+    return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
   }
 
   return (
