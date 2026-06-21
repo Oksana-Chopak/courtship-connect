@@ -2,7 +2,7 @@
   "name": "Courtship — Tennis partners in Uppsala",
   "short_name": "Courtship",
   "description": "It's a match. Literally. Find a hitting partner — and rescue ghosted sets.",
-  "start_url": "/home",
+  "start_url": "/board",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
