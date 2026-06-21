@@ -31,10 +31,6 @@ export type EligibleSosRow = SosRow & {
   is_buddy: boolean;
 };
 
-export async function sweepExpired() {
-  await (supabase as any).rpc("expire_old_sos");
-}
-
 export async function fetchCourts(): Promise<CourtRow[]> {
   const { data } = await (supabase as any)
     .from("courts")

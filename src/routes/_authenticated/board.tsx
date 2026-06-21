@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
@@ -39,7 +39,6 @@ function BoardPage() {
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    await sweepExpired();
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     if (au.user) {
