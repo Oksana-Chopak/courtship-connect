@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { subscribeToPush } from "@/lib/push";
 
 const DISMISS_KEY = "courtship.install.dismissed_at";
 const WEEK_MS = 7 * 24 * 3600 * 1000;
@@ -118,7 +119,9 @@ export function StandaloneNotifPrompt() {
     setShow(false);
   }
   async function enable() {
-    try { await Notification.requestPermission(); } catch {}
+    // Requests permission AND registers a real Web Push subscription (prod only;
+    // in preview/dev the SW is unregistered so this no-ops gracefully).
+    try { await subscribeToPush(); } catch { /* best-effort */ }
     close();
   }
   if (!show) return null;
