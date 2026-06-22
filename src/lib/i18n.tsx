@@ -8,6 +8,21 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  // Iteration 1 — Save My Set push controls
+  "push.title": "Last-minute SOS alerts",
+  "push.sub": "Get pinged when a player nearby needs a partner. You set the rules.",
+  "push.enable": "Turn on alerts",
+  "push.enabled": "You're on the rescue squad ✓",
+  "push.disable": "Turn off alerts",
+  "push.denied": "Notifications are blocked in your browser settings.",
+  "push.sos_optin": "Notify me about SOS calls",
+  "push.radius": "Within {km} km",
+  "push.max_week": "Max alerts per week",
+  "push.wake": "Wake me at night (22–07)",
+  "push.wake_sub": "Off = quiet hours respected",
+  "push.save": "Save alert settings",
+  "push.saved": "Alert settings saved 🎾",
+  "push.prod_only": "Alerts work on the installed app — add Courtship to your Home Screen.",
   // Iteration 0.3 — i18n holes: players, player detail, SOS toasts, loading
   "common.loading": "Loading…",
   "common.all": "All",
@@ -480,6 +495,21 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  // Iteration 1 — Save My Set push controls
+  "push.title": "SOS-aviseringar i sista minuten",
+  "push.sub": "Bli pingad när en spelare i närheten behöver en partner. Du bestämmer reglerna.",
+  "push.enable": "Slå på aviseringar",
+  "push.enabled": "Du är med i räddningsstyrkan ✓",
+  "push.disable": "Stäng av aviseringar",
+  "push.denied": "Aviseringar är blockerade i webbläsarens inställningar.",
+  "push.sos_optin": "Avisera mig om SOS-anrop",
+  "push.radius": "Inom {km} km",
+  "push.max_week": "Max aviseringar per vecka",
+  "push.wake": "Väck mig på natten (22–07)",
+  "push.wake_sub": "Av = tysta timmar respekteras",
+  "push.save": "Spara aviseringar",
+  "push.saved": "Aviseringar sparade 🎾",
+  "push.prod_only": "Aviseringar fungerar i den installerade appen — lägg till Courtship på hemskärmen.",
   // Iteration 0.3 — i18n holes: players, player detail, SOS toasts, loading
   "common.loading": "Laddar…",
   "common.all": "Alla",

@@ -1,0 +1,134 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
+import { getPushStatus, subscribeToPush, unsubscribeFromPush, isPushSupported, type PushStatus } from "@/lib/push";
+
+const MAX_OPTIONS = [3, 7, 15, 30];
+
+// "Save My Set" alert controls. The opt-in must SELL, not just ask — and the user
+// stays in control of radius, frequency and quiet hours, or they'll mute us.
+export function PushControls() {
+  const { t } = useI18n();
+  const [status, setStatus] = useState<PushStatus>("unsupported");
+  const [sosOptin, setSosOptin] = useState(true);
+  const [radius, setRadius] = useState(10);
+  const [maxWeek, setMaxWeek] = useState(10);
+  const [wakeMe, setWakeMe] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setStatus(await getPushStatus());
+      const { data } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
+      const d = data as any;
+      if (d) {
+        setSosOptin(d.buddy_sos_optin ?? true);
+        setRadius(d.buddy_radius_km ?? 10);
+        setMaxWeek(d.push_max_per_week ?? 10);
+        setWakeMe(d.push_wake_me ?? false);
+      }
+    })();
+  }, []);
+
+  async function toggleSubscription() {
+    setBusy(true);
+    try {
+      if (status === "subscribed") {
+        await unsubscribeFromPush();
+      } else {
+        const r = await subscribeToPush();
+        if (!r.ok && r.reason && !["default", "denied"].includes(r.reason)) {
+          toast.message(t("push.prod_only"));
+        }
+      }
+      setStatus(await getPushStatus());
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function save() {
+    setBusy(true);
+    const { error } = await (supabase as any).rpc("save_push_prefs", {
+      _radius: radius,
+      _sos_optin: sosOptin,
+      _max_per_week: maxWeek,
+      _wake_me: wakeMe,
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message ?? t("push.save")); return; }
+    toast.success(t("push.saved"));
+  }
+
+  const supported = isPushSupported();
+
+  return (
+    <div className="ccard p-4 space-y-4" style={{ borderColor: "var(--coral)" }}>
+      <div>
+        <div className="font-display text-2xl leading-tight">{t("push.title")}</div>
+        <div className="text-sm text-[var(--ink)] font-semibold mt-1">{t("push.sub")}</div>
+      </div>
+
+      {/* Subscription state */}
+      {status === "denied" ? (
+        <div className="text-sm font-semibold text-[var(--ink)]">{t("push.denied")}</div>
+      ) : (
+        <button onClick={toggleSubscription} disabled={busy || !supported}
+          className={status === "subscribed" ? "cbtn cbtn-ghost w-full" : "cbtn cbtn-coral w-full"}>
+          {status === "subscribed" ? `🔕 ${t("push.disable")}` : `🔔 ${t("push.enable")}`}
+        </button>
+      )}
+      {status === "subscribed" && <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>{t("push.enabled")}</div>}
+
+      <div className="border-t border-[var(--ink)]/15" />
+
+      {/* SOS opt-in */}
+      <Toggle on={sosOptin} onClick={() => setSosOptin((v) => !v)} label={t("push.sos_optin")} />
+
+      {/* Radius */}
+      <div>
+        <div className="csection-label">{t("push.radius", { km: radius })}</div>
+        <input type="range" min={1} max={30} value={radius} onChange={(e) => setRadius(Number(e.target.value))}
+          className="w-full mt-2 accent-[var(--coral)]" aria-label={t("push.radius", { km: radius })} />
+      </div>
+
+      {/* Max per week */}
+      <div>
+        <div className="csection-label mb-2">{t("push.max_week")}</div>
+        <div className="flex gap-2 flex-wrap">
+          {MAX_OPTIONS.map((n) => (
+            <button key={n} type="button" role="radio" aria-checked={maxWeek === n} onClick={() => setMaxWeek(n)}
+              className="rounded-full border-2 border-[var(--ink)] px-4 font-extrabold"
+              style={{ minHeight: 44, background: maxWeek === n ? "var(--green-pop)" : "var(--cream2)", color: "var(--ink)" }}>
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Wake me at night */}
+      <Toggle on={wakeMe} onClick={() => setWakeMe((v) => !v)} label={t("push.wake")} sub={t("push.wake_sub")} />
+
+      <button onClick={save} disabled={busy} className="cbtn cbtn-coral w-full">{t("push.save")}</button>
+    </div>
+  );
+}
+
+function Toggle({ on, onClick, label, sub }: { on: boolean; onClick: () => void; label: string; sub?: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={onClick}
+      className="w-full flex items-center justify-between gap-3 text-left">
+      <span className="min-w-0">
+        <span className="font-extrabold block">{label}</span>
+        {sub && <span className="text-sm text-[var(--ink)] block">{sub}</span>}
+      </span>
+      <span className="shrink-0 rounded-full border-2 border-[var(--ink)] transition-colors" style={{
+        width: 52, height: 30, padding: 3, background: on ? "var(--green-pop)" : "var(--cream2)",
+        display: "inline-flex", justifyContent: on ? "flex-end" : "flex-start",
+      }}>
+        <span style={{ width: 22, height: 22, borderRadius: "9999px", background: "var(--ink)" }} />
+      </span>
+    </button>
+  );
+}

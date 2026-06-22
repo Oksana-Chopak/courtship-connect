@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { PushControls } from "@/components/PushControls";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
@@ -213,6 +214,8 @@ function MePage() {
           <button className="cbtn cbtn-coral w-full" onClick={shareInvite}>🔗 {t("invite.cta")}</button>
         </div>
       )}
+
+      <PushControls />
 
       <div className="ccard p-4 space-y-3">
         <div className="font-display text-2xl">{t("buddy.my_buddies")}</div>
