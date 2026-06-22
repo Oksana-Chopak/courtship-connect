@@ -21,17 +21,11 @@ export const Route = createFileRoute("/auth")({
 async function checkInvite(code: string) {
   const c = code.trim().toUpperCase();
   // Validate via SECURITY DEFINER RPC so anon (signing-up) users can check a code
-  // without read access to the invite_codes table.
+  // without read access to the (admin-only) invite_codes table. The old direct-table
+  // fallback is now blocked by RLS for normal users, so it only masked errors — gone.
   const { data, error } = await (supabase as any).rpc("check_invite_code", { _code: c });
-  if (!error && typeof data === "boolean") return data;
-  // Fallback if the RPC isn't deployed yet
-  const { data: row } = await (supabase as any)
-    .from("invite_codes" as any)
-    .select("uses_remaining, active")
-    .eq("code", c)
-    .maybeSingle();
-  const d = row as any;
-  return !!d && d.uses_remaining > 0 && d.active !== false;
+  if (error) { console.error("check_invite_code failed", error); return false; }
+  return data === true;
 }
 
 async function userHasProfile(id: string) {

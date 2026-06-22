@@ -96,7 +96,7 @@ function SosDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sos?.id, me?.id, isCaller, iJoined, gamePlayerBs.join(",")]);
 
-  if (!sos || !me) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
+  if (!sos || !me) return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
 
   const when = whenLabel(sos.play_at);
   const ctMeta = courtTypeMeta(sos.court_type, lang);
@@ -280,8 +280,8 @@ function SosDetail() {
           setBusy(false);
           if (!r.ok) {
             if (r.reason === "taken") toast.error(t("sos.taken_toast"));
-            else if (r.reason === "expired") toast.error("Too late — SOS expired ⌛");
-            else if (r.reason === "own_sos") toast.error("Can't rescue yourself 🙃");
+            else if (r.reason === "expired") toast.error(t("sos.err_expired"));
+            else if (r.reason === "own_sos") toast.error(t("sos.err_own"));
             else if (r.reason === "already_in") toast.error(t("sos.already_in"));
             else toast.error(r.reason);
             await load();

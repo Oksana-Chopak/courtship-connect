@@ -46,7 +46,7 @@ function PlayerDetail() {
     })();
   }, [id]);
 
-  if (!p) return <div className="text-center py-12 text-[var(--ink)]">Loading...</div>;
+  if (!p) return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
 
   const lm = levelMeta(p.level);
 
@@ -65,7 +65,7 @@ function PlayerDetail() {
   return (
     <div className="space-y-5">
       <Link to="/players" className="text-sm font-extrabold underline">
-        ← Back to players
+        {t("players.back")}
       </Link>
 
       <div className="ccard p-5 space-y-4">
@@ -83,7 +83,7 @@ function PlayerDetail() {
           </div>
           {p.ghost_badge && (
             <div className="mt-2 inline-block text-xs font-extrabold uppercase tracking-wider px-2 py-1 rounded-full border-2 border-[var(--ink)] bg-[var(--cream2)]">
-              🪦 ghosted a match
+              {t("player.ghosted")}
             </div>
           )}
         </div>
@@ -149,12 +149,12 @@ function PlayerDetail() {
         )}
 
         <Row label={t("city.label")}>📍 {p.home_city ?? "—"}</Row>
-        <Row label="Formats">{p.formats?.join(" · ") || "—"}</Row>
-        <Row label="When">{p.play_times?.join(" · ") || "—"}</Row>
-        <Row label="Looking for">{p.looking_for}</Row>
-        <Row label="Home courts">{p.home_courts || "—"}</Row>
-        <Row label="Buddy">{p.buddy_optin === "yes" ? `Yes — rescues within ${p.buddy_radius_km} km` : p.buddy_optin}</Row>
-        <Row label="Rescues">🚑 {p.rescues_count ?? 0}</Row>
+        <Row label={t("player.formats")}>{p.formats?.join(" · ") || "—"}</Row>
+        <Row label={t("player.when")}>{p.play_times?.join(" · ") || "—"}</Row>
+        <Row label={t("player.looking_for")}>{p.looking_for}</Row>
+        <Row label={t("player.home_courts")}>{p.home_courts || "—"}</Row>
+        <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : p.buddy_optin}</Row>
+        <Row label={t("player.rescues")}>🚑 {p.rescues_count ?? 0}</Row>
       </div>
     </div>
   );

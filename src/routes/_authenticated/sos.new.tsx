@@ -105,14 +105,14 @@ function NewSos() {
 
   async function doSubmit() {
     if (!uid || !playAt) return;
-    if (!courtId) { toast.error("Pick a court"); return; }
-    if (playAt.getTime() < Date.now()) { toast.error("That time's already gone ⏰"); return; }
+    if (!courtId) { toast.error(t("sos.err_pick_court")); return; }
+    if (playAt.getTime() < Date.now()) { toast.error(t("sos.err_time_gone")); return; }
     setBusy(true);
     if (urgent) {
       const count = await activeSosCount(uid);
       if (count >= 3) {
         setBusy(false);
-        toast.error("Easy, hero — max 3 SOS at once. Cancel one first.");
+        toast.error(t("sos.err_max3"));
         return;
       }
     }

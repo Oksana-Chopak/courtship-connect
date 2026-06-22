@@ -84,8 +84,8 @@ function Players() {
             </Chip>
           ))}
         </FilterRow>
-        <FilterRow label="Level">
-          <Chip on={level == null} onClick={() => setLevel(null)}>All</Chip>
+        <FilterRow label={t("players.filter_level")}>
+          <Chip on={level == null} onClick={() => setLevel(null)}>{t("common.all")}</Chip>
           {LEVELS.map((l) => (
             <Chip key={l.n} on={level === l.n} onClick={() => setLevel(level === l.n ? null : l.n)}>
               <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
@@ -93,25 +93,25 @@ function Players() {
             </Chip>
           ))}
         </FilterRow>
-        <FilterRow label="Format">
-          <Chip on={!format} onClick={() => setFormat(null)}>All</Chip>
+        <FilterRow label={t("players.filter_format")}>
+          <Chip on={!format} onClick={() => setFormat(null)}>{t("common.all")}</Chip>
           {["singles", "doubles"].map((f) => (
             <Chip key={f} on={format === f} onClick={() => setFormat(format === f ? null : f)}>
               {f}
             </Chip>
           ))}
         </FilterRow>
-        <FilterRow label="Time">
-          <Chip on={!time} onClick={() => setTime(null)}>Any</Chip>
+        <FilterRow label={t("players.filter_time")}>
+          <Chip on={!time} onClick={() => setTime(null)}>{t("common.any")}</Chip>
           {PLAY_TIMES.map((t) => (
             <Chip key={t} on={time === t} onClick={() => setTime(time === t ? null : t)}>
               {t}
             </Chip>
           ))}
         </FilterRow>
-        <FilterRow label="Buddies">
+        <FilterRow label={t("players.filter_buddies")}>
           <Chip on={buddiesOnly} onClick={() => setBuddiesOnly(!buddiesOnly)}>
-            Will rescue no-shows 🆘
+            {t("players.will_rescue")}
           </Chip>
         </FilterRow>
       </div>

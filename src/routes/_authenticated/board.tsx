@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, sweepExpired, claimSos, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
@@ -39,7 +39,6 @@ function BoardPage() {
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    await sweepExpired();
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     if (au.user) {
@@ -268,7 +267,7 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
           const r = await claimSos(sos.id);
           setBusy(false);
           if (!r.ok) {
-            toast.error(r.reason === "taken" ? "This one's taken 💔" : r.reason === "already_in" ? "You're already in 🎾" : r.reason);
+            toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason);
             return;
           }
           // Complete the flow: land on the contact screen (host + Message on WhatsApp), not a 2s toast
