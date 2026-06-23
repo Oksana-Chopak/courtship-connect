@@ -27,6 +27,7 @@ function MePage() {
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
   const [rescues, setRescues] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [referrals, setReferrals] = useState(0);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
@@ -122,6 +123,7 @@ function MePage() {
       setIsAdmin(!!d.is_admin);
       setRescues(d.rescues_count ?? 0);
       setGamesPlayed(d.games_played ?? 0);
+      setReferrals(d.referrals_count ?? 0);
       setInitial({
         name: d.name ?? "",
         last_name: d.last_name ?? "",
@@ -192,6 +194,9 @@ function MePage() {
             <div className="font-extrabold text-lg">{t("invite.title")}</div>
             <div className="text-sm text-[var(--ink)]">{t("invite.sub")}</div>
           </div>
+          {referrals > 0 && (
+            <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>🎁 {t("invite.referrals", { n: referrals })}</div>
+          )}
           {editingCode ? (
             <div className="flex items-center gap-2">
               <input

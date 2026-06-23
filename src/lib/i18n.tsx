@@ -8,6 +8,7 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "invite.referrals": "{n} joined via you — you're building the club 🎾",
   "score.placeholder": "Score (optional) — e.g. 6-4 6-3",
   "ann.tag": "From the founder",
   "ann.cta": "Open",
@@ -512,6 +513,7 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "invite.referrals": "{n} gick med via dig — du bygger klubben 🎾",
   "score.placeholder": "Resultat (valfritt) — t.ex. 6-4 6-3",
   "ann.tag": "Från grundaren",
   "ann.cta": "Öppna",
