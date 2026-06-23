@@ -8,6 +8,12 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "cancel.push_title": "Game cancelled 😕",
+  "cancel.push_body": "{name} cancelled {when} @ {court}.",
+  "invite.push_title": "🎾 {name} created a match",
+  "invite.push_body": "{when} @ {court}. Want to join?",
+  "sos.invite_buddies": "Invite buddies (optional)",
+  "sos.invite_hint": "They get a ping. Leave empty to post for everyone on the board.",
   "cal.add": "📅 Add to calendar",
   // Iteration 1 — Save My Set push controls
   "push.title": "Last-minute SOS alerts",
@@ -496,6 +502,12 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "cancel.push_title": "Matchen inställd 😕",
+  "cancel.push_body": "{name} ställde in {when} @ {court}.",
+  "invite.push_title": "🎾 {name} skapade en match",
+  "invite.push_body": "{when} @ {court}. Vill du vara med?",
+  "sos.invite_buddies": "Bjud in polare (valfritt)",
+  "sos.invite_hint": "De får en pling. Lämna tomt för att posta för alla på tavlan.",
   "cal.add": "📅 Lägg i kalender",
   // Iteration 1 — Save My Set push controls
   "push.title": "SOS-aviseringar i sista minuten",

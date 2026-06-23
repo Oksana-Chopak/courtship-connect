@@ -131,6 +131,20 @@ export async function notifySos(sosId: string): Promise<void> {
   }
 }
 
+// Direct push to specific users (game cancellations, match invites). Best-effort.
+export async function notifyUsers(
+  userIds: string[],
+  opts: { title: string; body?: string; url?: string; tag?: string },
+): Promise<void> {
+  const ids = (userIds || []).filter(Boolean);
+  if (!ids.length) return;
+  try {
+    await (supabase as any).functions.invoke("notify-users", { body: { user_ids: ids, ...opts } });
+  } catch {
+    /* best-effort */
+  }
+}
+
 export async function unsubscribeFromPush(): Promise<void> {
   const reg = await getRegistration();
   if (!reg) return;
