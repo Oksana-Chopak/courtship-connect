@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { AnnouncementAdmin } from "@/components/AnnouncementBanner";
 import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, shortCourtName, type AdminCourt } from "@/lib/courts";
 import { fetchPendingEvents, setEventStatus, fetchEventContact, type EventRow } from "@/lib/events";
 import { whenLabel, levelMeta, vibeEmoji, VIBES } from "@/lib/courtship";
@@ -168,6 +169,8 @@ function AdminPage() {
         <div className="csection-label">{t("admin.tag")}</div>
         <h1 className="font-display text-4xl mt-1">{t("admin.title")}</h1>
       </div>
+
+      <AnnouncementAdmin />
 
       {pendingEvents.length > 0 && (
         <div>

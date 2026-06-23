@@ -11,6 +11,7 @@ export type GameRow = {
   sos_id: string | null;
   archived_by?: string[] | null;
   created_at?: string | null;
+  score?: string | null;
 };
 
 /** Games this user played that are ≥ 2h after play time, not archived by them,
@@ -35,8 +36,11 @@ export async function fetchPendingPostGameChecks(uid: string): Promise<GameRow[]
   });
 }
 
-export async function confirmGame(gameId: string) {
-  const { error } = await (supabase as any).rpc("confirm_game", { _game_id: gameId });
+export async function confirmGame(gameId: string, score?: string) {
+  const { error } = await (supabase as any).rpc("confirm_game", {
+    _game_id: gameId,
+    _score: score && score.trim() ? score.trim() : null,
+  });
   if (error) throw new Error(error.message);
 }
 

@@ -51,7 +51,7 @@ export function GamesHistory() {
           <div key={g.id} className="border-t border-[var(--ink)]/15 pt-2 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="font-extrabold truncate">{t("hist.vs", { name: mm?.otherName ?? "Player" })}</div>
-              <div className="text-sm text-[var(--ink)] truncate">{whenLabel(g.played_at)}{mm?.court ? ` · 📍 ${mm.court}` : ""}</div>
+              <div className="text-sm text-[var(--ink)] truncate">{whenLabel(g.played_at)}{mm?.court ? ` · 📍 ${mm.court}` : ""}{g.score ? ` · 🎾 ${g.score}` : ""}</div>
             </div>
             {confirmed && <span className="text-sm shrink-0" title={t("hist.confirmed")}>✓</span>}
           </div>

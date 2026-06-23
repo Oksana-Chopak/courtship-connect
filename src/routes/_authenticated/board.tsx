@@ -10,6 +10,7 @@ import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
 import { GetStarted } from "@/components/GetStarted";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -93,6 +94,8 @@ function BoardPage() {
       <StandaloneNotifPrompt />
 
       <AttentionStrip onChange={load} />
+
+      <AnnouncementBanner />
 
       {/* HERO — Save My Set: the killer feature, always front & center */}
       <Link

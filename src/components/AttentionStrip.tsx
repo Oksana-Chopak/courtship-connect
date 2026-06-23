@@ -11,6 +11,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   const { t } = useI18n();
   const [pending, setPending] = useState<GameRow[]>([]);
   const [pendingMeta, setPendingMeta] = useState<Record<string, { court: string; other: string; otherName: string }>>({});
+  const [scores, setScores] = useState<Record<string, string>>({});
   const [flarePrompts, setFlarePrompts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -61,8 +62,8 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
     })();
   }, []);
 
-  async function onConfirm(g: GameRow) {
-    try { await confirmGame(g.id); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); }
+  async function onConfirm(g: GameRow, score?: string) {
+    try { await confirmGame(g.id, score); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); }
     catch (e: any) { oops(e); }
   }
   async function onNoshow(g: GameRow) {
@@ -107,8 +108,14 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
               <div className="csection-label">{whenLabel(g.played_at)}</div>
               <div className="font-display text-2xl mt-1 leading-tight">{t("home.pending_q", { court })}</div>
             </div>
+            <input
+              value={scores[g.id] ?? ""}
+              onChange={(e) => setScores((p) => ({ ...p, [g.id]: e.target.value }))}
+              placeholder={t("score.placeholder")}
+              className="cinput w-full"
+            />
             <div className="space-y-2">
-              <button onClick={() => onConfirm(g)} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
+              <button onClick={() => onConfirm(g, scores[g.id])} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
               <button onClick={() => onArchive(g)} className="cbtn cbtn-ghost w-full">{t("home.didnt_happen")}</button>
               <button onClick={() => onNoshow(g)} className="cbtn cbtn-ghost w-full">{t("home.player_noshow", { name: otherName })}</button>
             </div>
