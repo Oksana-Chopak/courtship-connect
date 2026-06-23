@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
+import { notifySos } from "@/lib/push";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
@@ -139,6 +140,7 @@ function NewSos() {
     setBusy(false);
     if (error) { oops(error); return; }
     if (urgent) {
+      void notifySos(data.id);
       toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });
     } else {
