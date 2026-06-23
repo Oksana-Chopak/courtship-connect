@@ -8,6 +8,7 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "cal.add": "📅 Add to calendar",
   // Iteration 1 — Save My Set push controls
   "push.title": "Last-minute SOS alerts",
   "push.sub": "Get pinged when a player nearby needs a partner. You set the rules.",
@@ -495,6 +496,7 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "cal.add": "📅 Lägg i kalender",
   // Iteration 1 — Save My Set push controls
   "push.title": "SOS-aviseringar i sista minuten",
   "push.sub": "Bli pingad när en spelare i närheten behöver en partner. Du bestämmer reglerna.",

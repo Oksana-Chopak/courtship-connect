@@ -12,6 +12,7 @@ import {
   type Attendee,
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
   const { t } = useI18n();
@@ -68,6 +69,11 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
       </div>
       {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
       {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
+      <a
+        href={googleCalendarUrl({ title: e.title, startISO: e.starts_at, durationMin: 120, location: [e.city, shortCourtName(e.location)].filter(Boolean).join(", "), details: e.description || undefined })}
+        target="_blank" rel="noopener noreferrer"
+        className="text-sm font-extrabold underline mt-2 inline-block"
+      >{t("cal.add")}</a>
 
       {isHost ? (
         <div className="mt-3 space-y-2">

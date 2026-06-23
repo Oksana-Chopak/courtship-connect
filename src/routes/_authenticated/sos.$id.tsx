@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
+import { googleCalendarUrl } from "@/lib/calendar";
 import { myInviteLink, shareMessage } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
@@ -105,6 +106,12 @@ function SosDetail() {
   const remaining = Math.max(0, spotsNeeded - spotsFilled);
   const multi = spotsNeeded > 1;
   const canPlay = new Date(sos.play_at).getTime() > Date.now();
+  const calUrl = googleCalendarUrl({
+    title: `Tennis · ${courtName || "court"}`,
+    startISO: sos.play_at,
+    location: [courtName, courtCity].filter(Boolean).join(", "),
+    details: sos.note || undefined,
+  });
 
   async function messageWa(targetId: string) {
     // Open the tab synchronously inside the click gesture, THEN redirect after the
@@ -176,6 +183,9 @@ function SosDetail() {
           </div>
         )}
         {canPlay && (
+          <a href={calUrl} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-ghost w-full text-center block">{t("cal.add")}</a>
+        )}
+        {canPlay && (
           <button className="cbtn cbtn-ghost w-full" disabled={busy} onClick={doWithdraw}>{t("home.cant_make_it")}</button>
         )}
       </div>
@@ -236,6 +246,9 @@ function SosDetail() {
           >
             {t("sos.cancel")}
           </button>
+        )}
+        {canPlay && (
+          <a href={calUrl} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-ghost w-full text-center block">{t("cal.add")}</a>
         )}
         <style>{`
           .sos-dot { animation: dotPulse 1.2s infinite; }
