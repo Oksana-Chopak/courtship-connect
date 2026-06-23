@@ -8,6 +8,15 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "ann.tag": "From the founder",
+  "ann.cta": "Open",
+  "ann.admin_title": "Broadcast",
+  "ann.placeholder": "Announce something to everyone (next Monday, a new feature…)",
+  "ann.link_placeholder": "Optional link (/sos/new or https://…)",
+  "ann.post": "Post to board",
+  "ann.clear": "Clear",
+  "ann.posted": "Posted 📣",
+  "ann.cleared": "Cleared",
   "cancel.push_title": "Game cancelled 😕",
   "cancel.push_body": "{name} cancelled {when} @ {court}.",
   "invite.push_title": "🎾 {name} created a match",
@@ -502,6 +511,15 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "ann.tag": "Från grundaren",
+  "ann.cta": "Öppna",
+  "ann.admin_title": "Sändning",
+  "ann.placeholder": "Meddela alla (nästa måndag, en ny funktion…)",
+  "ann.link_placeholder": "Valfri länk (/sos/new eller https://…)",
+  "ann.post": "Publicera",
+  "ann.clear": "Rensa",
+  "ann.posted": "Publicerat 📣",
+  "ann.cleared": "Rensat",
   "cancel.push_title": "Matchen inställd 😕",
   "cancel.push_body": "{name} ställde in {when} @ {court}.",
   "invite.push_title": "🎾 {name} skapade en match",
