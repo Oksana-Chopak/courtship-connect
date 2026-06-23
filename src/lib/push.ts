@@ -120,6 +120,17 @@ export async function ensurePushSubscribed(): Promise<void> {
   }
 }
 
+// Ask the backend to fan this SOS out to eligible rescuers. Fire-and-forget:
+// the SOS is already live on the board, so a push hiccup must never block the
+// user. Replaces a Supabase dashboard webhook — works purely via Lovable.
+export async function notifySos(sosId: string): Promise<void> {
+  try {
+    await (supabase as any).functions.invoke("sos-notify", { body: { sos_id: sosId } });
+  } catch {
+    /* best-effort */
+  }
+}
+
 export async function unsubscribeFromPush(): Promise<void> {
   const reg = await getRegistration();
   if (!reg) return;

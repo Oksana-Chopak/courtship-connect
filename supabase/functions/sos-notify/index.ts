@@ -69,18 +69,22 @@ Deno.serve(async (req) => {
 
     const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // Display bits for the copy
-    const rec = (payload?.record ?? {}) as SosRecord;
+    // Authoritative re-read — the function is client-invoked, so never trust the
+    // payload. Only fan out a genuinely active urgent SOS.
+    const { data: sos } = await sb
+      .from("sos_requests")
+      .select("kind,status,level_min,level_max,play_at,court_id")
+      .eq("id", sosId)
+      .maybeSingle();
+    if (!sos || sos.kind !== "sos" || sos.status !== "active") {
+      return new Response(JSON.stringify({ ok: true, skipped: "not_active_sos" }), { status: 200 });
+    }
     let courtName = "the court";
-    if (rec.court_id) {
-      const { data: court } = await sb.from("courts").select("name").eq("id", rec.court_id).maybeSingle();
+    if (sos.court_id) {
+      const { data: court } = await sb.from("courts").select("name").eq("id", sos.court_id).maybeSingle();
       if (court?.name) courtName = court.name as string;
     }
-    let levelMin = rec.level_min, levelMax = rec.level_max, playAt = rec.play_at;
-    if (levelMin == null || playAt == null) {
-      const { data: sos } = await sb.from("sos_requests").select("level_min,level_max,play_at").eq("id", sosId).maybeSingle();
-      if (sos) { levelMin = sos.level_min; levelMax = sos.level_max; playAt = sos.play_at; }
-    }
+    const levelMin = sos.level_min, levelMax = sos.level_max, playAt = sos.play_at;
 
     const body = `L${levelMin}–${levelMax} ${playAt ? whenShort(playAt) : "soon"} @ ${courtName}. First to claim plays! 🎾`;
     const notif = JSON.stringify({

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
+import { notifySos } from "@/lib/push";
 
 export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   const { t } = useI18n();
@@ -78,6 +79,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
       .update({ kind: "sos", flared_at: new Date().toISOString() })
       .eq("id", sosId);
     if (error) { oops(error); return; }
+    void notifySos(sosId);
     toast.success(t("post.flare_fired"));
     setFlarePrompts((p) => p.filter((x) => x.id !== sosId));
     onChange?.();
