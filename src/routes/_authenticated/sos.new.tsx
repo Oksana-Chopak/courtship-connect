@@ -2,9 +2,10 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
-import { notifySos } from "@/lib/push";
+import { notifySos, notifyUsers } from "@/lib/push";
+import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, whenLabel, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -42,6 +43,9 @@ function NewSos() {
   const [autoFlare, setAutoFlare] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [myName, setMyName] = useState("");
+  const [buddies, setBuddies] = useState<Array<{ id: string; name: string }>>([]);
+  const [inviteIds, setInviteIds] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -52,13 +56,21 @@ function NewSos() {
       setUid(u.user.id);
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("level,home_city")
+        .select("name,level,home_city")
         .eq("id", u.user.id)
         .maybeSingle();
       const lv = (p as any)?.level ?? 3;
       const hc = ((p as any)?.home_city ?? "Uppsala") as City;
       setMyLevel(lv);
       setCity(hc);
+      setMyName((p as any)?.name ?? "");
+      try {
+        const bids = await fetchBuddyIds(u.user!.id);
+        if (bids.size) {
+          const { data: dir } = await (supabase as any).rpc("players_directory", { _ids: [...bids] });
+          setBuddies(((dir as any[]) ?? []).map((x) => ({ id: x.id, name: x.name })));
+        }
+      } catch { /* ignore */ }
       const first = cs.find((c) => c.city === hc) ?? cs[0];
       if (first) setCourtId(first.id);
       setLevelMin(Math.max(1, lv - 1));
@@ -139,6 +151,15 @@ function NewSos() {
       .single();
     setBusy(false);
     if (error) { oops(error); return; }
+    if (inviteIds.length) {
+      const court = courts.find((c) => c.id === courtId);
+      void notifyUsers(inviteIds, {
+        title: t("invite.push_title", { name: myName || "A buddy" }),
+        body: t("invite.push_body", { when: playAt ? whenLabel(playAt.toISOString()) : "", court: court?.name || "the court" }),
+        url: `/sos/${data.id}`,
+        tag: `invite-${data.id}`,
+      });
+    }
     if (urgent) {
       void notifySos(data.id);
       toast.success(t("post.sos_toast"));
@@ -288,6 +309,22 @@ function NewSos() {
               {autoFlare ? "ON" : "OFF"}
             </Chip>
           </div>
+        </Section>
+      )}
+
+      {buddies.length > 0 && (
+        <Section label={t("sos.invite_buddies")}>
+          <div className="flex gap-2 flex-wrap">
+            {buddies.map((b) => {
+              const on = inviteIds.includes(b.id);
+              return (
+                <Chip key={b.id} on={on} onClick={() => setInviteIds((prev) => (on ? prev.filter((x) => x !== b.id) : [...prev, b.id]))}>
+                  {b.name}
+                </Chip>
+              );
+            })}
+          </div>
+          <p className="text-sm text-[var(--ink)] font-semibold mt-2">{t("sos.invite_hint")}</p>
         </Section>
       )}
 
