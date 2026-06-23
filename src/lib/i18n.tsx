@@ -8,6 +8,7 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "score.placeholder": "Score (optional) — e.g. 6-4 6-3",
   "ann.tag": "From the founder",
   "ann.cta": "Open",
   "ann.admin_title": "Broadcast",
@@ -511,6 +512,7 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "score.placeholder": "Resultat (valfritt) — t.ex. 6-4 6-3",
   "ann.tag": "Från grundaren",
   "ann.cta": "Öppna",
   "ann.admin_title": "Sändning",
