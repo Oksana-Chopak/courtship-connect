@@ -51,11 +51,17 @@ function PlayerDetail() {
   const lm = levelMeta(p.level);
 
   async function openWhatsapp() {
+    // Sync-open the tab in the gesture, redirect after the async fetch (avoids
+    // popup-block and iframe ERR_BLOCKED_BY_RESPONSE).
+    const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     try {
       const { phone, name } = await getPhone({ data: { targetId: id } });
-      window.open(whatsappLink(phone, name), "_blank");
+      const url = whatsappLink(phone, name);
+      if (w) w.location.href = url;
+      else if (typeof window !== "undefined") window.location.href = url;
     } catch (e: any) {
+      if (w) w.close();
       oops(e);
     } finally {
       setBusy(false);

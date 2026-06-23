@@ -107,10 +107,15 @@ function SosDetail() {
   const canPlay = new Date(sos.play_at).getTime() > Date.now();
 
   async function messageWa(targetId: string) {
+    // Open the tab synchronously inside the click gesture, THEN redirect after the
+    // async phone fetch — opening after await is popup-blocked and breaks in iframes.
+    const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     try {
       const { phone } = await getPhone({ data: { targetId } });
-      window.open(whatsappClaimLink(phone, me!.name, when, courtName || "the court"), "_blank");
-    } catch (e: any) { oops(e); }
+      const url = whatsappClaimLink(phone, me!.name, when, courtName || "the court");
+      if (w) w.location.href = url;
+      else if (typeof window !== "undefined") window.location.href = url;
+    } catch (e: any) { if (w) w.close(); oops(e); }
   }
 
   async function doWithdraw() {
