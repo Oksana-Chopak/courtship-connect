@@ -5,16 +5,15 @@ import { useI18n } from "@/lib/i18n";
 
 const KEY = "courtship.getstarted.dismissed";
 
+// Calm onboarding nudge: a single subtle row, no loud accent colour, and it only
+// shows the steps that are NOT done yet (profile is already done by the time you
+// see a board; invite hides once someone joins via your code). Dismissible.
 export function GetStarted() {
   const { t } = useI18n();
   const [hidden, setHidden] = useState(() => {
-    try {
-      return localStorage.getItem(KEY) === "1";
-    } catch {
-      return false;
-    }
+    try { return localStorage.getItem(KEY) === "1"; } catch { return false; }
   });
-  const [inviteDone, setInviteDone] = useState(false);
+  const [inviteDone, setInviteDone] = useState(true); // assume done to avoid flashing the step
 
   useEffect(() => {
     let cancelled = false;
@@ -22,52 +21,27 @@ export function GetStarted() {
       try {
         const { data } = await (supabase as any).rpc("my_invite_uses");
         if (!cancelled) setInviteDone((Number(data) || 0) > 0);
-      } catch {
-        /* RPC not deployed yet — step stays actionable */
-      }
+      } catch { /* RPC not deployed — keep the row minimal */ }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (hidden) return null;
   const dismiss = () => {
-    try {
-      localStorage.setItem(KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.setItem(KEY, "1"); } catch { /* ignore */ }
     setHidden(true);
   };
+
   return (
-    <div className="ccard p-4 relative" style={{ background: "var(--cream2)" }}>
-      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="absolute top-2 right-3 text-lg opacity-50">
-        ✕
-      </button>
-      <div className="font-display text-xl pr-6">{t("gs.title")}</div>
-      <div className="text-sm text-[var(--ink)] mb-3">{t("gs.sub")}</div>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-base font-semibold">
-          <span>✅</span>
-          <span>{t("gs.step1")}</span>
-        </div>
-        {inviteDone ? (
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <span>✅</span>
-            <span>{t("gs.step2")}</span>
-          </div>
-        ) : (
-          <Link to="/me" className="flex items-center gap-2 text-base font-extrabold underline">
-            <span>🎾</span>
-            <span>{t("gs.step2")}</span>
-          </Link>
+    <div className="rounded-xl border border-[var(--ink)]/15 px-3 py-2 flex items-center gap-3 text-sm" style={{ background: "var(--cream2)" }}>
+      <span className="opacity-60 shrink-0">{t("gs.title")}</span>
+      <div className="flex-1 flex gap-4 flex-wrap">
+        {!inviteDone && (
+          <Link to="/me" className="font-extrabold underline">{t("gs.step2")}</Link>
         )}
-        <Link to="/sos/new" search={{ planned: undefined }} className="flex items-center gap-2 text-base font-extrabold underline">
-          <span>📅</span>
-          <span>{t("gs.step3")}</span>
-        </Link>
+        <Link to="/sos/new" search={{ planned: undefined }} className="font-extrabold underline">{t("gs.step3")}</Link>
       </div>
+      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="opacity-40 shrink-0">✕</button>
     </div>
   );
 }
