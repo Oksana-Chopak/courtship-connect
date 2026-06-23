@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { notifyUsers } from "@/lib/push";
 import { myInviteLink, shareMessage } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
 import { whenLabel, levelMeta } from "@/lib/courtship";
@@ -231,22 +232,30 @@ function SosDetail() {
         {!full && (
           <button className="cbtn cbtn-green w-full" onClick={shareSos}>{t("share.button")}</button>
         )}
-        {!full && (
-          <button
-            className="cbtn cbtn-ghost w-full"
-            disabled={busy}
-            onClick={async () => {
-              if (typeof window !== "undefined" && !window.confirm(t("sos.cancel_confirm"))) return;
-              setBusy(true);
-              const { error } = await (supabase as any).rpc("cancel_sos", { _sos_id: sos.id });
-              setBusy(false);
-              if (error) oops(error);
-              else { toast.success(t("sos.cancelled")); navigate({ to: "/board" }); }
-            }}
-          >
-            {t("sos.cancel")}
-          </button>
-        )}
+        <button
+          className="cbtn cbtn-ghost w-full"
+          disabled={busy}
+          onClick={async () => {
+            if (typeof window !== "undefined" && !window.confirm(t("sos.cancel_confirm"))) return;
+            setBusy(true);
+            const { data, error } = await (supabase as any).rpc("cancel_game", { _sos_id: sos!.id });
+            if (error) { setBusy(false); oops(error); return; }
+            const ids: string[] = ((data as any[])?.[0]?.claimer_ids) ?? [];
+            if (ids.length) {
+              await notifyUsers(ids, {
+                title: t("cancel.push_title"),
+                body: t("cancel.push_body", { name: me!.name, when, court: courtName || "the court" }),
+                url: "/board",
+                tag: `cancel-${sos!.id}`,
+              });
+            }
+            setBusy(false);
+            toast.success(t("sos.cancelled"));
+            navigate({ to: "/board" });
+          }}
+        >
+          {t("sos.cancel")}
+        </button>
         {canPlay && (
           <a href={calUrl} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-ghost w-full text-center block">{t("cal.add")}</a>
         )}
