@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { FLAGS } from "@/lib/flags";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,7 @@ import { oops } from "@/lib/oops";
 type LuckyPlayer = { id: string; name: string; photo_url: string | null; level: number; home_city: string | null; bio: string | null };
 
 export const Route = createFileRoute("/_authenticated/lucky")({
+  beforeLoad: () => { if (!FLAGS.luckyServe) throw redirect({ to: "/players" }); },
   head: () => ({ meta: [{ title: "Lucky Serve — Courtship" }] }),
   component: Lucky,
 });
