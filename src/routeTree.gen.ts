@@ -23,6 +23,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedPlayersIndexRouteImport } from './routes/_authenticated/players.index'
 import { Route as AuthenticatedSosNewRouteImport } from './routes/_authenticated/sos.new'
 import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/sos.$id'
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
@@ -96,6 +97,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlayersIndexRoute =
+  AuthenticatedPlayersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPlayersRoute,
+  } as any)
 const AuthenticatedSosNewRoute = AuthenticatedSosNewRouteImport.update({
   id: '/sos/new',
   path: '/sos/new',
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
+  '/players/': typeof AuthenticatedPlayersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,11 +150,11 @@ export interface FileRoutesByTo {
   '/lucky': typeof AuthenticatedLuckyRoute
   '/match': typeof AuthenticatedMatchRoute
   '/me': typeof AuthenticatedMeRoute
-  '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/rescue': typeof AuthenticatedRescueRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
+  '/players': typeof AuthenticatedPlayersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
   '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
   '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
+  '/_authenticated/players/': typeof AuthenticatedPlayersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
+    | '/players/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -200,11 +210,11 @@ export interface FileRouteTypes {
     | '/lucky'
     | '/match'
     | '/me'
-    | '/players'
     | '/rescue'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
+    | '/players'
   id:
     | '__root__'
     | '/'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/players/$id'
     | '/_authenticated/sos/$id'
     | '/_authenticated/sos/new'
+    | '/_authenticated/players/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -334,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/players/': {
+      id: '/_authenticated/players/'
+      path: '/'
+      fullPath: '/players/'
+      preLoaderRoute: typeof AuthenticatedPlayersIndexRouteImport
+      parentRoute: typeof AuthenticatedPlayersRoute
+    }
     '/_authenticated/sos/new': {
       id: '/_authenticated/sos/new'
       path: '/sos/new'
@@ -360,10 +378,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedPlayersRouteChildren {
   AuthenticatedPlayersIdRoute: typeof AuthenticatedPlayersIdRoute
+  AuthenticatedPlayersIndexRoute: typeof AuthenticatedPlayersIndexRoute
 }
 
 const AuthenticatedPlayersRouteChildren: AuthenticatedPlayersRouteChildren = {
   AuthenticatedPlayersIdRoute: AuthenticatedPlayersIdRoute,
+  AuthenticatedPlayersIndexRoute: AuthenticatedPlayersIndexRoute,
 }
 
 const AuthenticatedPlayersRouteWithChildren =
