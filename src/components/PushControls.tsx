@@ -64,7 +64,7 @@ export function PushControls() {
   const supported = isPushSupported();
 
   return (
-    <div className="ccard p-4 space-y-4" style={{ borderColor: "var(--coral)" }}>
+    <div className="ccard p-4 space-y-4">
       <div>
         <div className="font-display text-2xl leading-tight">{t("push.title")}</div>
         <div className="text-sm text-[var(--ink)] font-semibold mt-1">{t("push.sub")}</div>
