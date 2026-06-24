@@ -225,7 +225,7 @@ function MePage() {
         <PushControls bare />
       </Collapsible>
 
-      <Collapsible title={`🤝 ${t("buddy.my_buddies")}`}>
+      <Collapsible title={t("buddy.my_buddies")}>
         {buddies.length === 0 ? (
           <div className="text-base font-semibold text-[var(--ink)]">{t("empty.buddies")}</div>
         ) : (
