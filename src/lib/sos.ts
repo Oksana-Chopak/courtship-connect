@@ -168,6 +168,6 @@ export function formatLabel(f: string): string {
 
 export function whatsappClaimLink(phoneE164: string, myName: string, when: string, court: string) {
   const clean = phoneE164.replace(/[^\d]/g, "");
-  const text = `🎾 Hey! I'm in for our tennis match ${when} at ${court} — I'm ${myName}, see you on court!`;
+  const text = `\u{1F3BE} Hey! I'm in for our tennis match ${when} at ${court} — I'm ${myName}, see you on court!`;
   return `https://wa.me/${clean}?text=${encodeURIComponent(text)}`;
 }
