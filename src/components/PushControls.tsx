@@ -8,7 +8,7 @@ const MAX_OPTIONS = [3, 7, 15, 30];
 
 // "Save My Set" alert controls. The opt-in must SELL, not just ask — and the user
 // stays in control of radius, frequency and quiet hours, or they'll mute us.
-export function PushControls() {
+export function PushControls({ bare = false }: { bare?: boolean }) {
   const { t } = useI18n();
   const [status, setStatus] = useState<PushStatus>("unsupported");
   const [sosOptin, setSosOptin] = useState(true);
@@ -64,11 +64,15 @@ export function PushControls() {
   const supported = isPushSupported();
 
   return (
-    <div className="ccard p-4 space-y-4">
-      <div>
-        <div className="font-display text-2xl leading-tight">{t("push.title")}</div>
-        <div className="text-sm text-[var(--ink)] font-semibold mt-1">{t("push.sub")}</div>
-      </div>
+    <div className={bare ? "space-y-4" : "ccard p-4 space-y-4"}>
+      {bare ? (
+        <div className="text-sm text-[var(--ink)] font-semibold">{t("push.sub")}</div>
+      ) : (
+        <div>
+          <div className="font-display text-2xl leading-tight">{t("push.title")}</div>
+          <div className="text-sm text-[var(--ink)] font-semibold mt-1">{t("push.sub")}</div>
+        </div>
+      )}
 
       {/* Subscription state */}
       {status === "denied" ? (

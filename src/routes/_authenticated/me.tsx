@@ -14,6 +14,7 @@ import {
   type BuddyRow, type BuddyRequest,
 } from "@/lib/buddies";
 import { Avatar } from "@/components/Avatar";
+import { Collapsible } from "@/components/Collapsible";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Edit profile — Courtship" }] }),
@@ -220,10 +221,11 @@ function MePage() {
         </div>
       )}
 
-      <PushControls />
+      <Collapsible title={`🔔 ${t("push.title")}`}>
+        <PushControls bare />
+      </Collapsible>
 
-      <div className="ccard p-4 space-y-3">
-        <div className="font-display text-2xl">{t("buddy.my_buddies")}</div>
+      <Collapsible title={`🤝 ${t("buddy.my_buddies")}`}>
         {buddies.length === 0 ? (
           <div className="text-base font-semibold text-[var(--ink)]">{t("empty.buddies")}</div>
         ) : (
@@ -255,7 +257,7 @@ function MePage() {
             </div>
           ))
         )}
-      </div>
+      </Collapsible>
 
       <div className="ccard p-5">
         <ProfileWizard
