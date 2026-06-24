@@ -146,11 +146,13 @@ function NewSos() {
       court_type: courtType,
       duration_min: duration,
     };
-    const { data, error } = await (supabase as any)
-      .from("sos_requests")
-      .insert(insertRow)
-      .select("id")
-      .single();
+    let res = await (supabase as any).from("sos_requests").insert(insertRow).select("id").single();
+    if (res.error && /duration_min/i.test(res.error.message || "")) {
+      // duration_min column not migrated yet — post without it so creation never breaks
+      const { duration_min: _omit, ...fallback } = insertRow;
+      res = await (supabase as any).from("sos_requests").insert(fallback).select("id").single();
+    }
+    const { data, error } = res;
     setBusy(false);
     if (error) { oops(error); return; }
     if (inviteIds.length) {
