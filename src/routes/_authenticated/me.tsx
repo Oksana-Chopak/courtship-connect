@@ -4,7 +4,7 @@ import { PushControls } from "@/components/PushControls";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
-import { oops } from "@/lib/oops";
+import { oops, SUPPORT_WA } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
@@ -239,7 +239,8 @@ function MePage() {
                 </div>
               </div>
               <button
-                className="cbtn cbtn-ghost"
+                className="text-xs underline shrink-0"
+                style={{ opacity: 0.5 }}
                 onClick={async () => {
                   if (typeof window !== "undefined" && !window.confirm(t("buddy.confirm_remove"))) return;
                   try {
@@ -277,6 +278,12 @@ function MePage() {
           }}
         />
       </div>
+
+      <button
+        onClick={() => { try { window.open(`https://wa.me/${SUPPORT_WA.replace(/[^\d]/g, "")}?text=${encodeURIComponent(t("feedback.prefill"))}`, "_blank"); } catch { /* ignore */ } }}
+        className="w-full text-center text-sm underline"
+        style={{ opacity: 0.6 }}
+      >{t("feedback.cta")}</button>
 
       {isAdmin && (
         <Link to="/admin" className="ccard p-4 flex items-center justify-between">

@@ -41,11 +41,18 @@ function Players() {
   const [buddiesOnly, setBuddiesOnly] = useState(false);
   const [city, setCity] = useState<City | null>(null);
   const [buddyIds, setBuddyIds] = useState<Set<string>>(new Set());
+  const [meId, setMeId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (u.user) setBuddyIds(await fetchBuddyIds(u.user.id));
+      if (u.user) {
+        setMeId(u.user.id);
+        setBuddyIds(await fetchBuddyIds(u.user.id));
+        const { data: meRow } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
+        setIsAdmin(!!(meRow as any)?.is_admin);
+      }
       const { data } = await (supabase as any).rpc("players_directory");
       setRows((data as any) ?? []);
       setLoading(false);
@@ -141,8 +148,8 @@ function Players() {
         )
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((p) => (
-            <PlayerCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} />
+          {(meId ? [...filtered.filter((p) => p.id === meId), ...filtered.filter((p) => p.id !== meId)] : filtered).map((p) => (
+            <PlayerCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
           ))}
         </div>
       )}
@@ -167,7 +174,7 @@ function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => void; c
   );
 }
 
-function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
+function PlayerCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string }) {
   const lm = levelMeta(p.level);
   return (
     <Link
@@ -182,6 +189,7 @@ function PlayerCard({ p, isBuddy }: { p: P; isBuddy: boolean }) {
         <div className="font-display text-lg truncate flex items-center gap-1">
           {p.name}{p.last_name ? " " + p.last_name : ""}
           {isBuddy && <span title="Buddy">🤝</span>}
+          {badge && <span className="cchip-mini">{badge}</span>}
         </div>
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
