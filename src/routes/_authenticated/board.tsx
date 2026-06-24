@@ -90,9 +90,6 @@ function BoardPage() {
         <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>
       </div>
 
-      <InstallBanner />
-      <StandaloneNotifPrompt />
-
       <AttentionStrip onChange={load} />
 
       <AnnouncementBanner />
@@ -110,6 +107,9 @@ function BoardPage() {
           🚨 {t("hero.rescue_cta")}
         </div>
       </Link>
+
+      <InstallBanner />
+      <StandaloneNotifPrompt />
 
       {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
       {!loading && urgentRows.length > 0 && (
