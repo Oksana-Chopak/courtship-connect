@@ -8,6 +8,10 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "feedback.cta": "💬 Send feedback or an idea",
+  "feedback.prefill": "Courtship feedback: ",
+  "players.you": "You",
+  "players.founder": "Founder",
   "match.title": "💘 Find a Match",
   "match.sub": "Swipe your way to a hitting partner",
   "match.like": "Like",
@@ -530,6 +534,10 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "feedback.cta": "💬 Skicka feedback eller idé",
+  "feedback.prefill": "Courtship feedback: ",
+  "players.you": "Du",
+  "players.founder": "Grundare",
   "match.title": "💘 Hitta en match",
   "match.sub": "Swajpa fram en spelpartner",
   "match.like": "Gilla",
