@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          link: string | null
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+        }
+        Relationships: []
+      }
       buddies: {
         Row: {
           created_at: string
@@ -212,6 +239,7 @@ export type Database = {
           player_a: string
           player_b: string
           reported_noshow: string | null
+          score: string | null
           sos_id: string | null
         }
         Insert: {
@@ -224,6 +252,7 @@ export type Database = {
           player_a: string
           player_b: string
           reported_noshow?: string | null
+          score?: string | null
           sos_id?: string | null
         }
         Update: {
@@ -236,6 +265,7 @@ export type Database = {
           player_a?: string
           player_b?: string
           reported_noshow?: string | null
+          score?: string | null
           sos_id?: string | null
         }
         Relationships: [
@@ -296,6 +326,9 @@ export type Database = {
           phone_e164: string
           photo_url: string | null
           play_times: string[]
+          push_max_per_week: number
+          push_wake_me: boolean
+          referrals_count: number
           rescues_count: number
           signup_code: string | null
           vibe: Database["public"]["Enums"]["vibe_t"]
@@ -323,6 +356,9 @@ export type Database = {
           phone_e164: string
           photo_url?: string | null
           play_times?: string[]
+          push_max_per_week?: number
+          push_wake_me?: boolean
+          referrals_count?: number
           rescues_count?: number
           signup_code?: string | null
           vibe?: Database["public"]["Enums"]["vibe_t"]
@@ -350,9 +386,80 @@ export type Database = {
           phone_e164?: string
           photo_url?: string | null
           play_times?: string[]
+          push_max_per_week?: number
+          push_wake_me?: boolean
+          referrals_count?: number
           rescues_count?: number
           signup_code?: string | null
           vibe?: Database["public"]["Enums"]["vibe_t"]
+        }
+        Relationships: []
+      }
+      push_events: {
+        Row: {
+          id: string
+          kind: string
+          sent_at: string
+          sos_id: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kind?: string
+          sent_at?: string
+          sos_id?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          sent_at?: string
+          sos_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_events_sos_id_fkey"
+            columns: ["sos_id"]
+            isOneToOne: false
+            referencedRelation: "sos_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          fail_count: number
+          id: string
+          last_seen_at: string
+          p256dh: string
+          ua: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          fail_count?: number
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          ua?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          fail_count?: number
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          ua?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -365,6 +472,7 @@ export type Database = {
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
+          duration_min: number
           flared_at: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -385,6 +493,7 @@ export type Database = {
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type?: Database["public"]["Enums"]["court_type_t"]
           created_at?: string
+          duration_min?: number
           flared_at?: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
           id?: string
@@ -405,6 +514,7 @@ export type Database = {
           court_status?: Database["public"]["Enums"]["court_status_t"]
           court_type?: Database["public"]["Enums"]["court_type_t"]
           created_at?: string
+          duration_min?: number
           flared_at?: string | null
           format?: Database["public"]["Enums"]["sos_format_t"]
           id?: string
@@ -426,6 +536,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      swipes: {
+        Row: {
+          created_at: string
+          id: string
+          liked: boolean
+          liker_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          liked: boolean
+          liker_id: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          liked?: boolean
+          liker_id?: string
+          target_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -516,6 +650,12 @@ export type Database = {
         Returns: undefined
       }
       archive_game: { Args: { _game_id: string }; Returns: undefined }
+      cancel_game: {
+        Args: { _sos_id: string }
+        Returns: {
+          claimer_ids: string[]
+        }[]
+      }
       cancel_sos: { Args: { _sos_id: string }; Returns: undefined }
       check_invite_code: { Args: { _code: string }; Returns: boolean }
       claim_sos: {
@@ -527,6 +667,7 @@ export type Database = {
           sos_id: string
         }[]
       }
+      clear_announcements: { Args: never; Returns: undefined }
       community_stats: {
         Args: { _city: string }
         Returns: {
@@ -536,8 +677,21 @@ export type Database = {
           sets_saved: number
         }[]
       }
-      confirm_game: { Args: { _game_id: string }; Returns: undefined }
+      confirm_game: {
+        Args: { _game_id: string; _score?: string }
+        Returns: undefined
+      }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
+      delete_push_subscription: {
+        Args: { _endpoint: string }
+        Returns: undefined
+      }
+      do_swipe: {
+        Args: { _like: boolean; _target: string }
+        Returns: {
+          is_match: boolean
+        }[]
+      }
       eligible_open_games_for_me: {
         Args: never
         Returns: {
@@ -621,6 +775,9 @@ export type Database = {
           phone_e164: string
           photo_url: string | null
           play_times: string[]
+          push_max_per_week: number
+          push_wake_me: boolean
+          referrals_count: number
           rescues_count: number
           signup_code: string | null
           vibe: Database["public"]["Enums"]["vibe_t"]
@@ -667,6 +824,21 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
       }
+      post_announcement: {
+        Args: { _body: string; _link?: string }
+        Returns: string
+      }
+      random_player_for_me: {
+        Args: never
+        Returns: {
+          bio: string
+          home_city: string
+          id: string
+          level: number
+          name: string
+          photo_url: string
+        }[]
+      }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       request_buddy: { Args: { _other: string }; Returns: undefined }
@@ -675,7 +847,46 @@ export type Database = {
         Returns: undefined
       }
       save_my_profile: { Args: { _data: Json }; Returns: undefined }
+      save_push_prefs: {
+        Args: {
+          _max_per_week: number
+          _radius: number
+          _sos_optin: boolean
+          _wake_me: boolean
+        }
+        Returns: undefined
+      }
+      save_push_subscription: {
+        Args: {
+          _auth: string
+          _endpoint: string
+          _p256dh: string
+          _ua?: string
+        }
+        Returns: undefined
+      }
       set_my_invite_code: { Args: { _new: string }; Returns: string }
+      sos_push_targets: {
+        Args: { _sos_id: string }
+        Returns: {
+          auth: string
+          endpoint: string
+          p256dh: string
+          user_id: string
+        }[]
+      }
+      swipe_deck: {
+        Args: never
+        Returns: {
+          bio: string
+          fav_shot: string
+          home_city: string
+          id: string
+          level: number
+          name: string
+          photo_url: string
+        }[]
+      }
       top_rescuers_month: {
         Args: never
         Returns: {
