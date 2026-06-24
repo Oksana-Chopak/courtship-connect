@@ -7,6 +7,7 @@ import { ActivityBadge } from "@/components/ActivityBadge";
 import { TopRescuers } from "@/components/TopRescuers";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
+import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds } from "@/lib/buddies";
 
 export const Route = createFileRoute("/_authenticated/players")({
@@ -77,8 +78,8 @@ function Players() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">{t("players.title")}</h1>
-        <Link to="/lucky" className="cbtn cbtn-coral w-full mt-2 text-center block">{t("lucky.cta")}</Link>
-        <Link to="/match" className="cbtn cbtn-green w-full mt-2 text-center block">{t("match.cta")}</Link>
+        {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full mt-2 text-center block">{t("lucky.cta")}</Link>}
+        {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full mt-2 text-center block">{t("match.cta")}</Link>}
         <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
 

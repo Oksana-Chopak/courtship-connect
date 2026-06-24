@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { FLAGS } from "@/lib/flags";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,7 @@ import { oops } from "@/lib/oops";
 type Card = { id: string; name: string; photo_url: string | null; level: number; home_city: string | null; bio: string | null; fav_shot: string | null };
 
 export const Route = createFileRoute("/_authenticated/match")({
+  beforeLoad: () => { if (!FLAGS.swipeDeck) throw redirect({ to: "/players" }); },
   head: () => ({ meta: [{ title: "Match — Courtship" }] }),
   component: MatchDeck,
 });
