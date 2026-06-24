@@ -8,6 +8,13 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "lucky.title": "🎰 Lucky Serve",
+  "lucky.sub": "Spin for a random partner — any level, just tennis",
+  "lucky.spinning": "Spinning…",
+  "lucky.spin_again": "🎰 Spin again",
+  "lucky.view_profile": "View full profile",
+  "lucky.empty": "No one to spin yet — invite more players!",
+  "lucky.cta": "🎰 Lucky Serve — spin for a partner",
   "invite.referrals": "{n} joined via you — you're building the club 🎾",
   "score.placeholder": "Score (optional) — e.g. 6-4 6-3",
   "ann.tag": "From the founder",
@@ -513,6 +520,13 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "lucky.title": "🎰 Lucky Serve",
+  "lucky.sub": "Snurra fram en slumppartner — vilken nivå som helst, bara tennis",
+  "lucky.spinning": "Snurrar…",
+  "lucky.spin_again": "🎰 Snurra igen",
+  "lucky.view_profile": "Se hela profilen",
+  "lucky.empty": "Ingen att snurra fram än — bjud in fler spelare!",
+  "lucky.cta": "🎰 Lucky Serve — snurra fram en partner",
   "invite.referrals": "{n} gick med via dig — du bygger klubben 🎾",
   "score.placeholder": "Resultat (valfritt) — t.ex. 6-4 6-3",
   "ann.tag": "Från grundaren",
