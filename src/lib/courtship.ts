@@ -141,6 +141,8 @@ export function snapToSlot(d: Date, city: string, mode: "nearest" | "up" = "near
 }
 
 export const COURT_TYPES = ["indoor", "outdoor"] as const;
+export const DURATIONS = [60, 90, 120] as const;
+export function durationLabel(min: number): string { return min === 60 ? "1h" : min === 90 ? "1.5h" : min === 120 ? "2h" : `${Math.round(min / 60)}h`; }
 export type CourtType = (typeof COURT_TYPES)[number];
 
 export function courtTypeMeta(t: CourtType, lang: "en" | "sv" = "en") {
