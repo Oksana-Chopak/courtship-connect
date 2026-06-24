@@ -70,6 +70,7 @@ function Players() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">{t("players.title")}</h1>
+        <Link to="/lucky" className="cbtn cbtn-coral w-full mt-2 text-center block">{t("lucky.cta")}</Link>
         <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
 
