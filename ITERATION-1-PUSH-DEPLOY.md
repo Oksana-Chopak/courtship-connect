@@ -63,3 +63,5 @@ supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=ma
 - **Тихі години 22:00–07:00 (Europe/Stockholm)** — не турбуємо, якщо не ввімкнено «Wake me».
 - **Радіус** поки зводиться до міста (реальний гео-радіус — Iteration 2).
 - Авто-ескалація (cron open→sos) поки без пушу — додамо в наступному кроці; створення SOS і ручний flare пуш шлють.
+
+<!-- preview rebuild trigger 2026-06-24T07:56:53Z -->
