@@ -8,6 +8,7 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "sos.duration": "Duration",
   "feedback.cta": "💬 Send feedback or an idea",
   "feedback.prefill": "Courtship feedback: ",
   "players.you": "You",
@@ -534,6 +535,7 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "sos.duration": "Längd",
   "feedback.cta": "💬 Skicka feedback eller idé",
   "feedback.prefill": "Courtship feedback: ",
   "players.you": "Du",

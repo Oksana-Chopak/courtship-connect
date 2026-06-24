@@ -5,7 +5,7 @@ import { activeSosCount } from "@/lib/sos";
 import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, whenLabel, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -39,6 +39,7 @@ function NewSos() {
   const [levelMin, setLevelMin] = useState(2);
   const [levelMax, setLevelMax] = useState(4);
   const [courtStatus, setCourtStatus] = useState<typeof COURT_STATUSES[number]["value"]>("booked");
+  const [duration, setDuration] = useState<number>(60);
   const [note, setNote] = useState("");
   const [autoFlare, setAutoFlare] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -143,6 +144,7 @@ function NewSos() {
       auto_flare: urgent ? false : autoFlare,
       flared_at: urgent ? new Date().toISOString() : null,
       court_type: courtType,
+      duration_min: duration,
     };
     const { data, error } = await (supabase as any)
       .from("sos_requests")
@@ -255,6 +257,14 @@ function NewSos() {
             <Chip key={f.value} on={format === f.value} onClick={() => setFormat(f.value)}>
               {f.label}
             </Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section label={t("sos.duration")}>
+        <div className="flex gap-2 flex-wrap">
+          {DURATIONS.map((d) => (
+            <Chip key={d} on={duration === d} onClick={() => setDuration(d)}>{durationLabel(d)}</Chip>
           ))}
         </div>
       </Section>

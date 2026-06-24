@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type SosRow = {
+  duration_min?: number;
   id: string;
   caller_id: string;
   play_at: string;

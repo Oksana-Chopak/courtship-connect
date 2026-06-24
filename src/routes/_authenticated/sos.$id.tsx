@@ -110,7 +110,7 @@ function SosDetail() {
   const calUrl = googleCalendarUrl({
     title: `\u{1F3BE} Tennis · ${courtName || "court"}`,
     startISO: sos.play_at,
-    durationMin: 60,
+    durationMin: sos.duration_min ?? 60,
     location: [courtName, courtCity].filter(Boolean).join(", "),
     details: sos.note || undefined,
   });
