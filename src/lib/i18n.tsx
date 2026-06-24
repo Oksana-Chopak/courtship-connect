@@ -8,6 +8,16 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "match.title": "💘 Find a Match",
+  "match.sub": "Swipe your way to a hitting partner",
+  "match.like": "Like",
+  "match.pass": "Pass",
+  "match.its_a_match": "It's a match!",
+  "match.match_sub": "You and {name} both swiped right 🎾",
+  "match.plan_game": "📅 Plan a game",
+  "match.keep_swiping": "Keep swiping",
+  "match.empty": "No more players right now — check back soon!",
+  "match.cta": "💘 Find a Match — swipe players",
   "lucky.title": "🎰 Lucky Serve",
   "lucky.sub": "Spin for a random partner — any level, just tennis",
   "lucky.spinning": "Spinning…",
@@ -520,6 +530,16 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "match.title": "💘 Hitta en match",
+  "match.sub": "Swajpa fram en spelpartner",
+  "match.like": "Gilla",
+  "match.pass": "Nej tack",
+  "match.its_a_match": "Det är en match!",
+  "match.match_sub": "Du och {name} swajpade båda höger 🎾",
+  "match.plan_game": "📅 Planera en match",
+  "match.keep_swiping": "Fortsätt swajpa",
+  "match.empty": "Inga fler spelare just nu — kom tillbaka snart!",
+  "match.cta": "💘 Hitta en match — swajpa spelare",
   "lucky.title": "🎰 Lucky Serve",
   "lucky.sub": "Snurra fram en slumppartner — vilken nivå som helst, bara tennis",
   "lucky.spinning": "Snurrar…",

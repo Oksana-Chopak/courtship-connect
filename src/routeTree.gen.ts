@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRescueRouteImport } from './routes/_authenticated/rescue'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
+import { Route as AuthenticatedMatchRouteImport } from './routes/_authenticated/match'
 import { Route as AuthenticatedLuckyRouteImport } from './routes/_authenticated/lucky'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
@@ -63,6 +64,11 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMatchRoute = AuthenticatedMatchRouteImport.update({
+  id: '/match',
+  path: '/match',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLuckyRoute = AuthenticatedLuckyRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof AuthenticatedGamesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/lucky': typeof AuthenticatedLuckyRoute
+  '/match': typeof AuthenticatedMatchRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/rescue': typeof AuthenticatedRescueRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/games': typeof AuthenticatedGamesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/lucky': typeof AuthenticatedLuckyRoute
+  '/match': typeof AuthenticatedMatchRoute
   '/me': typeof AuthenticatedMeRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/rescue': typeof AuthenticatedRescueRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/_authenticated/games': typeof AuthenticatedGamesRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/lucky': typeof AuthenticatedLuckyRoute
+  '/_authenticated/match': typeof AuthenticatedMatchRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
   '/_authenticated/rescue': typeof AuthenticatedRescueRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/home'
     | '/lucky'
+    | '/match'
     | '/me'
     | '/players'
     | '/rescue'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/home'
     | '/lucky'
+    | '/match'
     | '/me'
     | '/players'
     | '/rescue'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games'
     | '/_authenticated/home'
     | '/_authenticated/lucky'
+    | '/_authenticated/match'
     | '/_authenticated/me'
     | '/_authenticated/players'
     | '/_authenticated/rescue'
@@ -278,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof AuthenticatedMeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/match': {
+      id: '/_authenticated/match'
+      path: '/match'
+      fullPath: '/match'
+      preLoaderRoute: typeof AuthenticatedMatchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/lucky': {
@@ -356,6 +375,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedLuckyRoute: typeof AuthenticatedLuckyRoute
+  AuthenticatedMatchRoute: typeof AuthenticatedMatchRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
   AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
@@ -369,6 +389,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGamesRoute: AuthenticatedGamesRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedLuckyRoute: AuthenticatedLuckyRoute,
+  AuthenticatedMatchRoute: AuthenticatedMatchRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
   AuthenticatedRescueRoute: AuthenticatedRescueRoute,
