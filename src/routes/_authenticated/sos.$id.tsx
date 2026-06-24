@@ -108,7 +108,7 @@ function SosDetail() {
   const multi = spotsNeeded > 1;
   const canPlay = new Date(sos.play_at).getTime() > Date.now();
   const calUrl = googleCalendarUrl({
-    title: `🎾 Tennis · ${courtName || "court"}`,
+    title: `\u{1F3BE} Tennis · ${courtName || "court"}`,
     startISO: sos.play_at,
     durationMin: 60,
     location: [courtName, courtCity].filter(Boolean).join(", "),

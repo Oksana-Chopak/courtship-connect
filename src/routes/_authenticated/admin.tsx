@@ -70,21 +70,16 @@ function AdminPage() {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
 
   async function load() {
-    const cr = await (supabase as any).rpc("admin_invite_codes");
-    if (!cr.error && Array.isArray(cr.data)) {
-      setCodes(cr.data as Invite[]);
-    } else {
-      const { data } = await (supabase as any)
-        .from("invite_codes").select("code,uses_remaining,active,created_at").order("created_at", { ascending: false });
-      setCodes(((data as Invite[]) ?? []).map((c) => ({ ...c, signups: 0 })));
-    }
-    const { data: d, error } = await (supabase as any).rpc("admin_dashboard");
-    if (error) { setAllowed(false); return; }
-    setDash(d as Dashboard);
+    // Hard gate on the caller's OWN is_admin (own-row read). Non-admins see nothing.
+    const { data: me } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
+    if (!me || !(me as any).is_admin) { setAllowed(false); return; }
     setAllowed(true);
-    try { setAdminCourts(await adminListCustomCourts()); } catch {}
-    try { setPendingEvents(await fetchPendingEvents()); } catch {}
-    try { const { data: pl } = await (supabase as any).rpc("admin_players_list"); if (Array.isArray(pl)) setPlayers(pl as PlayerRow[]); } catch {}
+    const cr = await (supabase as any).rpc("admin_invite_codes");
+    if (!cr.error && Array.isArray(cr.data)) setCodes(cr.data as Invite[]);
+    try { const { data: d } = await (supabase as any).rpc("admin_dashboard"); if (d) setDash(d as Dashboard); } catch { /* dashboard optional */ }
+    try { setAdminCourts(await adminListCustomCourts()); } catch { /* ignore */ }
+    try { setPendingEvents(await fetchPendingEvents()); } catch { /* ignore */ }
+    try { const { data: pl } = await (supabase as any).rpc("admin_players_list"); if (Array.isArray(pl)) setPlayers(pl as PlayerRow[]); } catch { /* ignore */ }
   }
 
   useEffect(() => { load(); }, []);

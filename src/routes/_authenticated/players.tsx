@@ -44,6 +44,7 @@ function Players() {
   const [buddyIds, setBuddyIds] = useState<Set<string>>(new Set());
   const [meId, setMeId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selfRow, setSelfRow] = useState<P | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +54,7 @@ function Players() {
         setBuddyIds(await fetchBuddyIds(u.user.id));
         const { data: meRow } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
         setIsAdmin(!!(meRow as any)?.is_admin);
+        if (meRow) setSelfRow(meRow as P);
       }
       const { data } = await (supabase as any).rpc("players_directory");
       setRows((data as any) ?? []);
@@ -149,7 +151,7 @@ function Players() {
         )
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {(meId ? [...filtered.filter((p) => p.id === meId), ...filtered.filter((p) => p.id !== meId)] : filtered).map((p) => (
+          {(selfRow ? [selfRow, ...filtered.filter((p) => p.id !== selfRow.id)] : filtered).map((p) => (
             <PlayerCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
           ))}
         </div>
