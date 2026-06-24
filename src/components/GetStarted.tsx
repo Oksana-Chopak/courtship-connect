@@ -5,9 +5,8 @@ import { useI18n } from "@/lib/i18n";
 
 const KEY = "courtship.getstarted.dismissed";
 
-// Calm onboarding nudge: a single subtle row, no loud accent colour, and it only
-// shows the steps that are NOT done yet (profile is already done by the time you
-// see a board; invite hides once someone joins via your code). Dismissible.
+// Calm onboarding nudge: title on its own line, action links in a tidy row
+// below — no cramped column wrapping. Hides steps already done. Dismissible.
 export function GetStarted() {
   const { t } = useI18n();
   const [hidden, setHidden] = useState(() => {
@@ -33,15 +32,13 @@ export function GetStarted() {
   };
 
   return (
-    <div className="rounded-xl border border-[var(--ink)]/15 px-3 py-2 flex items-center gap-3 text-sm" style={{ background: "var(--cream2)" }}>
-      <span className="opacity-60 shrink-0">{t("gs.title")}</span>
-      <div className="flex-1 flex gap-4 flex-wrap">
-        {!inviteDone && (
-          <Link to="/me" className="font-extrabold underline">{t("gs.step2")}</Link>
-        )}
-        <Link to="/sos/new" search={{ planned: undefined }} className="font-extrabold underline">{t("gs.step3")}</Link>
+    <div className="rounded-xl border border-[var(--ink)]/15 px-3 py-2.5 text-sm relative" style={{ background: "var(--cream2)" }}>
+      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="absolute top-1.5 right-2.5 opacity-40 text-base leading-none">✕</button>
+      <div className="opacity-60 pr-6">{t("gs.title")}</div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 font-extrabold">
+        {!inviteDone && <Link to="/me" className="underline">{t("gs.step2")}</Link>}
+        <Link to="/sos/new" search={{ planned: undefined }} className="underline">{t("gs.step3")}</Link>
       </div>
-      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="opacity-40 shrink-0">✕</button>
     </div>
   );
 }
