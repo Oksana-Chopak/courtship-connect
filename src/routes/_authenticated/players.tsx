@@ -189,10 +189,10 @@ function PlayerCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: str
         <Avatar src={p.photo_url} name={p.name} seed={p.id} size={104} />
       </div>
       <div className="flex items-center justify-between gap-1">
-        <div className="font-display text-lg truncate flex items-center gap-1">
-          {p.name}{p.last_name ? " " + p.last_name : ""}
-          {isBuddy && <span title="Buddy">🤝</span>}
-          {badge && <span className="cchip-mini">{badge}</span>}
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-display text-lg truncate min-w-0">{p.name}{p.last_name ? " " + p.last_name : ""}</span>
+          {isBuddy && <span className="shrink-0" title="Buddy">🤝</span>}
+          {badge && <span className="cchip-mini shrink-0">{badge}</span>}
         </div>
         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
       </div>
