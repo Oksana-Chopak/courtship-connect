@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { AnnouncementAdmin } from "@/components/AnnouncementBanner";
+import { Collapsible } from "@/components/Collapsible";
 import { adminListCustomCourts, adminSetCourtHidden, adminUpdateCourt, shortCourtName, type AdminCourt } from "@/lib/courts";
 import { fetchPendingEvents, setEventStatus, fetchEventContact, type EventRow } from "@/lib/events";
 import { whenLabel, levelMeta, vibeEmoji, VIBES } from "@/lib/courtship";
@@ -174,13 +175,6 @@ function AdminPage() {
       </div>
 
       <AnnouncementAdmin />
-
-      <div className="ccard p-4 space-y-2" style={{ background: "var(--cream2)" }}>
-        <div className="csection-label">{t("admin.support_title")}</div>
-        <div className="text-sm text-[var(--ink)]/60">{t("admin.support_hint")}</div>
-        <input className="cinput" value={supportSwish} onChange={(e) => setSupportSwish(e.target.value)} placeholder={t("admin.support_ph")} inputMode="tel" />
-        <button type="button" className="cbtn cbtn-coral w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
-      </div>
 
       {pendingEvents.length > 0 && (
         <div>
@@ -369,6 +363,14 @@ function AdminPage() {
           </div>
         )}
       </div>
+
+      <Collapsible title={t("admin.support_title")}>
+        <div className="space-y-2">
+          <div className="text-sm text-[var(--ink)]/60">{t("admin.support_hint")}</div>
+          <input className="cinput" value={supportSwish} onChange={(e) => setSupportSwish(e.target.value)} placeholder={t("admin.support_ph")} inputMode="tel" />
+          <button type="button" className="cbtn cbtn-coral w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
+        </div>
+      </Collapsible>
     </div>
   );
 }
