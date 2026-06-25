@@ -8,6 +8,7 @@ const STORAGE_KEY = "courtship.lang";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  "ev.youre_hosting": "🎉 You're hosting this — players join below",
   "sos.duration": "Duration",
   "feedback.cta": "💬 Send feedback or an idea",
   "feedback.prefill": "Courtship feedback: ",
@@ -544,6 +545,7 @@ const en: Dict = {
 };
 
 const sv: Dict = {
+  "ev.youre_hosting": "🎉 Du är värd — spelare anmäler sig nedan",
   "sos.duration": "Längd",
   "feedback.cta": "💬 Skicka feedback eller idé",
   "feedback.prefill": "Courtship feedback: ",

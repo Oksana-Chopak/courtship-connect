@@ -77,6 +77,7 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
 
       {isHost ? (
         <div className="mt-3 space-y-2">
+          <div className="font-extrabold" style={{ color: "var(--coral)" }}>{t("ev.youre_hosting")}</div>
           <div className="csection-label">{t("ev.attendees")} · {e.spots_taken}</div>
           {attendees && attendees.length > 0 ? (
             attendees.map((a) => (
