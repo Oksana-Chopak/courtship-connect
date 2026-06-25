@@ -68,6 +68,7 @@ function AdminPage() {
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
   const [pendingEvents, setPendingEvents] = useState<EventRow[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [supportSwish, setSupportSwish] = useState("");
 
   async function load() {
     // Hard gate on the caller's OWN is_admin (own-row read). Non-admins see nothing.
@@ -80,6 +81,7 @@ function AdminPage() {
     try { setAdminCourts(await adminListCustomCourts()); } catch { /* ignore */ }
     try { setPendingEvents(await fetchPendingEvents()); } catch { /* ignore */ }
     try { const { data: pl } = await (supabase as any).rpc("admin_players_list"); if (Array.isArray(pl)) setPlayers(pl as PlayerRow[]); } catch { /* ignore */ }
+    try { const { data: sw } = await (supabase as any).rpc("get_support_swish"); setSupportSwish(((sw as string | null) ?? "")); } catch { /* ignore */ }
   }
 
   useEffect(() => { load(); }, []);
@@ -115,6 +117,12 @@ function AdminPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Code deleted");
     load();
+  }
+
+  async function saveSupportSwish() {
+    const { error } = await (supabase as any).rpc("set_support_swish", { _number: supportSwish.trim() });
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("admin.support_saved"));
   }
 
   if (allowed === null) return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
@@ -166,6 +174,13 @@ function AdminPage() {
       </div>
 
       <AnnouncementAdmin />
+
+      <div className="ccard p-4 space-y-2" style={{ background: "var(--cream2)" }}>
+        <div className="csection-label">{t("admin.support_title")}</div>
+        <div className="text-sm text-[var(--ink)]/60">{t("admin.support_hint")}</div>
+        <input className="cinput" value={supportSwish} onChange={(e) => setSupportSwish(e.target.value)} placeholder={t("admin.support_ph")} inputMode="tel" />
+        <button type="button" className="cbtn cbtn-coral w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
+      </div>
 
       {pendingEvents.length > 0 && (
         <div>
