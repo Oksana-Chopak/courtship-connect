@@ -8,6 +8,8 @@ import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
+import { CelebrationOverlay } from "@/components/CelebrationOverlay";
+import { checkCelebration, type Celebration } from "@/lib/celebrate";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
 import { GetStarted } from "@/components/GetStarted";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -38,15 +40,18 @@ function BoardPage() {
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
 
   const load = useCallback(async () => {
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     if (au.user) {
-      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played").eq("id", au.user.id).maybeSingle();
+      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played,rescues_count").eq("id", au.user.id).maybeSingle();
       if (!pe && prof) {
         setCityForStats((prof as any).home_city ?? "Uppsala");
         setGamesPlayed((prof as any).games_played ?? 0);
+        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0);
+        if (cel) setCelebration(cel);
       }
     }
     const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
@@ -84,6 +89,7 @@ function BoardPage() {
 
   return (
     <div className="space-y-5">
+      {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
       <div>
         <h1 className="font-display text-4xl">{t("board.title")}</h1>

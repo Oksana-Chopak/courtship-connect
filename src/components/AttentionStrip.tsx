@@ -63,7 +63,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   }, []);
 
   async function onConfirm(g: GameRow, score?: string) {
-    try { await confirmGame(g.id, score); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); }
+    try { await confirmGame(g.id, score); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); onChange?.(); }
     catch (e: any) { oops(e); }
   }
   async function onNoshow(g: GameRow) {
