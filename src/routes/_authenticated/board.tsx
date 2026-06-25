@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, type CourtType } from "@/lib/courtship";
+import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, weeklyStreak, type CourtType } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -10,6 +10,7 @@ import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { checkCelebration, type Celebration } from "@/lib/celebrate";
+import { fetchMyGameHistory } from "@/lib/games";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
 import { GetStarted } from "@/components/GetStarted";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -41,6 +42,7 @@ function BoardPage() {
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [streakWeeks, setStreakWeeks] = useState(0);
 
   const load = useCallback(async () => {
     const { data: au } = await supabase.auth.getUser();
@@ -53,6 +55,10 @@ function BoardPage() {
         const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0, (prof as any).referrals_count ?? 0);
         if (cel) setCelebration(cel);
       }
+      try {
+        const hist = await fetchMyGameHistory(au.user.id, 150);
+        setStreakWeeks(weeklyStreak(hist.map((g) => g.played_at)).weeks);
+      } catch { /* ignore */ }
     }
     const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
     setMyClaims(au.user ? await fetchMyUpcomingClaims(au.user.id) : []);
@@ -86,33 +92,42 @@ function BoardPage() {
   const plannedRows = buddyFirst(filt(planned));
   const mineAll = [...mine].sort(byTime);
   const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0 && events.length === 0;
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+  const weekdayLabel = new Date().toLocaleDateString(locale, { weekday: "long" });
+  const openCount = urgentRows.length + plannedRows.length + mineAll.length;
 
   return (
     <div className="space-y-5">
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
+      {/* Tonight — header */}
       <div>
-        <h1 className="font-display text-4xl">{t("board.title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("board.sub")}</p>
+        <div className="csection-label">{weekdayLabel}</div>
+        <h1 className="font-display text-3xl leading-none mt-0.5">{t("tonight.title", { city: cityForStats })}</h1>
+      </div>
+
+      {/* live pulse + streak */}
+      <div className="ccard p-3 flex items-center gap-3" style={{ background: "var(--green-pop)" }}>
+        <span className="flex-1 font-extrabold text-sm" style={{ color: "var(--ink)" }}>
+          {openCount > 0 ? t("tonight.pulse", { n: openCount }) : t("tonight.pulse_quiet")}
+        </span>
+        {streakWeeks >= 1 && (
+          <span className="inline-flex items-center gap-1 font-extrabold text-sm px-2.5 py-1 rounded-full shrink-0"
+            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>
+            🔥 {streakWeeks}
+          </span>
+        )}
+      </div>
+
+      {/* PRIMARY actions — New game + SOS, right under the streak */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
+        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
       </div>
 
       <AttentionStrip onChange={load} />
 
       <AnnouncementBanner />
-
-      {/* HERO — Save My Set: the killer feature, always front & center */}
-      <Link
-        to="/sos/new"
-        search={{ planned: undefined }}
-        className="block ccard p-5 text-center"
-        style={{ background: "var(--coral)", borderColor: "var(--ink)", color: "#FFF6E8" }}
-      >
-        <div className="font-display text-3xl leading-tight">{t("hero.rescue_title")}</div>
-        <div className="text-base font-semibold mt-1" style={{ opacity: 0.95 }}>{t("hero.rescue_sub")}</div>
-        <div className="mt-3 inline-block px-5 py-2 rounded-full font-display text-2xl" style={{ background: "#FFF6E8", color: "var(--coral)" }}>
-          🚨 {t("hero.rescue_cta")}
-        </div>
-      </Link>
 
       <InstallBanner />
       <StandaloneNotifPrompt />
@@ -174,7 +189,6 @@ function BoardPage() {
       {/* Plan ahead + browse open games */}
       <div className="flex justify-end gap-2">
         <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
-        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-ghost">📅 {t("board.plan_game")}</Link>
       </div>
       <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
         <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
