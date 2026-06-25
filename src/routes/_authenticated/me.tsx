@@ -11,6 +11,8 @@ import { ActivityBadge } from "@/components/ActivityBadge";
 import { RecruiterBadge } from "@/components/RecruiterBadge";
 import { StreakCard } from "@/components/StreakCard";
 import { CourtsPassport } from "@/components/CourtsPassport";
+import { MatchmakerBadge } from "@/components/MatchmakerBadge";
+import { LogGameCard } from "@/components/LogGameCard";
 import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
@@ -33,6 +35,7 @@ function MePage() {
   const [rescues, setRescues] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [referrals, setReferrals] = useState(0);
+  const [hosted, setHosted] = useState(0);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
@@ -129,6 +132,12 @@ function MePage() {
       setRescues(d.rescues_count ?? 0);
       setGamesPlayed(d.games_played ?? 0);
       setReferrals(d.referrals_count ?? 0);
+      try {
+        const { count: hc } = await (supabase as any)
+          .from("sos_requests").select("id", { count: "exact", head: true })
+          .eq("caller_id", u.user.id).eq("kind", "open");
+        setHosted(hc ?? 0);
+      } catch { /* ignore */ }
       setInitial({
         name: d.name ?? "",
         last_name: d.last_name ?? "",
@@ -175,11 +184,14 @@ function MePage() {
         <RescuerBadge count={rescues} size="lg" progress />
         <ActivityBadge count={gamesPlayed} size="lg" progress />
         <RecruiterBadge count={referrals} size="lg" progress />
+        <MatchmakerBadge count={hosted} size="lg" progress />
       </div>
 
       <StreakCard />
 
       <CourtsPassport />
+
+      <LogGameCard />
 
       <GamesHistory />
 

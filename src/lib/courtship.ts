@@ -328,3 +328,22 @@ export function weeklyStreak(playedAtISO: string[]): { weeks: number; playedThis
   }
   return { weeks, playedThisWeek };
 }
+
+// Matchmaker track — open games you host (post) for others to join.
+// Counted client-side from your open-game posts (no counter/SQL needed).
+const MATCHMAKER_TIERS = [
+  { level: 1, name: "Host", emoji: "🎪", at: 1 },
+  { level: 2, name: "Organizer", emoji: "📅", at: 4 },
+  { level: 3, name: "Ringleader", emoji: "📣", at: 10 },
+  { level: 4, name: "Maestro", emoji: "🎩", at: 20 },
+  { level: 5, name: "Impresario", emoji: "🌟", at: 40 },
+] as const;
+
+export function matchmakerTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
+  if (!count || count < 1) return null;
+  let idx = 0;
+  for (let i = 0; i < MATCHMAKER_TIERS.length; i++) if (count >= MATCHMAKER_TIERS[i].at) idx = i;
+  const cur = MATCHMAKER_TIERS[idx];
+  const nx = idx < MATCHMAKER_TIERS.length - 1 ? MATCHMAKER_TIERS[idx + 1] : null;
+  return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
+}
