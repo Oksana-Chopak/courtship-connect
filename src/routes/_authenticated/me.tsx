@@ -10,6 +10,7 @@ import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { RecruiterBadge } from "@/components/RecruiterBadge";
 import { StreakCard } from "@/components/StreakCard";
+import { CourtsPassport } from "@/components/CourtsPassport";
 import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
@@ -177,6 +178,8 @@ function MePage() {
       </div>
 
       <StreakCard />
+
+      <CourtsPassport />
 
       <GamesHistory />
 
