@@ -818,6 +818,10 @@ export type Database = {
         }[]
       }
       leave_event: { Args: { _event_id: string }; Returns: undefined }
+      log_game: {
+        Args: { _other_id: string; _played_at: string; _score?: string }
+        Returns: string
+      }
       players_directory: {
         Args: { _ids?: string[] }
         Returns: {
