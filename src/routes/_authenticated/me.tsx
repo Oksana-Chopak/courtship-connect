@@ -15,6 +15,7 @@ import {
 } from "@/lib/buddies";
 import { Avatar } from "@/components/Avatar";
 import { Collapsible } from "@/components/Collapsible";
+import { SupportCard } from "@/components/SupportCard";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Edit profile — Courtship" }] }),
@@ -296,6 +297,8 @@ function MePage() {
           <div className="text-2xl">🛠️</div>
         </Link>
       )}
+
+      <SupportCard />
 
       <button
         type="button"
