@@ -65,3 +65,4 @@ supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=ma
 - Авто-ескалація (cron open→sos) поки без пушу — додамо в наступному кроці; створення SOS і ручний flare пуш шлють.
 
 <!-- preview rebuild trigger 2026-06-24T07:56:53Z -->
+Thu Jun 25 19:09:47 UTC 2026
