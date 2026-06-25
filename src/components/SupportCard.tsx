@@ -1,12 +1,30 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
-// Friendly, no-pressure "chip in via Swish" card. The Swish number lives in an env
-// var (VITE_SUPPORT_SWISH) so it never sits in the public repo; if it's unset, the
-// card simply doesn't render.
+// Friendly, no-pressure "chip in via Swish" card. The Swish number lives in the DB
+// (app_config row, served via the get_support_swish RPC) — never in the public repo.
+// If it isn't set, the card simply doesn't render.
 export function SupportCard() {
   const { t } = useI18n();
-  const number = ((import.meta.env.VITE_SUPPORT_SWISH as string | undefined) ?? "").trim();
+  const [number, setNumber] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("get_support_swish");
+        if (!cancelled) setNumber(((data as string | null) ?? "").trim());
+      } catch {
+        /* not configured yet — card stays hidden */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (!number) return null;
 
   function copy() {
