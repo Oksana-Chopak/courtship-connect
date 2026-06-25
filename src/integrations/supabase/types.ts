@@ -41,6 +41,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       buddies: {
         Row: {
           created_at: string
@@ -789,6 +807,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_support_swish: { Args: never; Returns: string }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
       join_event: {
         Args: { _event_id: string }
@@ -866,6 +885,7 @@ export type Database = {
         Returns: undefined
       }
       set_my_invite_code: { Args: { _new: string }; Returns: string }
+      set_support_swish: { Args: { _number: string }; Returns: undefined }
       sos_push_targets: {
         Args: { _sos_id: string }
         Returns: {
