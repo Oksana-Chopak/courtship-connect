@@ -267,3 +267,22 @@ export function activityTier(count: number): { level: number; name: string; emoj
   const nx = idx < ACTIVITY_TIERS.length - 1 ? ACTIVITY_TIERS[idx + 1] : null;
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
+
+// Recruiter track — invites that turned into real signups (profiles.referrals_count).
+// Thresholds are modest: bringing even a handful of players in is a big deal.
+const RECRUITER_TIERS = [
+  { level: 1, name: "Wingman", emoji: "🤝", at: 1 },
+  { level: 2, name: "Connector", emoji: "🔗", at: 3 },
+  { level: 3, name: "Influencer", emoji: "📣", at: 7 },
+  { level: 4, name: "Kingmaker", emoji: "👑", at: 12 },
+  { level: 5, name: "Legend", emoji: "🌟", at: 25 },
+] as const;
+
+export function recruiterTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
+  if (!count || count < 1) return null;
+  let idx = 0;
+  for (let i = 0; i < RECRUITER_TIERS.length; i++) if (count >= RECRUITER_TIERS[i].at) idx = i;
+  const cur = RECRUITER_TIERS[idx];
+  const nx = idx < RECRUITER_TIERS.length - 1 ? RECRUITER_TIERS[idx + 1] : null;
+  return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
+}

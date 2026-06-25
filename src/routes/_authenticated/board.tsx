@@ -46,11 +46,11 @@ function BoardPage() {
     const { data: au } = await supabase.auth.getUser();
     setMeId(au.user?.id ?? null);
     if (au.user) {
-      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played,rescues_count").eq("id", au.user.id).maybeSingle();
+      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count").eq("id", au.user.id).maybeSingle();
       if (!pe && prof) {
         setCityForStats((prof as any).home_city ?? "Uppsala");
         setGamesPlayed((prof as any).games_played ?? 0);
-        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0);
+        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0, (prof as any).referrals_count ?? 0);
         if (cel) setCelebration(cel);
       }
     }

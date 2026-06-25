@@ -8,6 +8,7 @@ import { oops, SUPPORT_WA } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
+import { RecruiterBadge } from "@/components/RecruiterBadge";
 import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
@@ -171,6 +172,7 @@ function MePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <RescuerBadge count={rescues} size="lg" progress />
         <ActivityBadge count={gamesPlayed} size="lg" progress />
+        <RecruiterBadge count={referrals} size="lg" progress />
       </div>
 
       <GamesHistory />

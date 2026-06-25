@@ -1,4 +1,4 @@
-import { activityTier, rescuerTier } from "@/lib/courtship";
+import { activityTier, rescuerTier, recruiterTier } from "@/lib/courtship";
 
 // Phase 1 of the rewards system: the "celebration moment".
 // We never trust a single action to tell us a counter moved (games_played only
@@ -6,11 +6,12 @@ import { activityTier, rescuerTier } from "@/lib/courtship";
 // localStorage and, on every board load, diff the live lifetime counters
 // against it. Any increase → a celebration; a tier crossing → a level-up.
 // First run ever just records the baseline (no retroactive confetti).
+// Tracks three counters: games played, rescues, and recruits (referrals).
 
 const PROGRESS_KEY = "courtship.progress";
 
 export type Celebration = {
-  kind: "game" | "rescue";
+  kind: "game" | "rescue" | "recruit";
   count: number;
   leveledUp: boolean;
   tierName: string;
@@ -19,14 +20,15 @@ export type Celebration = {
   nextName: string | null;
 };
 
-type Progress = { games: number; rescues: number };
+type Progress = { games: number; rescues: number; referrals: number };
 
-function readProgress(): Progress | null {
+function readProgress(): Partial<Progress> | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(PROGRESS_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw);
+    // referrals is optional for backward-compat with the first Phase-1 baseline.
     if (typeof p?.games === "number" && typeof p?.rescues === "number") return p;
     return null;
   } catch {
@@ -43,9 +45,13 @@ function writeProgress(p: Progress) {
   }
 }
 
-function celebrationFor(kind: "game" | "rescue", before: number, after: number): Celebration {
-  const tBefore = kind === "game" ? activityTier(before) : rescuerTier(before);
-  const tAfter = kind === "game" ? activityTier(after) : rescuerTier(after);
+function tierOf(kind: Celebration["kind"], n: number) {
+  return kind === "game" ? activityTier(n) : kind === "rescue" ? rescuerTier(n) : recruiterTier(n);
+}
+
+function celebrationFor(kind: Celebration["kind"], before: number, after: number): Celebration {
+  const tBefore = tierOf(kind, before);
+  const tAfter = tierOf(kind, after);
   const leveledUp = !!tAfter && (!tBefore || tAfter.level > tBefore.level);
   return {
     kind,
@@ -61,16 +67,23 @@ function celebrationFor(kind: "game" | "rescue", before: number, after: number):
 /**
  * Compare the current lifetime counters to the last-seen baseline.
  * - First call ever (no baseline): record silently, return null.
- * - A counter went up: return a Celebration (games take priority over rescues).
+ * - A counter went up: return a Celebration (games > rescues > recruits priority).
  * - Nothing changed: return null.
  * Always advances the baseline so a celebration fires exactly once.
  */
-export function checkCelebration(games: number, rescues: number): Celebration | null {
-  const prev = readProgress();
-  const curr: Progress = { games: games ?? 0, rescues: rescues ?? 0 };
+export function checkCelebration(games: number, rescues: number, referrals: number): Celebration | null {
+  const prevRaw = readProgress();
+  const curr: Progress = { games: games ?? 0, rescues: rescues ?? 0, referrals: referrals ?? 0 };
   writeProgress(curr);
-  if (!prev) return null; // baseline only — no retroactive celebration
+  if (!prevRaw) return null; // baseline only — no retroactive celebration
+  const prev: Progress = {
+    games: prevRaw.games ?? 0,
+    rescues: prevRaw.rescues ?? 0,
+    // missing referrals (old baseline) → treat as current so we never fire a false recruit celebration
+    referrals: typeof prevRaw.referrals === "number" ? prevRaw.referrals : curr.referrals,
+  };
   if (curr.games > prev.games) return celebrationFor("game", prev.games, curr.games);
   if (curr.rescues > prev.rescues) return celebrationFor("rescue", prev.rescues, curr.rescues);
+  if (curr.referrals > prev.referrals) return celebrationFor("recruit", prev.referrals, curr.referrals);
   return null;
 }

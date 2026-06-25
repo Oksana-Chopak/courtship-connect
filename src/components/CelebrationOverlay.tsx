@@ -29,20 +29,27 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
     []
   );
 
+  const levelupSubKey =
+    c.kind === "rescue"
+      ? "celebrate.levelup_sub_rescue"
+      : c.kind === "recruit"
+        ? "celebrate.levelup_sub_recruit"
+        : "celebrate.levelup_sub_game";
   let title: string;
   let subtitle: string;
   let bigEmoji: string;
   if (c.leveledUp) {
     title = t("celebrate.levelup_title");
-    subtitle = t(c.kind === "rescue" ? "celebrate.levelup_sub_rescue" : "celebrate.levelup_sub_game", {
-      n: c.count,
-      name: `${c.tierEmoji} ${c.tierName}`,
-    });
+    subtitle = t(levelupSubKey, { n: c.count, name: `${c.tierEmoji} ${c.tierName}` });
     bigEmoji = c.tierEmoji;
   } else if (c.kind === "rescue") {
     title = t("celebrate.rescue_title");
     subtitle = t("celebrate.rescue_sub", { n: c.count });
     bigEmoji = "🚑";
+  } else if (c.kind === "recruit") {
+    title = t("celebrate.recruit_title");
+    subtitle = t("celebrate.recruit_sub", { n: c.count });
+    bigEmoji = "🎁";
   } else {
     title = t("celebrate.game_title");
     subtitle = t("celebrate.game_sub", { n: c.count });
