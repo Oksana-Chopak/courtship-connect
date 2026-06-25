@@ -251,10 +251,10 @@ export function rescuerTier(count: number): { level: number; name: string; emoji
 
 const ACTIVITY_TIERS = [
   { level: 1, name: "Rookie", emoji: "🎾", at: 1 },
-  { level: 2, name: "Regular", emoji: "🟢", at: 5 },
-  { level: 3, name: "Local", emoji: "🔥", at: 15 },
-  { level: 4, name: "Veteran", emoji: "⭐", at: 30 },
-  { level: 5, name: "Courtmaster", emoji: "👑", at: 50 },
+  { level: 2, name: "Regular", emoji: "🟢", at: 3 },
+  { level: 3, name: "Local", emoji: "🔥", at: 7 },
+  { level: 4, name: "Veteran", emoji: "⭐", at: 12 },
+  { level: 5, name: "Courtmaster", emoji: "👑", at: 20 },
 ] as const;
 
 export function activityTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
