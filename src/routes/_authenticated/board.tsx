@@ -95,6 +95,15 @@ function BoardPage() {
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
   const weekdayLabel = new Date().toLocaleDateString(locale, { weekday: "long" });
   const openCount = urgentRows.length + plannedRows.length + mineAll.length;
+  type TLItem =
+    | { id: string; t: number; kind: "sos" | "open" | "mine"; r: EligibleSosRow }
+    | { id: string; t: number; kind: "event"; e: EventRow };
+  const timeline: TLItem[] = [
+    ...filt(urgent).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
+    ...filt(planned).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "open", r })),
+    ...filt(mine).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "mine", r })),
+    ...events.map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
+  ].sort((a, b) => a.t - b.t);
 
   return (
     <div className="space-y-5">
@@ -133,12 +142,6 @@ function BoardPage() {
       <StandaloneNotifPrompt />
 
       {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
-      {!loading && urgentRows.length > 0 && (
-        <div className="space-y-3">
-          <div className="csection-label" style={{ color: "var(--coral)" }}>🚨 {t("board.seg_urgent")}</div>
-          {urgentRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
-        </div>
-      )}
 
       {myClaims.length > 0 && (
         <div className="space-y-3">
@@ -155,41 +158,6 @@ function BoardPage() {
         </div>
       )}
 
-      {mineAll.length > 0 && (
-        <div className="space-y-3">
-          <div className="csection-label">📣 {t("board.your_games")}</div>
-          {mineAll.map((r) => (
-            <Link key={r.id} to="/sos/$id" params={{ id: r.id }} className="ccard p-4 flex items-center justify-between">
-              <div>
-                <div className="font-display text-lg">{whenLabel(r.play_at)} · {r.court_name ?? "—"}</div>
-                <div className="text-base text-[var(--ink)] font-semibold">
-                  📍 {r.court_city ?? "—"} · {courtTypeMeta(r.court_type, lang).emoji}{" "}
-                  {r.status === "claimed" ? t("board.claimed") : t("board.live")}
-                </div>
-              </div>
-              <span className="text-2xl">›</span>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {events.length > 0 && (
-        <div className="space-y-3">
-          <div className="csection-label">🎉 {t("board.events")}</div>
-          {events.map((e) => (
-            <EventCard key={e.id} e={e} meId={meId} myStatus={myAttendance[e.id]} onChange={load} />
-          ))}
-        </div>
-      )}
-
-      {showEventForm && (
-        <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
-      )}
-
-      {/* Plan ahead + browse open games */}
-      <div className="flex justify-end gap-2">
-        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
-      </div>
       <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
         <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
         {COURT_TYPES.map((ct) => {
@@ -201,12 +169,40 @@ function BoardPage() {
           );
         })}
       </div>
-      {!loading && plannedRows.length > 0 && (
+
+      {/* The evening — games, SOS and events woven together by time */}
+      {!loading && timeline.length > 0 && (
         <div className="space-y-3">
-          <div className="csection-label">🎾 {t("board.seg_planned")}</div>
-          {plannedRows.map((r) => <Card key={r.id} sos={r} onChange={load} />)}
+          <div className="csection-label">{t("tonight.evening")}</div>
+          {timeline.map((it) =>
+            it.kind === "event" ? (
+              <EventCard key={it.id} e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
+            ) : it.kind === "mine" ? (
+              <MineLink key={it.id} r={it.r} />
+            ) : (
+              <Card key={it.id} sos={it.r} onChange={load} />
+            )
+          )}
         </div>
       )}
+
+      {showEventForm && (
+        <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
+      )}
+
+      <div className="flex justify-end">
+        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
+      </div>
+
+      {/* Coming soon — flag-gated features shown as teasers */}
+      <div className="space-y-3">
+        <div className="csection-label">{t("soon.title")}</div>
+        <div className="grid grid-cols-2 gap-3">
+          <SoonCard emoji="🎰" title={t("soon.lucky")} />
+          <SoonCard emoji="💘" title={t("soon.swipe")} />
+        </div>
+      </div>
+
       {nothing && (
         <div className="ccard p-6 text-center space-y-3">
           <div className="text-3xl">🌅</div>
@@ -298,6 +294,38 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
         }}>
         {t("games.im_in")}
       </button>
+    </div>
+  );
+}
+
+function MineLink({ r }: { r: EligibleSosRow }) {
+  const { t, lang } = useI18n();
+  return (
+    <Link to="/sos/$id" params={{ id: r.id }} className="ccard p-4 flex items-center justify-between">
+      <div>
+        <div className="font-display text-lg">{whenLabel(r.play_at)} · {r.court_name ?? "—"}</div>
+        <div className="text-base text-[var(--ink)] font-semibold">
+          📍 {r.court_city ?? "—"} · {courtTypeMeta(r.court_type, lang).emoji}{" "}
+          {r.status === "claimed" ? t("board.claimed") : t("board.live")}
+        </div>
+      </div>
+      <span className="text-2xl">›</span>
+    </Link>
+  );
+}
+
+function SoonCard({ emoji, title }: { emoji: string; title: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="ccard p-4 text-center" style={{ opacity: 0.75, borderStyle: "dashed" }}>
+      <div className="text-3xl">{emoji}</div>
+      <div className="font-display text-lg mt-1 leading-tight">{title}</div>
+      <div
+        className="inline-block text-xs font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full mt-2"
+        style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
+      >
+        {t("soon.badge")}
+      </div>
     </div>
   );
 }
