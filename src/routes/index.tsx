@@ -20,13 +20,9 @@ function Index() {
     <div className="terry-bg min-h-screen flex flex-col items-center justify-center px-6 text-[var(--ink)] font-body">
       <div className="max-w-md w-full text-center space-y-8">
         <div className="flex justify-end"><LangToggle /></div>
-        <div className="space-y-1.5">
-          <div className="inline-block px-4 py-1 rounded-full border-2 border-[var(--ink)] bg-[var(--cream2)] text-xs font-extrabold tracking-widest uppercase">
-            {t("brand.cities")}
-          </div>
-          <div className="text-xs font-extrabold tracking-widest uppercase text-[var(--ink)]/70">
-            {t("brand.beta_tag")}
-          </div>
+        <div className="space-y-0.5 text-xs font-extrabold tracking-widest uppercase">
+          <div>{t("brand.cities")}</div>
+          <div className="text-[var(--ink)]/50 font-semibold">{t("brand.beta_tag")}</div>
         </div>
         <h1 className="font-display text-6xl leading-[0.95]">
           {t("index.match_a")}<br/>

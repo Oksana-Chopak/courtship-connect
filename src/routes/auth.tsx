@@ -120,7 +120,10 @@ function AuthPage() {
       <div className="ccard w-full max-w-md p-7 space-y-5">
         <div className="flex justify-end -mb-2"><LangToggle /></div>
         <div>
-          <div className="csection-label mb-2">{t("brand.uppsala_beta")}</div>
+          <div className="mb-2 text-xs font-extrabold tracking-widest uppercase">
+            <div>{t("brand.cities")}</div>
+            <div className="text-[var(--ink)]/50 font-semibold">{t("brand.beta_tag")}</div>
+          </div>
           <h1 className="font-display text-4xl">
             {mode === "signup" ? t("auth.signup_title") : t("auth.login_title")}
           </h1>
