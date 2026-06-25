@@ -9,6 +9,7 @@ import { LangToggle, useI18n } from "@/lib/i18n";
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { RecruiterBadge } from "@/components/RecruiterBadge";
+import { StreakCard } from "@/components/StreakCard";
 import { GamesHistory } from "@/components/GamesHistory";
 import {
   fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
@@ -174,6 +175,8 @@ function MePage() {
         <ActivityBadge count={gamesPlayed} size="lg" progress />
         <RecruiterBadge count={referrals} size="lg" progress />
       </div>
+
+      <StreakCard />
 
       <GamesHistory />
 

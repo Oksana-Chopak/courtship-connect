@@ -286,3 +286,45 @@ export function recruiterTier(count: number): { level: number; name: string; emo
   const nx = idx < RECRUITER_TIERS.length - 1 ? RECRUITER_TIERS[idx + 1] : null;
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
+
+// Weekly streak — consecutive weeks (Mon-based) with at least one played game.
+// One missed week is forgiven (a built-in "freeze") so a single quiet week
+// doesn't wipe a long run. The current week being empty does NOT break the
+// streak (you still have time) — it just isn't counted until you play.
+export function weeklyStreak(playedAtISO: string[]): { weeks: number; playedThisWeek: boolean } {
+  const dates = playedAtISO.filter(Boolean).map((s) => new Date(s)).filter((d) => !isNaN(d.getTime()));
+  if (!dates.length) return { weeks: 0, playedThisWeek: false };
+
+  const mondayOf = (d: Date): number => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    const dow = (x.getDay() + 6) % 7; // Monday = 0
+    x.setDate(x.getDate() - dow);
+    return x.getTime();
+  };
+  const prevWeek = (mondayMs: number): number => {
+    const x = new Date(mondayMs);
+    x.setDate(x.getDate() - 7); // DST-safe (date stepping, not ms math)
+    return x.getTime();
+  };
+
+  const weeksWithGames = new Set(dates.map(mondayOf));
+  const thisWeek = mondayOf(new Date());
+  const playedThisWeek = weeksWithGames.has(thisWeek);
+
+  let cursor = playedThisWeek ? thisWeek : prevWeek(thisWeek);
+  let weeks = 0;
+  let usedFreeze = false;
+  while (true) {
+    if (weeksWithGames.has(cursor)) {
+      weeks++;
+      cursor = prevWeek(cursor);
+    } else if (weeks > 0 && !usedFreeze) {
+      usedFreeze = true; // forgive a single gap week
+      cursor = prevWeek(cursor);
+    } else {
+      break;
+    }
+  }
+  return { weeks, playedThisWeek };
+}
