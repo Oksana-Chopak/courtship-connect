@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SupportCard } from "@/components/SupportCard";
+import { InstallCard } from "@/components/InstallCard";
 import { SUPPORT_WA } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
@@ -14,6 +15,8 @@ function HelpPage() {
     <div className="space-y-4">
       <Link to="/me" className="font-extrabold text-sm underline">← {t("prog.back")}</Link>
       <h1 className="font-display text-3xl">{t("help.title")}</h1>
+
+      <InstallCard />
 
       <div className="ccard p-4 space-y-2">
         <div className="font-display text-xl">{t("help.feedback_title")}</div>

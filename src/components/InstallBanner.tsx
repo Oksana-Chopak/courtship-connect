@@ -108,11 +108,20 @@ export function StandaloneNotifPrompt() {
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!isStandalone()) return;
     if (!("Notification" in window)) return;
     if (Notification.permission !== "default") return;
     try { if (localStorage.getItem(NOTIF_KEY)) return; } catch {}
-    setShow(true);
+    if (isStandalone()) { setShow(true); return; }
+    // Browser case: only where web push actually works (not iOS Safari, which
+    // needs the installed PWA), and only once the install nudge has been
+    // dismissed — so the two banners never stack.
+    if (isIOS()) return;
+    let installDismissed = false;
+    try {
+      const at = Number(localStorage.getItem(DISMISS_KEY) || "0");
+      installDismissed = !!at && Date.now() - at < WEEK_MS;
+    } catch {}
+    if (installDismissed) setShow(true);
   }, []);
   function close() {
     try { localStorage.setItem(NOTIF_KEY, "1"); } catch {}
