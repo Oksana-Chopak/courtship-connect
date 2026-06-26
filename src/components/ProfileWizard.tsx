@@ -15,6 +15,7 @@ import { CourtCombobox } from "@/components/CourtCombobox";
 import { uploadAvatar } from "@/lib/avatar";
 import { Avatar } from "@/components/Avatar";
 import { useEffect } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export type ProfileFormValues = {
   name: string;
@@ -56,31 +57,9 @@ export const emptyProfile: ProfileFormValues = {
   buddy_sos_optin: true,
 };
 
-const LEVEL_DESC: Record<number, string> = {
-  1: "Just picked up a racket. Rallies start here.",
-  2: "Can rally a bit. Working on consistency.",
-  3: "Solid rallies, decent serve, plays matches.",
-  4: "Tournament-tested. Strong all-court game.",
-  5: "Competition level. Bring your A game.",
-};
-
-const VIBE_META: Record<string, { e: string; label: string; desc: string }> = {
-  chill: { e: "😌", label: "Chill", desc: "Just a hit. Laughs allowed." },
-  friendly: { e: "🤝", label: "Friendly", desc: "Competitive but cool." },
-  sweat: { e: "🔥", label: "Sweat", desc: "Show up to win. No mercy." },
-};
-
 function toggle<T>(arr: T[], v: T) {
   return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 }
-
-const TITLES = [
-  "Who's serving?",
-  "Your level",
-  "How do you play?",
-  "What's your vibe?",
-  "What are you after?",
-];
 
 export function ProfileWizard({
   initial,
@@ -100,6 +79,8 @@ export function ProfileWizard({
   busy?: boolean;
 }) {
   const [step, setStep] = useState(0);
+  const { t } = useI18n();
+  const titles = [t("wiz.title_0"), t("wiz.title_1"), t("wiz.title_2"), t("wiz.title_3"), t("wiz.title_4")];
   const [v, setV] = useState<ProfileFormValues>(initial);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -122,7 +103,7 @@ export function ProfileWizard({
       const url = await uploadAvatar(userId, file);
       set("photo_url", url);
     } catch (err: any) {
-      toast.error(err?.message ?? "Photo upload failed");
+      toast.error(err?.message ?? t("wiz.photo_fail"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -142,11 +123,7 @@ export function ProfileWizard({
 
   function next() {
     if (!canAdvance()) {
-      toast.error(
-        step === 0
-          ? "Add your first and last name and a valid phone number."
-          : "Pick at least one option.",
-      );
+      toast.error(step === 0 ? t("wiz.err_name_phone") : t("wiz.err_pick"));
       return;
     }
     if (step === 0) set("phone_e164", toE164(v.phone_e164));
@@ -169,7 +146,7 @@ export function ProfileWizard({
           className="text-sm font-extrabold underline disabled:opacity-30"
           disabled={step === 0}
         >
-          ← Back
+          {t("wiz.back")}
         </button>
         <span className="csection-label">{step + 1} / 5</span>
       </div>
@@ -184,7 +161,7 @@ export function ProfileWizard({
         ))}
       </div>
 
-      <h2 className="font-display text-3xl mb-5">{TITLES[step]}</h2>
+      <h2 className="font-display text-3xl mb-5">{titles[step]}</h2>
 
       <div className="min-h-[260px]">
         {step === 0 && (
@@ -194,7 +171,7 @@ export function ProfileWizard({
               onClick={() => fileRef.current?.click()}
               className="relative"
               disabled={uploading}
-              aria-label="Add a photo"
+              aria-label={t("wiz.add_photo")}
             >
               {v.photo_url ? (
                 <Avatar src={v.photo_url} name={v.name || "?"} seed={userId} size={140} />
@@ -204,7 +181,7 @@ export function ProfileWizard({
                   style={{ border: "2.5px dashed rgba(43,33,24,0.35)" }}
                 >
                   <span className="text-3xl">📷</span>
-                  <span>{uploading ? "Uploading..." : "Add a photo"}</span>
+                  <span>{uploading ? t("wiz.uploading") : t("wiz.add_photo")}</span>
                 </div>
               )}
             </button>
@@ -221,37 +198,37 @@ export function ProfileWizard({
                 onClick={() => set("photo_url", "")}
                 className="text-xs underline text-[var(--ink)]"
               >
-                Remove photo (use monogram)
+                {t("wiz.remove_photo")}
               </button>
             )}
             <p className="text-xs font-bold text-[var(--ink)] text-center">
-              Real face optional. Real forehand mandatory.
+              {t("wiz.photo_hint")}
             </p>
 
             <div className="w-full">
-              <div className="csection-label mb-1">First name</div>
+              <div className="csection-label mb-1">{t("wiz.first_name")}</div>
               <input
                 className="cinput"
                 value={v.name}
                 maxLength={40}
                 onChange={(e) => set("name", e.target.value)}
-                placeholder="e.g. Björn"
+                placeholder={t("wiz.first_name_ph")}
               />
             </div>
 
             <div className="w-full">
-              <div className="csection-label mb-1">Last name</div>
+              <div className="csection-label mb-1">{t("wiz.last_name")}</div>
               <input
                 className="cinput"
                 value={v.last_name}
                 maxLength={40}
                 onChange={(e) => set("last_name", e.target.value)}
-                placeholder="e.g. Borg"
+                placeholder={t("wiz.last_name_ph")}
               />
             </div>
 
             <div className="w-full">
-              <div className="csection-label mb-1">WhatsApp number</div>
+              <div className="csection-label mb-1">{t("wiz.whatsapp")}</div>
               <input
                 className="cinput"
                 inputMode="tel"
@@ -260,8 +237,7 @@ export function ProfileWizard({
                 placeholder="+46 70 123 45 67"
               />
               <p className="text-xs font-semibold text-[var(--ink)] mt-2 leading-snug">
-                Players can reach you on WhatsApp. Your number is only shared
-                when someone actually messages you — never shown in the app.
+                {t("wiz.whatsapp_hint")}
               </p>
             </div>
           </div>
@@ -285,9 +261,9 @@ export function ProfileWizard({
               ))}
             </div>
             <div className="text-center">
-              <div className="font-display text-2xl">{lm.name}</div>
+              <div className="font-display text-2xl">{t(`lvl.${v.level}`)}</div>
               <div className="font-bold text-sm text-[var(--ink)] mt-1">
-                {LEVEL_DESC[v.level]}
+                {t(`wiz.level_desc_${v.level}`)}
               </div>
             </div>
           </div>
@@ -296,7 +272,7 @@ export function ProfileWizard({
         {step === 2 && (
           <div className="flex flex-col gap-6">
             <div>
-              <div className="csection-label mb-2">Format</div>
+              <div className="csection-label mb-2">{t("wiz.format")}</div>
               <div className="flex flex-wrap gap-2">
                 {FORMATS.map((f) => (
                   <button
@@ -305,22 +281,22 @@ export function ProfileWizard({
                     className={`cchip ${v.formats.includes(f) ? "cchip-on" : ""}`}
                     onClick={() => set("formats", toggle(v.formats, f))}
                   >
-                    {f}
+                    {t(`fmt.${f}`)}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <div className="csection-label mb-2">When can you play?</div>
+              <div className="csection-label mb-2">{t("wiz.when")}</div>
               <div className="flex flex-wrap gap-2">
-                {PLAY_TIMES.map((t) => (
+                {PLAY_TIMES.map((pt, i) => (
                   <button
-                    key={t}
+                    key={pt}
                     type="button"
-                    className={`cchip ${v.play_times.includes(t) ? "cchip-on" : ""}`}
-                    onClick={() => set("play_times", toggle(v.play_times, t))}
+                    className={`cchip ${v.play_times.includes(pt) ? "cchip-on" : ""}`}
+                    onClick={() => set("play_times", toggle(v.play_times, pt))}
                   >
-                    {t}
+                    {t(`ptime.${i}`)}
                   </button>
                 ))}
               </div>
@@ -331,7 +307,6 @@ export function ProfileWizard({
         {step === 3 && (
           <div className="flex flex-col gap-3">
             {VIBES.map((vb) => {
-              const meta = VIBE_META[vb.value];
               const on = v.vibe === vb.value;
               return (
                 <button
@@ -346,11 +321,11 @@ export function ProfileWizard({
                       : "4px 4px 0 rgba(43,33,24,0.14)",
                   }}
                 >
-                  <span className="text-3xl">{meta.e}</span>
+                  <span className="text-3xl">{vb.emoji}</span>
                   <span>
-                    <span className="block font-display text-lg">{meta.label}</span>
+                    <span className="block font-display text-lg">{t(`vibe.${vb.value}`)}</span>
                     <span className="block text-sm font-bold text-[var(--ink)] mt-0.5">
-                      {meta.desc}
+                      {t(`wiz.vibe_desc_${vb.value}`)}
                     </span>
                   </span>
                 </button>
@@ -362,7 +337,7 @@ export function ProfileWizard({
         {step === 4 && (
           <div className="flex flex-col gap-6">
             <div>
-              <div className="csection-label mb-2">Looking for</div>
+              <div className="csection-label mb-2">{t("wiz.looking")}</div>
               <div className="flex flex-wrap gap-2">
                 {(["regular", "dropin", "both"] as const).map((l) => (
                   <button
@@ -371,35 +346,35 @@ export function ProfileWizard({
                     className={`cchip ${v.looking_for === l ? "cchip-on" : ""}`}
                     onClick={() => set("looking_for", l)}
                   >
-                    {l === "dropin" ? "Drop-in" : l === "regular" ? "Regular" : "Both"}
+                    {t(`lf.${l}`)}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <div className="csection-label mb-1">A little about you <span className="opacity-50 font-normal">(optional)</span></div>
+              <div className="csection-label mb-1">{t("wiz.about")} <span className="opacity-50 font-normal">{t("wiz.optional")}</span></div>
               <textarea
                 className="cinput"
                 value={v.bio}
                 maxLength={200}
                 rows={3}
                 onChange={(e) => set("bio", e.target.value)}
-                placeholder="New in town and keen to rally. Evenings work best 🎾"
+                placeholder={t("wiz.bio_ph")}
               />
             </div>
             <div>
-              <div className="csection-label mb-1">Favourite shot <span className="opacity-50 font-normal">(optional)</span></div>
+              <div className="csection-label mb-1">{t("wiz.fav_shot")} <span className="opacity-50 font-normal">{t("wiz.optional")}</span></div>
               <input
                 className="cinput"
                 value={v.fav_shot}
                 maxLength={40}
                 onChange={(e) => set("fav_shot", e.target.value)}
-                placeholder="e.g. Backhand slice"
+                placeholder={t("wiz.fav_shot_ph")}
               />
             </div>
             <div>
-              <div className="csection-label mb-2">Home courts</div>
-              <div className="text-xs text-[var(--ink)] mb-2 -mt-1">Pick the cities you play in — tap both if you split your time.</div>
+              <div className="csection-label mb-2">{t("wiz.home_courts")}</div>
+              <div className="text-xs text-[var(--ink)] mb-2 -mt-1">{t("wiz.cities_hint")}</div>
               <div className="flex gap-2 mb-3">
                 {CITIES.map((cy) => {
                   const on = (v.home_cities ?? []).includes(cy);
@@ -442,7 +417,7 @@ export function ProfileWizard({
                     {n}
                     <button
                       type="button"
-                      aria-label={`Remove ${n}`}
+                      aria-label={t("wiz.remove", { n })}
                       className="ml-1 underline"
                       onClick={() => {
                         const list = (v.home_courts || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -456,7 +431,7 @@ export function ProfileWizard({
               </div>
             </div>
             <div>
-              <div className="csection-label mb-2">Be a buddy — rescue someone's no-show?</div>
+              <div className="csection-label mb-2">{t("wiz.buddy_q")}</div>
               <div className="flex flex-wrap gap-2">
                 {(["yes", "sometimes", "no"] as const).map((x) => (
                   <button
@@ -465,7 +440,7 @@ export function ProfileWizard({
                     className={`cchip ${v.buddy_optin === x ? "cchip-on" : ""}`}
                     onClick={() => set("buddy_optin", x)}
                   >
-                    {x}
+                    {t(`optin.${x}`)}
                   </button>
                 ))}
               </div>
@@ -477,9 +452,9 @@ export function ProfileWizard({
                   onChange={(e) => set("buddy_sos_optin", e.target.checked)}
                 />
                 <span>
-                  <span className="block font-extrabold">SOS from my buddies 🤝</span>
+                  <span className="block font-extrabold">{t("wiz.sos_buddies")}</span>
                   <span className="block text-sm font-semibold text-[var(--ink)] mt-1">
-                    Hear when a buddy needs you — even when rescuer mode is off.
+                    {t("wiz.sos_buddies_sub")}
                   </span>
                 </span>
               </label>
@@ -496,9 +471,9 @@ export function ProfileWizard({
         style={saved ? { background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", cursor: "default" } : undefined}
       >
         {busy
-          ? "Saving..."
+          ? t("wiz.saving")
           : step < 4
-            ? "Next"
+            ? t("wiz.next")
             : saved
               ? savedLabel
               : submitLabel}
