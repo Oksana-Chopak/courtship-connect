@@ -397,7 +397,7 @@ export function ProfileWizard({
                 })}
               </div>
               <CourtCombobox
-                city={v.home_city}
+                cities={v.home_cities ?? [v.home_city]}
                 valueId={picker}
                 onChange={(id, c) => {
                   setPicker(id);

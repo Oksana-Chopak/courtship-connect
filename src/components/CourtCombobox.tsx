@@ -7,10 +7,12 @@ import { oops } from "@/lib/oops";
 /** Searchable, accessible court picker with "Add your own" action. */
 export function CourtCombobox({
   city,
+  cities,
   valueId,
   onChange,
 }: {
-  city: string;
+  city?: string;
+  cities?: string[];
   valueId: string;
   onChange: (id: string, court: CourtFull) => void;
 }) {
@@ -22,10 +24,21 @@ export function CourtCombobox({
   const [addName, setAddName] = useState("");
   const [area, setArea] = useState("");
   const [busy, setBusy] = useState(false);
+  const [addCity, setAddCity] = useState<string>("");
+
+  // The picker can be scoped to several cities (e.g. a player who plays in both
+  // Uppsala and Stockholm). `cities` wins when provided; `city` stays for the
+  // single-city callers (creating one game). When adding a custom court with
+  // more than one active city, the user picks which city it belongs to.
+  const activeCities = useMemo(
+    () => (cities && cities.length ? cities : city ? [city] : []),
+    [cities, city],
+  );
+  const effectiveAddCity = addCity && activeCities.includes(addCity) ? addCity : activeCities[0] ?? "";
 
   useEffect(() => { fetchCourtsForPicker().then(setCourts); }, []);
 
-  const inCity = useMemo(() => courts.filter((c) => c.city === city), [courts, city]);
+  const inCity = useMemo(() => courts.filter((c) => activeCities.includes(c.city)), [courts, activeCities]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return inCity;
@@ -49,7 +62,7 @@ export function CourtCombobox({
     if (busy) return;
     setBusy(true);
     try {
-      const created = await addCustomCourt({ name, area: area || null, city });
+      const created = await addCustomCourt({ name, area: area || null, city: effectiveAddCity });
       setCourts((p) => [...p, created]);
       onChange(created.id, created);
       setAddOpen(false);
@@ -140,7 +153,22 @@ export function CourtCombobox({
           <div className="ccard p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
             <div>
               <div className="csection-label">{t("court.add_dialog_title")}</div>
-              <div className="text-base font-semibold text-[var(--ink)] mt-2">📍 {city}</div>
+              {activeCities.length > 1 ? (
+                <div className="flex gap-2 mt-2">
+                  {activeCities.map((cy) => (
+                    <button
+                      key={cy}
+                      type="button"
+                      className={`cchip ${effectiveAddCity === cy ? "cchip-on" : ""}`}
+                      onClick={() => setAddCity(cy)}
+                    >
+                      📍 {cy}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-base font-semibold text-[var(--ink)] mt-2">📍 {effectiveAddCity}</div>
+              )}
             </div>
             <div>
               <div className="csection-label mb-1">{t("court.name_label")}</div>
