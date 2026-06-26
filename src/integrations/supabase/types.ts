@@ -323,6 +323,27 @@ export type Database = {
         }
         Relationships: []
       }
+      kudos: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+          to_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          id?: string
+          to_id: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          to_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -811,6 +832,7 @@ export type Database = {
         }
       }
       get_support_swish: { Args: never; Returns: string }
+      give_kudos: { Args: { _to: string }; Returns: number }
       is_buddy: { Args: { _a: string; _b: string }; Returns: boolean }
       join_event: {
         Args: { _event_id: string }
@@ -818,6 +840,14 @@ export type Database = {
           attendee_status: string
           ok: boolean
           reason: string
+        }[]
+      }
+      kudos_for: {
+        Args: { _ids: string[] }
+        Returns: {
+          mine: boolean
+          n: number
+          to_id: string
         }[]
       }
       leave_event: { Args: { _event_id: string }; Returns: undefined }
@@ -917,6 +947,22 @@ export type Database = {
           level: number
           name: string
           photo_url: string
+        }[]
+      }
+      top_active_month: {
+        Args: never
+        Returns: {
+          n: number
+          name: string
+          user_id: string
+        }[]
+      }
+      top_hosts_month: {
+        Args: never
+        Returns: {
+          n: number
+          name: string
+          user_id: string
         }[]
       }
       top_rescuers_month: {
