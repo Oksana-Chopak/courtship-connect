@@ -1,121 +1,60 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { PushControls } from "@/components/PushControls";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
-import { toast } from "sonner";
-import { oops, SUPPORT_WA } from "@/lib/oops";
-import { LangToggle, useI18n } from "@/lib/i18n";
-import { RescuerBadge } from "@/components/RescuerBadge";
-import { ActivityBadge } from "@/components/ActivityBadge";
-import { RecruiterBadge } from "@/components/RecruiterBadge";
-import { StreakCard } from "@/components/StreakCard";
-import { CourtsPassport } from "@/components/CourtsPassport";
-import { MatchmakerBadge } from "@/components/MatchmakerBadge";
-import { LogGameCard } from "@/components/LogGameCard";
-import { GamesHistory } from "@/components/GamesHistory";
-import {
-  fetchMyBuddies, removeBuddy, fetchPendingRequestsTo, respondBuddyRequest,
-  type BuddyRow, type BuddyRequest,
-} from "@/lib/buddies";
+import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
-import { Collapsible } from "@/components/Collapsible";
-import { SupportCard } from "@/components/SupportCard";
+import { StreakCard } from "@/components/StreakCard";
+import { fetchPendingRequestsTo } from "@/lib/buddies";
+import { activityTier, rescuerTier, recruiterTier, matchmakerTier, levelMeta, vibeEmoji } from "@/lib/courtship";
 
 export const Route = createFileRoute("/_authenticated/me")({
-  head: () => ({ meta: [{ title: "Edit profile — Courtship" }] }),
+  head: () => ({ meta: [{ title: "Profile — Courtship" }] }),
   component: MePage,
 });
+
+type Tier = { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null;
+
+function RankCircle({ tier, fallbackEmoji, label }: { tier: Tier; fallbackEmoji: string; label: string }) {
+  const started = !!tier;
+  return (
+    <div className="flex flex-col items-center text-center gap-1">
+      <div
+        className="flex items-center justify-center rounded-full"
+        style={{ width: 52, height: 52, background: started ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: started ? 1 : 0.5 }}
+      >
+        <span style={{ fontSize: 24 }}>{started ? tier!.emoji : fallbackEmoji}</span>
+      </div>
+      <div className="font-extrabold text-[10px] leading-tight">{started ? tier!.name : "—"}</div>
+      <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: "var(--wood, #8a6d3b)" }}>{label}</div>
+    </div>
+  );
+}
+
+function MenuLink({ to, icon, label, badge }: { to: string; icon: string; label: string; badge?: number }) {
+  return (
+    <Link to={to} className="ccard p-4 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <span className="text-xl">{icon}</span>
+        <span className="font-display text-lg">{label}</span>
+        {badge && badge > 0 ? (
+          <span className="text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{badge}</span>
+        ) : null}
+      </div>
+      <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
+    </Link>
+  );
+}
 
 function MePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
-  const [initial, setInitial] = useState<ProfileFormValues | null>(null);
+  const [profile, setProfile] = useState<{ name: string; photo_url: string | null; level: number; vibe: string } | null>(null);
   const [rescues, setRescues] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [referrals, setReferrals] = useState(0);
   const [hosted, setHosted] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [buddies, setBuddies] = useState<Array<BuddyRow & { other_id: string; name: string; photo_url: string | null; home_city: string | null }>>([]);
-  const [buddyReqs, setBuddyReqs] = useState<BuddyRequest[]>([]);
-  const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
-  const [confirmSignout, setConfirmSignout] = useState(false);
-  const [editingCode, setEditingCode] = useState(false);
-  const [codeDraft, setCodeDraft] = useState("");
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-
-  async function loadBuddies(u: string) {
-    const rows = await fetchMyBuddies(u);
-    const others = rows.map((b) => (b.user_low === u ? b.user_high : b.user_low));
-    if (!others.length) { setBuddies([]); return; }
-    const { data } = await (supabase as any).rpc("players_directory", { _ids: others });
-    const byId = new Map<string, any>((data as any[] | null)?.map((d) => [d.id, d]) ?? []);
-    setBuddies(rows.map((b) => {
-      const oid = b.user_low === u ? b.user_high : b.user_low;
-      const p = byId.get(oid) ?? {};
-      return { ...b, other_id: oid, name: p.name ?? "Player", photo_url: p.photo_url ?? null, home_city: p.home_city ?? null };
-    }));
-  }
-
-  async function loadBuddyReqs(u: string) {
-    const reqs = await fetchPendingRequestsTo(u);
-    setBuddyReqs(reqs);
-    if (reqs.length) {
-      const ids = reqs.map((r) => r.from_id);
-      const { data: names } = await (supabase as any).rpc("players_directory", { _ids: ids });
-      const m: Record<string, string> = {};
-      (names as any[] | null)?.forEach((n) => { m[n.id] = n.name; });
-      setRequesterNames(m);
-    }
-  }
-
-  async function respond(req: BuddyRequest, accept: boolean) {
-    try {
-      await respondBuddyRequest(req.id, accept);
-      setBuddyReqs((p) => p.filter((x) => x.id !== req.id));
-      toast.success(accept ? t("buddy.accepted") : t("buddy.declined"));
-    } catch (e: any) { oops(e); }
-  }
-
-  async function shareInvite() {
-    if (!inviteCode) return;
-    const link = `${window.location.origin}/auth?code=${inviteCode}`;
-    const msg = t("invite.message").replace("{link}", link).replace("{code}", inviteCode);
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share({ text: msg }); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
-    }
-    let copied = false;
-    try { await navigator.clipboard.writeText(msg); copied = true; } catch { /* fall back */ }
-    if (!copied && typeof document !== "undefined") {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = msg; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.focus(); ta.select();
-        copied = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch { /* ignore */ }
-    }
-    toast.success(copied ? t("invite.copied") : t("invite.share"));
-  }
-
-  function copyCode() {
-    if (!inviteCode) return;
-    navigator.clipboard?.writeText(inviteCode).then(() => toast.success(t("invite.copied"))).catch(() => {});
-  }
-  async function saveCode() {
-    const c = codeDraft.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
-    if (c.length < 3) { toast.error(t("invite.too_short")); return; }
-    const { data, error } = await (supabase as any).rpc("set_my_invite_code", { _new: c });
-    if (error) {
-      const m = String(error.message || "");
-      toast.error(m.includes("taken") ? t("invite.taken") : m.includes("too_short") ? t("invite.too_short") : t("invite.edit_fail"));
-      return;
-    }
-    if (data) { setInviteCode(data as string); setEditingCode(false); toast.success(t("invite.saved")); }
-  }
+  const [pendingReqs, setPendingReqs] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -128,236 +67,59 @@ function MePage() {
         return;
       }
       const d = data as any;
-      setIsAdmin(!!d.is_admin);
+      setProfile({ name: d.name ?? "", photo_url: d.photo_url ?? null, level: d.level ?? 3, vibe: d.vibe ?? "friendly" });
       setRescues(d.rescues_count ?? 0);
       setGamesPlayed(d.games_played ?? 0);
       setReferrals(d.referrals_count ?? 0);
       try {
-        const { count: hc } = await (supabase as any)
+        const { count } = await (supabase as any)
           .from("sos_requests").select("id", { count: "exact", head: true })
           .eq("caller_id", u.user.id).eq("kind", "open");
-        setHosted(hc ?? 0);
+        setHosted(count ?? 0);
       } catch { /* ignore */ }
-      setInitial({
-        name: d.name ?? "",
-        last_name: d.last_name ?? "",
-        bio: d.bio ?? "",
-        fav_shot: d.fav_shot ?? "",
-        phone_e164: d.phone_e164 ?? "",
-        photo_url: d.photo_url ?? "",
-        level: d.level ?? 3,
-        formats: d.formats ?? [],
-        play_times: d.play_times ?? [],
-        vibe: d.vibe ?? "friendly",
-        looking_for: d.looking_for ?? "both",
-        home_courts: d.home_courts ?? "",
-        home_city: d.home_city ?? "Uppsala",
-        home_cities: d.home_cities ?? [d.home_city ?? "Uppsala"],
-        buddy_optin: d.buddy_optin ?? "sometimes",
-        buddy_radius_km: d.buddy_radius_km ?? 10,
-        buddy_sos_optin: d.buddy_sos_optin ?? true,
-      });
-      loadBuddies(u.user.id);
-      loadBuddyReqs(u.user.id);
       try {
-        const { data: code } = await (supabase as any).rpc("ensure_my_invite_code");
-        if (code) setInviteCode(code as string);
-      } catch { /* invite RPC not deployed yet — block stays hidden */ }
+        const reqs = await fetchPendingRequestsTo(u.user.id);
+        setPendingReqs(reqs.length);
+      } catch { /* ignore */ }
     })();
   }, [navigate]);
 
-  if (!initial || !uid) {
+  if (!profile || !uid) {
     return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
   }
 
+  const lm = levelMeta(profile.level);
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-4xl">{t("me.title")}</h1>
-          <p className="text-[var(--ink)] font-semibold">{t("me.sub")}</p>
+    <div className="space-y-4">
+      <div className="ccard p-4 flex items-center gap-3">
+        <Avatar src={profile.photo_url} name={profile.name} seed={uid} size={64} />
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}</div>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} />
+            <span className="font-extrabold text-sm">{lm.name}</span>
+            <span className="text-sm">· {vibeEmoji(profile.vibe)}</span>
+          </div>
         </div>
-        <LangToggle className="shrink-0" />
-      </div>
-
-      <Link to="/progress" className="ccard p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">📈</span>
-          <span className="font-display text-lg">{t("prog.title")}</span>
-        </div>
-        <span className="text-2xl">›</span>
-      </Link>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <RescuerBadge count={rescues} size="lg" progress />
-        <ActivityBadge count={gamesPlayed} size="lg" progress />
-        <RecruiterBadge count={referrals} size="lg" progress />
-        <MatchmakerBadge count={hosted} size="lg" progress />
       </div>
 
       <StreakCard />
 
-      <CourtsPassport />
-
-      <LogGameCard />
-
-      <GamesHistory />
-
-      {buddyReqs.length > 0 && (
-        <div className="ccard p-4 space-y-3">
-          <div className="font-display text-2xl">{t("buddy.requests_title")}</div>
-          {buddyReqs.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
-              <div className="font-extrabold truncate">{requesterNames[r.from_id] ?? "Player"}</div>
-              <div className="flex gap-2 shrink-0">
-                <button onClick={() => respond(r, true)} className="cbtn cbtn-green">{t("buddy.accept")}</button>
-                <button onClick={() => respond(r, false)} className="cbtn cbtn-ghost">{t("buddy.decline")}</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {inviteCode && (
-        <div className="ccard p-4 space-y-2">
-          <div>
-            <div className="font-extrabold text-lg">{t("invite.title")}</div>
-            <div className="text-sm text-[var(--ink)]">{t("invite.sub")}</div>
-          </div>
-          {referrals > 0 && (
-            <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>🎁 {t("invite.referrals", { n: referrals })}</div>
-          )}
-          {editingCode ? (
-            <div className="flex items-center gap-2">
-              <input
-                className="cinput flex-1 font-extrabold tracking-widest uppercase"
-                value={codeDraft}
-                onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
-                placeholder="YOURCODE"
-              />
-              <button className="cbtn cbtn-green shrink-0 px-3" onClick={saveCode}>✓</button>
-              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => setEditingCode(false)}>✕</button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <code className="flex-1 font-extrabold tracking-widest text-center py-2 rounded-xl"
-                style={{ background: "var(--cream2)" }}>{inviteCode}</code>
-              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={copyCode} aria-label={t("invite.copy")} title={t("invite.copy")}>📋</button>
-              <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => { setCodeDraft(inviteCode); setEditingCode(true); }} aria-label={t("invite.edit")} title={t("invite.edit")}>✏️</button>
-            </div>
-          )}
-          <button className="cbtn cbtn-coral w-full" onClick={shareInvite}>🔗 {t("invite.cta")}</button>
-        </div>
-      )}
-
-      <Collapsible title={`🔔 ${t("push.title")}`}>
-        <PushControls bare />
-      </Collapsible>
-
-      <Collapsible title={t("buddy.my_buddies")}>
-        {buddies.length === 0 ? (
-          <div className="text-base font-semibold text-[var(--ink)]">{t("empty.buddies")}</div>
-        ) : (
-          buddies.map((b) => (
-            <div key={b.id} className="flex items-center gap-3 border-t border-[var(--ink)]/15 pt-3">
-              <Avatar src={b.photo_url} name={b.name} seed={b.other_id} size={56} />
-              <div className="flex-1 min-w-0">
-                <Link to="/players/$id" params={{ id: b.other_id }} className="font-extrabold underline truncate block">
-                  {b.name}
-                </Link>
-                <div className="text-sm text-[var(--ink)]">
-                  📍 {b.home_city ?? "—"} · {t(`buddy.source.${b.source}` as any)}
-                </div>
-              </div>
-              <button
-                className="text-xs underline shrink-0"
-                style={{ opacity: 0.5 }}
-                onClick={async () => {
-                  if (typeof window !== "undefined" && !window.confirm(t("buddy.confirm_remove"))) return;
-                  try {
-                    await removeBuddy(b.other_id);
-                    setBuddies((p) => p.filter((x) => x.id !== b.id));
-                    toast.success(t("buddy.removed"));
-                  } catch (e: any) { oops(e); }
-                }}
-              >
-                {t("buddy.remove")}
-              </button>
-            </div>
-          ))
-        )}
-      </Collapsible>
-
-      <div className="ccard p-5">
-        <ProfileWizard
-          initial={initial ?? emptyProfile}
-          userId={uid}
-          submitLabel={t("me.save")}
-          savedState
-          savedLabel={t("me.saved")}
-          busy={busy}
-          onSubmit={async (v: ProfileFormValues) => {
-            setBusy(true);
-            const { error } = await (supabase as any).rpc("save_my_profile", { _data: v });
-            setBusy(false);
-            if (error) {
-              oops(error);
-              return;
-            }
-            setInitial(v);
-            toast.success(t("me.updated"));
-          }}
-        />
+      <div className="ccard p-3 grid grid-cols-4 gap-2">
+        <RankCircle tier={activityTier(gamesPlayed)} fallbackEmoji="🎾" label={t("prog.track_activity")} />
+        <RankCircle tier={rescuerTier(rescues)} fallbackEmoji="🚑" label={t("prog.track_rescuer")} />
+        <RankCircle tier={recruiterTier(referrals)} fallbackEmoji="🤝" label={t("prog.track_recruiter")} />
+        <RankCircle tier={matchmakerTier(hosted)} fallbackEmoji="🎪" label={t("prog.track_matchmaker")} />
       </div>
 
-      <button
-        onClick={() => { try { window.open(`https://wa.me/${SUPPORT_WA.replace(/[^\d]/g, "")}?text=${encodeURIComponent(t("feedback.prefill"))}`, "_blank"); } catch { /* ignore */ } }}
-        className="w-full text-center text-sm underline"
-        style={{ opacity: 0.6 }}
-      >{t("feedback.cta")}</button>
-
-      {isAdmin && (
-        <Link to="/admin" className="ccard p-4 flex items-center justify-between">
-          <div>
-            <div className="font-display text-xl">{t("admin.title")}</div>
-            <div className="text-base text-[var(--ink)] font-semibold">{t("admin.tag")}</div>
-          </div>
-          <div className="text-2xl">🛠️</div>
-        </Link>
-      )}
-
-      <SupportCard />
-
-      <button
-        type="button"
-        onClick={() => setConfirmSignout(true)}
-        className="cbtn cbtn-ghost w-full"
-      >
-        {t("auth.signout")}
-      </button>
-
-      {confirmSignout && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ background: "rgba(43,33,24,0.5)" }} onClick={() => setConfirmSignout(false)}>
-          <div className="ccard p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
-            <div className="font-display text-2xl">{t("auth.signout_confirm_title")}</div>
-            <div className="text-base font-semibold text-[var(--ink)]">{t("auth.signout_confirm_body")}</div>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmSignout(false)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
-              <button
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  toast.success(t("auth.signed_out"));
-                  window.location.href = "/";
-                }}
-                className="cbtn cbtn-coral flex-1"
-              >
-                {t("auth.signout")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="space-y-2">
+        <MenuLink to="/progress" icon="📈" label={t("prog.title")} />
+        <MenuLink to="/matches" icon="🎾" label={t("matches.title")} />
+        <MenuLink to="/people" icon="🤝" label={t("people.title")} badge={pendingReqs} />
+        <MenuLink to="/settings" icon="⚙️" label={t("settings.title")} />
+        <MenuLink to="/help" icon="💬" label={t("help.title")} />
+      </div>
     </div>
   );
 }
