@@ -125,10 +125,7 @@ function ProgressPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Link to="/me" className="font-extrabold text-sm underline">← {t("prog.back")}</Link>
-        <button type="button" onClick={share} className="cbtn cbtn-green" style={{ padding: "6px 12px" }}>📲</button>
-      </div>
+      <Link to="/me" className="font-extrabold text-sm underline">← {t("prog.back")}</Link>
       <h1 className="font-display text-3xl leading-none">{t("prog.title")}</h1>
 
       {/* weekly pulse hero */}

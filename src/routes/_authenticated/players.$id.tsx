@@ -157,9 +157,9 @@ function PlayerDetail() {
         <Row label={t("city.label")}>📍 {p.home_city ?? "—"}</Row>
         <Row label={t("player.formats")}>{p.formats?.join(" · ") || "—"}</Row>
         <Row label={t("player.when")}>{p.play_times?.join(" · ") || "—"}</Row>
-        <Row label={t("player.looking_for")}>{p.looking_for}</Row>
+        <Row label={t("player.looking_for")}>{p.looking_for ? t((`lf.${p.looking_for}`) as any) : "—"}</Row>
         <Row label={t("player.home_courts")}>{p.home_courts || "—"}</Row>
-        <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : p.buddy_optin}</Row>
+        <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : t((`optin.${p.buddy_optin}`) as any)}</Row>
         <Row label={t("player.rescues")}>🚑 {p.rescues_count ?? 0}</Row>
       </div>
     </div>

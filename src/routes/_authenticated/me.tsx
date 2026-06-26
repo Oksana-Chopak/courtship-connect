@@ -30,17 +30,22 @@ function RankCircle({ tier, fallbackEmoji, label }: { tier: Tier; fallbackEmoji:
   );
 }
 
-function MenuLink({ to, icon, label, badge }: { to: string; icon: string; label: string; badge?: number }) {
+function MenuLink({ to, icon, label, sub, badge }: { to: string; icon: string; label: string; sub?: string; badge?: number }) {
   return (
-    <Link to={to} className="ccard p-4 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <span className="text-xl">{icon}</span>
-        <span className="font-display text-lg">{label}</span>
-        {badge && badge > 0 ? (
-          <span className="text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{badge}</span>
-        ) : null}
+    <Link to={to} className="ccard p-4 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-xl shrink-0">{icon}</span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-lg">{label}</span>
+            {badge && badge > 0 ? (
+              <span className="text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{badge}</span>
+            ) : null}
+          </div>
+          {sub && <div className="text-xs font-semibold leading-tight" style={{ color: "var(--ink)", opacity: 0.55 }}>{sub}</div>}
+        </div>
       </div>
-      <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
+      <span className="text-2xl shrink-0" style={{ opacity: 0.4 }}>›</span>
     </Link>
   );
 }
@@ -114,11 +119,11 @@ function MePage() {
       </div>
 
       <div className="space-y-2">
-        <MenuLink to="/progress" icon="📈" label={t("prog.title")} />
-        <MenuLink to="/matches" icon="🎾" label={t("matches.title")} />
-        <MenuLink to="/people" icon="🤝" label={t("people.title")} badge={pendingReqs} />
-        <MenuLink to="/settings" icon="⚙️" label={t("settings.title")} />
-        <MenuLink to="/help" icon="💬" label={t("help.title")} />
+        <MenuLink to="/progress" icon="📈" label={t("prog.title")} sub={t("menu.progress_sub")} />
+        <MenuLink to="/matches" icon="🎾" label={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />
+        <MenuLink to="/people" icon="🤝" label={t("people.title")} sub={t("menu.people_sub")} badge={pendingReqs} />
+        <MenuLink to="/settings" icon="⚙️" label={t("settings.title")} sub={t("menu.settings_sub")} />
+        <MenuLink to="/help" icon="💬" label={t("help.title")} sub={t("menu.help_sub")} />
       </div>
     </div>
   );
