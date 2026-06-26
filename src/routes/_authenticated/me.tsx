@@ -180,6 +180,14 @@ function MePage() {
         <LangToggle className="shrink-0" />
       </div>
 
+      <Link to="/progress" className="ccard p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">📈</span>
+          <span className="font-display text-lg">{t("prog.title")}</span>
+        </div>
+        <span className="text-2xl">›</span>
+      </Link>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <RescuerBadge count={rescues} size="lg" progress />
         <ActivityBadge count={gamesPlayed} size="lg" progress />
