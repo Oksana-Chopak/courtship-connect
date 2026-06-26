@@ -57,6 +57,7 @@ function ProgressPage() {
   const [referrals, setReferrals] = useState(0);
   const [hosted, setHosted] = useState(0);
   const [dates, setDates] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -84,8 +85,29 @@ function ProgressPage() {
       }
       const hist = await fetchMyGameHistory(u.user.id, 200);
       setDates(hist.map((g) => g.played_at));
+      setLoaded(true);
     })();
   }, []);
+
+  if (!loaded) {
+    return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
+  }
+
+  const hasActivity = games > 0 || rescues > 0 || referrals > 0 || hosted > 0 || dates.length > 0;
+  if (!hasActivity) {
+    return (
+      <div className="space-y-4">
+        <Link to="/me" className="font-extrabold text-sm underline">← {t("prog.back")}</Link>
+        <h1 className="font-display text-3xl leading-none">{t("prog.title")}</h1>
+        <div className="ccard p-6 text-center space-y-3">
+          <div className="text-4xl">🌱</div>
+          <div className="font-display text-2xl leading-tight">{t("prog.empty_title")}</div>
+          <div className="text-sm font-semibold" style={{ color: "var(--ink)", opacity: 0.65 }}>{t("prog.empty_sub")}</div>
+          <Link to="/matches" className="cbtn cbtn-coral inline-flex">{t("prog.empty_cta")}</Link>
+        </div>
+      </div>
+    );
+  }
 
   const tracks: { track: string; tier: Tier; count: number }[] = [
     { track: "activity", tier: activityTier(games), count: games },
