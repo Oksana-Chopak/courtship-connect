@@ -12,12 +12,15 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   const [pending, setPending] = useState<GameRow[]>([]);
   const [pendingMeta, setPendingMeta] = useState<Record<string, { court: string; other: string; otherName: string }>>({});
   const [scores, setScores] = useState<Record<string, string>>({});
+  const [winners, setWinners] = useState<Record<string, string>>({});
+  const [meId, setMeId] = useState<string | null>(null);
   const [flarePrompts, setFlarePrompts] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
+      setMeId(u.user.id);
 
       const pendingRows = await fetchPendingPostGameChecks(u.user.id);
       setPending(pendingRows);
@@ -63,7 +66,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   }, []);
 
   async function onConfirm(g: GameRow, score?: string) {
-    try { await confirmGame(g.id, score); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); onChange?.(); }
+    try { await confirmGame(g.id, score, winners[g.id] || null); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); onChange?.(); }
     catch (e: any) { oops(e); }
   }
   async function onNoshow(g: GameRow) {
@@ -114,6 +117,27 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
               placeholder={t("score.placeholder")}
               className="cinput w-full"
             />
+            <div>
+              <div className="csection-label">{t("won.title")}</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWinners((p) => ({ ...p, [g.id]: meId && p[g.id] === meId ? "" : meId ?? "" }))}
+                  className="flex-1 rounded-full font-extrabold text-xs py-1.5"
+                  style={{ border: "2px solid var(--ink)", background: meId && winners[g.id] === meId ? "var(--green-pop)" : "var(--cream2)" }}
+                >
+                  {t("won.me")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinners((p) => ({ ...p, [g.id]: meta?.other && p[g.id] === meta.other ? "" : meta?.other ?? "" }))}
+                  className="flex-1 rounded-full font-extrabold text-xs py-1.5"
+                  style={{ border: "2px solid var(--ink)", background: meta?.other && winners[g.id] === meta.other ? "var(--green-pop)" : "var(--cream2)" }}
+                >
+                  {t("won.other", { name: otherName })}
+                </button>
+              </div>
+            </div>
             <div className="space-y-2">
               <button onClick={() => onConfirm(g, scores[g.id])} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
               <button onClick={() => onArchive(g)} className="cbtn cbtn-ghost w-full">{t("home.didnt_happen")}</button>

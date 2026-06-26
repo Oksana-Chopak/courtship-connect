@@ -8,11 +8,13 @@ export function GamesHistory() {
   const { t } = useI18n();
   const [rows, setRows] = useState<GameRow[]>([]);
   const [meta, setMeta] = useState<Record<string, { court: string; otherName: string }>>({});
+  const [meId, setMeId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
+      setMeId(u.user.id);
       const hist = await fetchMyGameHistory(u.user.id);
       setRows(hist);
       if (hist.length) {
@@ -41,9 +43,14 @@ export function GamesHistory() {
   }, []);
 
   if (rows.length === 0) return null;
+  const wins = rows.filter((g) => g.winner && g.winner === meId).length;
+  const losses = rows.filter((g) => g.winner && g.winner !== meId).length;
   return (
     <div className="ccard p-4 space-y-2">
-      <div className="csection-label">{t("hist.title")}</div>
+      <div className="flex items-center justify-between">
+        <div className="csection-label">{t("hist.title")}</div>
+        {wins + losses > 0 && <div className="text-sm font-extrabold">🏆 {wins}–{losses}</div>}
+      </div>
       {rows.map((g) => {
         const mm = meta[g.id];
         const confirmed = g.confirmed_a && g.confirmed_b;
@@ -53,7 +60,16 @@ export function GamesHistory() {
               <div className="font-extrabold truncate">{t("hist.vs", { name: mm?.otherName ?? "Player" })}</div>
               <div className="text-sm text-[var(--ink)] truncate">{whenLabel(g.played_at)}{mm?.court ? ` · 📍 ${mm.court}` : ""}{g.score ? ` · 🎾 ${g.score}` : ""}</div>
             </div>
-            {confirmed && <span className="text-sm shrink-0" title={t("hist.confirmed")}>✓</span>}
+            {g.winner ? (
+              <span
+                className="text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0"
+                style={{ background: g.winner === meId ? "var(--green-pop)" : "var(--cream2)", border: "1.5px solid var(--ink)" }}
+              >
+                {g.winner === meId ? t("hist.won") : t("hist.lost")}
+              </span>
+            ) : confirmed ? (
+              <span className="text-sm shrink-0" title={t("hist.confirmed")}>✓</span>
+            ) : null}
           </div>
         );
       })}

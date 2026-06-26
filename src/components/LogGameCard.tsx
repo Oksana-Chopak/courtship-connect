@@ -23,6 +23,7 @@ export function LogGameCard() {
   const [otherName, setOtherName] = useState("");
   const [when, setWhen] = useState(localNow());
   const [score, setScore] = useState("");
+  const [winner, setWinner] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -47,13 +48,14 @@ export function LogGameCard() {
     }
     setBusy(true);
     try {
-      await logGame(otherId, new Date(when).toISOString(), score);
+      await logGame(otherId, new Date(when).toISOString(), score, winner || null);
       toast.success(t("log.done", { name: otherName }));
       setOpen(false);
       setOtherId(null);
       setOtherName("");
       setSearch("");
       setScore("");
+      setWinner("");
       setWhen(localNow());
     } catch (e: any) {
       oops(e);
@@ -120,6 +122,30 @@ export function LogGameCard() {
         <div className="csection-label">{t("log.score")}</div>
         <input className="cinput" placeholder="6–4 6–3" value={score} onChange={(e) => setScore(e.target.value)} />
       </div>
+
+      {otherId && (
+        <div>
+          <div className="csection-label">{t("won.title")}</div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setWinner((w) => (meId && w === meId ? "" : meId ?? ""))}
+              className="flex-1 rounded-full font-extrabold text-sm py-2"
+              style={{ border: "2px solid var(--ink)", background: meId && winner === meId ? "var(--green-pop)" : "var(--cream2)" }}
+            >
+              {t("won.me")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setWinner((w) => (w === otherId ? "" : otherId))}
+              className="flex-1 rounded-full font-extrabold text-sm py-2"
+              style={{ border: "2px solid var(--ink)", background: winner === otherId ? "var(--green-pop)" : "var(--cream2)" }}
+            >
+              {t("won.other", { name: otherName })}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button type="button" className="cbtn cbtn-coral flex-1" disabled={busy} onClick={submit}>
