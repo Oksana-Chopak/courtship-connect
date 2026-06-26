@@ -1,4 +1,4 @@
-import { activityTier, rescuerTier, recruiterTier } from "@/lib/courtship";
+import { activityTier, rescuerTier, recruiterTier, matchmakerTier } from "@/lib/courtship";
 
 // Phase 1 of the rewards system: the "celebration moment".
 // We never trust a single action to tell us a counter moved (games_played only
@@ -11,7 +11,7 @@ import { activityTier, rescuerTier, recruiterTier } from "@/lib/courtship";
 const PROGRESS_KEY = "courtship.progress";
 
 export type Celebration = {
-  kind: "game" | "rescue" | "recruit";
+  kind: "game" | "rescue" | "recruit" | "host";
   count: number;
   leveledUp: boolean;
   tierName: string;
@@ -20,7 +20,7 @@ export type Celebration = {
   nextName: string | null;
 };
 
-type Progress = { games: number; rescues: number; referrals: number };
+type Progress = { games: number; rescues: number; referrals: number; hosted: number };
 
 function readProgress(): Partial<Progress> | null {
   if (typeof window === "undefined") return null;
@@ -46,7 +46,7 @@ function writeProgress(p: Progress) {
 }
 
 function tierOf(kind: Celebration["kind"], n: number) {
-  return kind === "game" ? activityTier(n) : kind === "rescue" ? rescuerTier(n) : recruiterTier(n);
+  return kind === "game" ? activityTier(n) : kind === "rescue" ? rescuerTier(n) : kind === "recruit" ? recruiterTier(n) : matchmakerTier(n);
 }
 
 function celebrationFor(kind: Celebration["kind"], before: number, after: number): Celebration {
@@ -71,9 +71,9 @@ function celebrationFor(kind: Celebration["kind"], before: number, after: number
  * - Nothing changed: return null.
  * Always advances the baseline so a celebration fires exactly once.
  */
-export function checkCelebration(games: number, rescues: number, referrals: number): Celebration | null {
+export function checkCelebration(games: number, rescues: number, referrals: number, hosted: number): Celebration | null {
   const prevRaw = readProgress();
-  const curr: Progress = { games: games ?? 0, rescues: rescues ?? 0, referrals: referrals ?? 0 };
+  const curr: Progress = { games: games ?? 0, rescues: rescues ?? 0, referrals: referrals ?? 0, hosted: hosted ?? 0 };
   writeProgress(curr);
   if (!prevRaw) return null; // baseline only — no retroactive celebration
   const prev: Progress = {
@@ -81,9 +81,12 @@ export function checkCelebration(games: number, rescues: number, referrals: numb
     rescues: prevRaw.rescues ?? 0,
     // missing referrals (old baseline) → treat as current so we never fire a false recruit celebration
     referrals: typeof prevRaw.referrals === "number" ? prevRaw.referrals : curr.referrals,
+    // missing hosted (older baseline) → treat as current so we never fire a false host celebration
+    hosted: typeof prevRaw.hosted === "number" ? prevRaw.hosted : curr.hosted,
   };
   if (curr.games > prev.games) return celebrationFor("game", prev.games, curr.games);
   if (curr.rescues > prev.rescues) return celebrationFor("rescue", prev.rescues, curr.rescues);
   if (curr.referrals > prev.referrals) return celebrationFor("recruit", prev.referrals, curr.referrals);
+  if (curr.hosted > prev.hosted) return celebrationFor("host", prev.hosted, curr.hosted);
   return null;
 }

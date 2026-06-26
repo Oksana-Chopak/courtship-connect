@@ -41,7 +41,7 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
     kicker = t("celebrate.kicker_levelup");
     title = c.tierName; // the new tier IS the headline
     const subKey =
-      c.kind === "rescue" ? "celebrate.levelup_sub_rescue" : c.kind === "recruit" ? "celebrate.levelup_sub_recruit" : "celebrate.levelup_sub_game";
+      c.kind === "rescue" ? "celebrate.levelup_sub_rescue" : c.kind === "recruit" ? "celebrate.levelup_sub_recruit" : c.kind === "host" ? "celebrate.levelup_sub_host" : "celebrate.levelup_sub_game";
     subtitle = t(subKey, { n: c.count });
     bigEmoji = c.tierEmoji;
   } else if (c.kind === "rescue") {
@@ -52,6 +52,10 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
     title = t("celebrate.recruit_title");
     subtitle = t("celebrate.recruit_sub", { n: c.count });
     bigEmoji = "🎁";
+  } else if (c.kind === "host") {
+    title = t("celebrate.host_title");
+    subtitle = t("celebrate.host_sub", { n: c.count });
+    bigEmoji = "🎪";
   } else {
     title = t("celebrate.game_title");
     subtitle = t("celebrate.game_sub", { n: c.count });

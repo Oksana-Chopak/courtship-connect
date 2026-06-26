@@ -52,7 +52,12 @@ function BoardPage() {
       if (!pe && prof) {
         setCityForStats((prof as any).home_city ?? "Uppsala");
         setGamesPlayed((prof as any).games_played ?? 0);
-        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0, (prof as any).referrals_count ?? 0);
+        let hostedCount = 0;
+        try {
+          const { count } = await (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", au.user.id).eq("kind", "open");
+          hostedCount = count ?? 0;
+        } catch { /* ignore */ }
+        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0, (prof as any).referrals_count ?? 0, hostedCount);
         if (cel) setCelebration(cel);
       }
       try {
