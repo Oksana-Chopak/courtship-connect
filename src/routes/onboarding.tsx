@@ -18,6 +18,7 @@ function Onboarding() {
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -28,6 +29,22 @@ function Onboarding() {
   }, [navigate]);
 
   if (!uid) return <div className="terry-bg min-h-screen" />;
+
+  if (done) {
+    return (
+      <div className="terry-bg min-h-screen px-5 py-8 font-body text-[var(--ink)]">
+        <div className="max-w-md mx-auto">
+          <div className="ccard p-6 text-center space-y-4">
+            <div className="text-5xl">🎾</div>
+            <h1 className="font-display text-3xl leading-tight">{t("ob.first_title")}</h1>
+            <p className="font-semibold" style={{ opacity: 0.75 }}>{t("ob.first_sub")}</p>
+            <button onClick={() => navigate({ to: "/board" })} className="cbtn cbtn-coral w-full">{t("ob.first_go")}</button>
+            <button onClick={() => navigate({ to: "/players" })} className="cbtn cbtn-ghost w-full">{t("ob.first_browse")}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="terry-bg min-h-screen px-5 py-8 font-body text-[var(--ink)]">
@@ -78,7 +95,7 @@ function Onboarding() {
                 window.location.href = _n;
                 return;
               }
-              navigate({ to: "/board" });
+              setDone(true);
             }}
           />
         </div>
