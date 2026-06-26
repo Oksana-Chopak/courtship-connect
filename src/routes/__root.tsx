@@ -12,25 +12,28 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
-import { I18nProvider } from "@/lib/i18n";
+import { I18nProvider, useI18n } from "@/lib/i18n";
 
 function NotFoundComponent() {
+  const { t } = useI18n();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+    <div className="terry-bg min-h-screen flex items-center justify-center px-5 font-body text-[var(--ink)]">
+      <style>{`
+        @keyframes cc404bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+        @keyframes cc404squash { 0%, 100% { transform: scaleX(1); opacity: 0.3; } 50% { transform: scaleX(0.55); opacity: 0.12; } }
+      `}</style>
+      <div className="max-w-sm text-center">
+        <div className="relative mx-auto mb-5" style={{ width: 120, height: 120 }}>
+          <div style={{ fontSize: 76, lineHeight: 1, animation: "cc404bounce 0.8s ease-in-out infinite" }}>🎾</div>
+          <div
+            className="mx-auto rounded-[50%]"
+            style={{ width: 64, height: 12, marginTop: 10, background: "var(--ink)", animation: "cc404squash 0.8s ease-in-out infinite" }}
+          />
         </div>
+        <div className="font-display" style={{ fontSize: 60, lineHeight: 1, color: "var(--coral)" }}>404</div>
+        <h2 className="font-display text-3xl mt-2 leading-tight">{t("nf.title")}</h2>
+        <p className="font-semibold mt-2" style={{ opacity: 0.7 }}>{t("nf.sub")}</p>
+        <Link to="/" className="cbtn cbtn-coral inline-flex mt-6">{t("nf.cta")}</Link>
       </div>
     </div>
   );
