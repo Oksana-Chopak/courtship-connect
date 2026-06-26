@@ -50,7 +50,6 @@ function Onboarding() {
     <div className="terry-bg min-h-screen px-5 py-8 font-body text-[var(--ink)]">
       <div className="max-w-md mx-auto space-y-6">
         <div>
-          <div className="csection-label">Step 1 of 1</div>
           <h1 className="font-display text-4xl mt-1">{t("onboarding.title")}</h1>
           <p className="text-[var(--ink)] font-semibold">
             {t("onboarding.sub")}
