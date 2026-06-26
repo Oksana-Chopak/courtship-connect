@@ -87,6 +87,14 @@ function Players() {
 
       <TopRescuers />
 
+      <Link to="/leaders" className="ccard p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🏆</span>
+          <span className="font-display text-lg">{t("lb.title")}</span>
+        </div>
+        <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
+      </Link>
+
       <div className="space-y-2">
         <FilterRow label={t("city.label")}>
           <Chip on={city == null} onClick={() => setCity(null)}>{t("city.any")}</Chip>
