@@ -43,8 +43,8 @@ export function BottomTabBar() {
 
   const tabs: Tab[] = [
     { to: "/board", icon: "📋", label: t("tabs.board"), match: (p) => p.startsWith("/board") || p.startsWith("/rescue") || p.startsWith("/games") || p.startsWith("/sos"), badge: boardBadge },
-    { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") },
-    { to: "/me", icon: "🙂", label: t("tabs.profile"), match: (p) => p === "/me" || p.startsWith("/admin"), badge: profileBadge },
+    { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") || p.startsWith("/leaders") },
+    { to: "/me", icon: "🙂", label: t("tabs.profile"), match: (p) => p === "/me" || p.startsWith("/admin") || p.startsWith("/progress") || p.startsWith("/matches") || p.startsWith("/people") || p.startsWith("/settings") || p.startsWith("/help"), badge: profileBadge },
   ];
 
   return (
