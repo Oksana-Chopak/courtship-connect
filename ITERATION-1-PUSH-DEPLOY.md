@@ -66,3 +66,4 @@ supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=ma
 
 <!-- preview rebuild trigger 2026-06-24T07:56:53Z -->
 Thu Jun 25 19:09:47 UTC 2026
+Fri Jun 26 13:16:21 UTC 2026
