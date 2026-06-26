@@ -259,6 +259,7 @@ export type Database = {
           reported_noshow: string | null
           score: string | null
           sos_id: string | null
+          winner: string | null
         }
         Insert: {
           archived_by?: string[]
@@ -272,6 +273,7 @@ export type Database = {
           reported_noshow?: string | null
           score?: string | null
           sos_id?: string | null
+          winner?: string | null
         }
         Update: {
           archived_by?: string[]
@@ -285,6 +287,7 @@ export type Database = {
           reported_noshow?: string | null
           score?: string | null
           sos_id?: string | null
+          winner?: string | null
         }
         Relationships: [
           {
@@ -696,7 +699,7 @@ export type Database = {
         }[]
       }
       confirm_game: {
-        Args: { _game_id: string; _score?: string }
+        Args: { _game_id: string; _score?: string; _winner?: string }
         Returns: undefined
       }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
@@ -819,7 +822,12 @@ export type Database = {
       }
       leave_event: { Args: { _event_id: string }; Returns: undefined }
       log_game: {
-        Args: { _other_id: string; _played_at: string; _score?: string }
+        Args: {
+          _other_id: string
+          _played_at: string
+          _score?: string
+          _winner?: string
+        }
         Returns: string
       }
       players_directory: {

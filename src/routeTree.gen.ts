@@ -14,12 +14,17 @@ import { Route as CheckEmailRouteImport } from './routes/check-email'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRescueRouteImport } from './routes/_authenticated/rescue'
+import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
+import { Route as AuthenticatedMatchesRouteImport } from './routes/_authenticated/matches'
 import { Route as AuthenticatedMatchRouteImport } from './routes/_authenticated/match'
 import { Route as AuthenticatedLuckyRouteImport } from './routes/_authenticated/lucky'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -52,9 +57,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRescueRoute = AuthenticatedRescueRouteImport.update({
   id: '/rescue',
   path: '/rescue',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
@@ -62,9 +77,19 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMatchesRoute = AuthenticatedMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMatchRoute = AuthenticatedMatchRouteImport.update({
@@ -80,6 +105,11 @@ const AuthenticatedLuckyRoute = AuthenticatedLuckyRouteImport.update({
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
@@ -127,12 +157,17 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
   '/games': typeof AuthenticatedGamesRoute
+  '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/lucky': typeof AuthenticatedLuckyRoute
   '/match': typeof AuthenticatedMatchRoute
+  '/matches': typeof AuthenticatedMatchesRoute
   '/me': typeof AuthenticatedMeRoute
+  '/people': typeof AuthenticatedPeopleRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -146,11 +181,16 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
   '/games': typeof AuthenticatedGamesRoute
+  '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/lucky': typeof AuthenticatedLuckyRoute
   '/match': typeof AuthenticatedMatchRoute
+  '/matches': typeof AuthenticatedMatchesRoute
   '/me': typeof AuthenticatedMeRoute
+  '/people': typeof AuthenticatedPeopleRoute
+  '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -166,12 +206,17 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/games': typeof AuthenticatedGamesRoute
+  '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/lucky': typeof AuthenticatedLuckyRoute
   '/_authenticated/match': typeof AuthenticatedMatchRoute
+  '/_authenticated/matches': typeof AuthenticatedMatchesRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
+  '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/rescue': typeof AuthenticatedRescueRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
   '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
   '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
@@ -187,12 +232,17 @@ export interface FileRouteTypes {
     | '/admin'
     | '/board'
     | '/games'
+    | '/help'
     | '/home'
     | '/lucky'
     | '/match'
+    | '/matches'
     | '/me'
+    | '/people'
     | '/players'
+    | '/progress'
     | '/rescue'
+    | '/settings'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -206,11 +256,16 @@ export interface FileRouteTypes {
     | '/admin'
     | '/board'
     | '/games'
+    | '/help'
     | '/home'
     | '/lucky'
     | '/match'
+    | '/matches'
     | '/me'
+    | '/people'
+    | '/progress'
     | '/rescue'
+    | '/settings'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -225,12 +280,17 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/board'
     | '/_authenticated/games'
+    | '/_authenticated/help'
     | '/_authenticated/home'
     | '/_authenticated/lucky'
     | '/_authenticated/match'
+    | '/_authenticated/matches'
     | '/_authenticated/me'
+    | '/_authenticated/people'
     | '/_authenticated/players'
+    | '/_authenticated/progress'
     | '/_authenticated/rescue'
+    | '/_authenticated/settings'
     | '/_authenticated/players/$id'
     | '/_authenticated/sos/$id'
     | '/_authenticated/sos/new'
@@ -282,11 +342,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rescue': {
       id: '/_authenticated/rescue'
       path: '/rescue'
       fullPath: '/rescue'
       preLoaderRoute: typeof AuthenticatedRescueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/progress': {
+      id: '/_authenticated/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof AuthenticatedProgressRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/players': {
@@ -296,11 +370,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/people': {
+      id: '/_authenticated/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AuthenticatedPeopleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me': {
       id: '/_authenticated/me'
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof AuthenticatedMeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/matches': {
+      id: '/_authenticated/matches'
+      path: '/matches'
+      fullPath: '/matches'
+      preLoaderRoute: typeof AuthenticatedMatchesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/match': {
@@ -322,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/help': {
+      id: '/_authenticated/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof AuthenticatedHelpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/games': {
@@ -393,12 +488,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRoute
+  AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedLuckyRoute: typeof AuthenticatedLuckyRoute
   AuthenticatedMatchRoute: typeof AuthenticatedMatchRoute
+  AuthenticatedMatchesRoute: typeof AuthenticatedMatchesRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
+  AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSosIdRoute: typeof AuthenticatedSosIdRoute
   AuthenticatedSosNewRoute: typeof AuthenticatedSosNewRoute
 }
@@ -407,12 +507,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRoute,
+  AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedLuckyRoute: AuthenticatedLuckyRoute,
   AuthenticatedMatchRoute: AuthenticatedMatchRoute,
+  AuthenticatedMatchesRoute: AuthenticatedMatchesRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
+  AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedRescueRoute: AuthenticatedRescueRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSosIdRoute: AuthenticatedSosIdRoute,
   AuthenticatedSosNewRoute: AuthenticatedSosNewRoute,
 }
