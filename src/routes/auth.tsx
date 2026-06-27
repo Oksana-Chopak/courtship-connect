@@ -88,11 +88,16 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { lang, signup_code: code } },
         });
         if (error) throw error;
-        if (!data.session) {
-          navigate({ to: "/check-email", search: { email } });
-          return;
+        // Invite-only app: the invite code is the real gate, so we skip the email
+        // round-trip. New users are auto-confirmed at the DB level (trigger), but
+        // signUp may still withhold a session — so grab one by signing in and go
+        // straight to onboarding. Falls back to the email screen if anything is off.
+        let session = data.session;
+        if (!session) {
+          const { data: si } = await supabase.auth.signInWithPassword({ email, password });
+          session = si.session ?? null;
         }
-        if (!data.user?.email_confirmed_at) {
+        if (!session) {
           navigate({ to: "/check-email", search: { email } });
           return;
         }
