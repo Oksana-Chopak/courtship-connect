@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchMyGameHistory } from "@/lib/games";
-import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak } from "@/lib/courtship";
+import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak, RANK_LADDERS } from "@/lib/courtship";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -109,6 +109,7 @@ function ProgressPage() {
     );
   }
 
+  const [openTrack, setOpenTrack] = useState<string | null>(null);
   const tracks: { track: string; tier: Tier; count: number }[] = [
     { track: "activity", tier: activityTier(games), count: games },
     { track: "rescuer", tier: rescuerTier(rescues), count: rescues },
@@ -235,7 +236,8 @@ function ProgressPage() {
             const meta = TRACK_META[x.track];
             const started = !!x.tier;
             return (
-              <div key={x.track} className="ccard p-2 flex flex-col items-center text-center gap-1">
+              <button key={x.track} type="button" onClick={() => setOpenTrack(x.track)} className="ccard p-2 flex flex-col items-center text-center gap-1 relative">
+                <span className="absolute top-1 right-1.5 text-[11px] leading-none opacity-45">ⓘ</span>
                 <div
                   className="flex items-center justify-center rounded-full"
                   style={{
@@ -252,7 +254,7 @@ function ProgressPage() {
                 <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: "var(--wood, #8a6d3b)" }}>
                   {t(meta.key)}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -263,6 +265,53 @@ function ProgressPage() {
       <button type="button" onClick={share} className="cbtn cbtn-coral w-full" style={{ padding: "13px 0", fontSize: 16 }}>
         📲 {t("prog.share")}
       </button>
+
+      {openTrack && (
+        <RankSheet
+          track={openTrack}
+          count={tracks.find((x) => x.track === openTrack)?.count ?? 0}
+          onClose={() => setOpenTrack(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function RankSheet({ track, count, onClose }: { track: string; count: number; onClose: () => void }) {
+  const { t } = useI18n();
+  const ladder = RANK_LADDERS[track] ?? [];
+  const meta = TRACK_META[track];
+  let curIdx = -1;
+  ladder.forEach((tier, i) => { if (count >= tier.at) curIdx = i; });
+  const next = curIdx < ladder.length - 1 ? ladder[curIdx + 1] : null;
+  const toNext = next ? next.at - count : 0;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: "rgba(0,0,0,0.5)" }} role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="w-full sm:max-w-md ccard p-5 space-y-3" style={{ background: "var(--cream)", borderColor: "var(--ink)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 26 }}>{meta?.emoji}</span>
+          <div className="font-display text-2xl">{t(meta?.key ?? "")}</div>
+        </div>
+        <div className="text-sm text-[var(--ink)]/70">{t(`prog.ladder_${track}`)}</div>
+        <div className="space-y-1.5">
+          {ladder.map((tier, i) => {
+            const reached = count >= tier.at;
+            const isCur = i === curIdx;
+            return (
+              <div key={tier.level} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: isCur ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: reached || isCur ? 1 : 0.55 }}>
+                <span style={{ fontSize: 20 }}>{tier.emoji}</span>
+                <span className="font-extrabold flex-1">{tier.name}</span>
+                {isCur && <span className="text-[10px] font-bold uppercase tracking-wide">{t("prog.ladder_current")}</span>}
+                <span className="font-extrabold tabular-nums">{tier.at}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="text-sm font-semibold">
+          {next ? t("prog.ladder_togo", { n: toNext, name: `${next.emoji} ${next.name}` }) : t("prog.ladder_maxed")}
+        </div>
+        <button type="button" onClick={onClose} className="cbtn cbtn-ghost w-full">{t("prog.ladder_close")}</button>
+      </div>
     </div>
   );
 }

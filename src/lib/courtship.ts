@@ -339,6 +339,14 @@ const MATCHMAKER_TIERS = [
   { level: 5, name: "Impresario", emoji: "🌟", at: 40 },
 ] as const;
 
+// Full ladders for the "All four ranks" info popover (what each badge is + the count to reach it).
+export const RANK_LADDERS: Record<string, ReadonlyArray<{ level: number; name: string; emoji: string; at: number }>> = {
+  activity: ACTIVITY_TIERS,
+  rescuer: RESCUER_TIERS,
+  recruiter: RECRUITER_TIERS,
+  matchmaker: MATCHMAKER_TIERS,
+};
+
 export function matchmakerTier(count: number): { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null {
   if (!count || count < 1) return null;
   let idx = 0;
