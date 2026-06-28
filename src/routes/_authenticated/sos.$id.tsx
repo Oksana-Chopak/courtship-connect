@@ -38,16 +38,21 @@ function SosDetail() {
   const getPhone = useServerFn(getProfilePhone);
 
   async function load() {
-    const { data } = await (supabase as any).from("sos_requests").select("*").eq("id", id).maybeSingle();
+    // SOS row and its games both key off the route id — fetch together. Court
+    // needs the SOS row's court_id, so it follows.
+    const [sosRes, gamesRes] = await Promise.all([
+      (supabase as any).from("sos_requests").select("*").eq("id", id).maybeSingle(),
+      (supabase as any).from("games").select("player_a,player_b").eq("sos_id", id),
+    ]);
+    const data = (sosRes as any)?.data;
     setSos(data ?? null);
+    // RLS: the host sees all (host = player_a); a joiner sees their own.
+    setGamePlayerBs((((gamesRes as any)?.data as any[]) ?? []).map((r) => r.player_b));
     if (data?.court_id) {
       const { data: c } = await (supabase as any).from("courts").select("name,city").eq("id", data.court_id).maybeSingle();
       setCourtName(c?.name ?? "");
       setCourtCity(c?.city ?? "");
     }
-    // Games for this SOS. RLS: the host sees all (host = player_a); a joiner sees their own.
-    const { data: g } = await (supabase as any).from("games").select("player_a,player_b").eq("sos_id", id);
-    setGamePlayerBs(((g as any[]) ?? []).map((r) => r.player_b));
   }
 
   useEffect(() => {

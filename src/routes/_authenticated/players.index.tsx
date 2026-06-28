@@ -280,7 +280,7 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
     >
       <div className="relative" style={{ height: 120, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}>
         {hasPhoto ? (
-          <img src={p.photo_url!} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={p.photo_url!} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 58, color: fg, opacity: 0.92 }}>{p.name[0]}</div>
         )}
