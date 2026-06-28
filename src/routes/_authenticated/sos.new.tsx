@@ -288,7 +288,7 @@ function NewSos() {
             </select>
           </div>
         )}
-        <div className="text-xs text-[var(--ink)] mt-1">L{myLevel}</div>
+        <div className="text-base font-semibold text-[var(--ink)] mt-1">L{myLevel} · {LEVELS.find((l) => l.n === myLevel)?.name}</div>
       </Section>
 
       <Section label={t("sos.court_status")}>
@@ -314,7 +314,7 @@ function NewSos() {
       {!urgent && (
         <Section label={t("post.auto_flare_label")}>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-[var(--ink)] font-semibold flex-1">
+            <p className="text-base text-[var(--ink)] font-semibold flex-1">
               {t("post.auto_flare_help")}
             </p>
             <Chip on={autoFlare} onClick={() => setAutoFlare(!autoFlare)}>
@@ -336,7 +336,7 @@ function NewSos() {
               );
             })}
           </div>
-          <p className="text-sm text-[var(--ink)] font-semibold mt-2">{t("sos.invite_hint")}</p>
+          <p className="text-base text-[var(--ink)] font-semibold mt-2">{t("sos.invite_hint")}</p>
         </Section>
       )}
 
