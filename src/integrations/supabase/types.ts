@@ -367,6 +367,7 @@ export type Database = {
           name: string
           phone_e164: string
           photo_url: string | null
+          photos: string[]
           play_times: string[]
           push_max_per_week: number
           push_wake_me: boolean
@@ -397,6 +398,7 @@ export type Database = {
           name: string
           phone_e164: string
           photo_url?: string | null
+          photos?: string[]
           play_times?: string[]
           push_max_per_week?: number
           push_wake_me?: boolean
@@ -427,6 +429,7 @@ export type Database = {
           name?: string
           phone_e164?: string
           photo_url?: string | null
+          photos?: string[]
           play_times?: string[]
           push_max_per_week?: number
           push_wake_me?: boolean
@@ -816,6 +819,7 @@ export type Database = {
           name: string
           phone_e164: string
           photo_url: string | null
+          photos: string[]
           play_times: string[]
           push_max_per_week: number
           push_wake_me: boolean
