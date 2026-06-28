@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 export function SupportCard() {
   const { t } = useI18n();
   const [number, setNumber] = useState("");
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,10 +36,20 @@ export function SupportCard() {
     <div className="ccard p-4 space-y-1.5" style={{ background: "var(--cream2)" }}>
       <div className="font-extrabold">💛 {t("support.title")}</div>
       <div className="text-sm text-[var(--ink)]/70">{t("support.blurb")}</div>
-      <button type="button" className="font-extrabold text-lg tracking-wide text-left" onClick={copy}>
-        📱 {number} <span className="text-sm">📋</span>
-      </button>
-      <div className="text-xs text-[var(--ink)]/60">{t("support.note")}</div>
+      {revealed ? (
+        <button type="button" className="font-extrabold text-lg tracking-wide text-left" onClick={copy}>
+          📱 {number} <span className="text-sm">📋</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          className="font-extrabold rounded-full border-2 border-[var(--ink)] px-4 py-2 text-sm"
+          style={{ background: "var(--green-pop)", color: "var(--ink)" }}
+        >
+          {t("support.reveal")} 💛
+        </button>
+      )}
     </div>
   );
 }
