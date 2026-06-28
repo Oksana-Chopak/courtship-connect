@@ -95,8 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "twitter:title", content: "Courtship — Tennis partners in Uppsala & Sthm" },
       { name: "twitter:description", content: "It's a match. Literally. Find a hitting partner in Uppsala & Sthm." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/FCxxQIQ2NyXzpI78VJfU3LodB3s1/social-images/social-1782681952642-qr-wordmark-url.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/FCxxQIQ2NyXzpI78VJfU3LodB3s1/social-images/social-1782681952642-qr-wordmark-url.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/FCxxQIQ2NyXzpI78VJfU3LodB3s1/social-images/social-1782684558798-Socials.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/FCxxQIQ2NyXzpI78VJfU3LodB3s1/social-images/social-1782684558798-Socials.webp" },
     ],
     links: [
       {
