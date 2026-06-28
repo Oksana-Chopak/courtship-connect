@@ -46,28 +46,37 @@ function BoardPage() {
 
   const load = useCallback(async () => {
     const { data: au } = await supabase.auth.getUser();
-    setMeId(au.user?.id ?? null);
-    if (au.user) {
-      const { data: prof, error: pe } = await (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count").eq("id", au.user.id).maybeSingle();
-      if (!pe && prof) {
-        setCityForStats((prof as any).home_city ?? "Uppsala");
-        setGamesPlayed((prof as any).games_played ?? 0);
-        let hostedCount = 0;
-        try {
-          const { count } = await (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", au.user.id).eq("kind", "open");
-          hostedCount = count ?? 0;
-        } catch { /* ignore */ }
-        const cel = checkCelebration((prof as any).games_played ?? 0, (prof as any).rescues_count ?? 0, (prof as any).referrals_count ?? 0, hostedCount);
-        if (cel) setCelebration(cel);
-      }
-      try {
-        const hist = await fetchMyGameHistory(au.user.id, 150);
-        setStreakWeeks(weeklyStreak(hist.map((g) => g.played_at)).weeks);
-      } catch { /* ignore */ }
+    const uid = au.user?.id ?? null;
+    setMeId(uid);
+
+    // After we know the user id, everything else only depends on it — fetch in
+    // parallel instead of waterfalling. Each personal fetch degrades on its own
+    // so one hiccup never blanks the board.
+    const profileQ = uid
+      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
+      : Promise.resolve(null);
+    const countQ = uid
+      ? (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0)
+      : Promise.resolve(0);
+    const histQ = uid ? fetchMyGameHistory(uid, 150).catch(() => [] as any[]) : Promise.resolve([] as any[]);
+    const claimsQ = uid ? fetchMyUpcomingClaims(uid).catch(() => [] as any[]) : Promise.resolve([] as any[]);
+
+    const [u, p, m, ev, att, profRes, hostedCount, hist, claims] = await Promise.all([
+      fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance(),
+      profileQ, countQ, histQ, claimsQ,
+    ]);
+
+    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att);
+    const prof = (profRes as any)?.data;
+    if (prof) {
+      setCityForStats(prof.home_city ?? "Uppsala");
+      setGamesPlayed(prof.games_played ?? 0);
+      const cel = checkCelebration(prof.games_played ?? 0, prof.rescues_count ?? 0, prof.referrals_count ?? 0, (hostedCount as number) ?? 0);
+      if (cel) setCelebration(cel);
     }
-    const [u, p, m, ev, att] = await Promise.all([fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance()]);
-    setMyClaims(au.user ? await fetchMyUpcomingClaims(au.user.id) : []);
-    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att); setLoading(false);
+    setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
+    setMyClaims(claims as any);
+    setLoading(false);
   }, []);
 
   useEffect(() => {

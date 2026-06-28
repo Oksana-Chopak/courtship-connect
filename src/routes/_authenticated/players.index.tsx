@@ -48,15 +48,19 @@ function Players() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (u.user) {
-        setMeId(u.user.id);
-        setBuddyIds(await fetchBuddyIds(u.user.id));
-        const { data: meRow } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
-        setIsAdmin(!!(meRow as any)?.is_admin);
-        if (meRow) setSelfRow(meRow as P);
-      }
-      const { data } = await (supabase as any).rpc("players_directory");
-      setRows((data as any) ?? []);
+      const uid = u.user?.id ?? null;
+      setMeId(uid);
+      // Buddies, my profile and the directory are independent — load together.
+      const [buddies, meRes, dirRes] = await Promise.all([
+        uid ? fetchBuddyIds(uid).catch(() => new Set<string>()) : Promise.resolve(new Set<string>()),
+        uid ? (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null) : Promise.resolve(null),
+        (supabase as any).rpc("players_directory").then((r: any) => r, () => ({ data: [] })),
+      ]);
+      setBuddyIds(buddies as Set<string>);
+      const meRow = (meRes as any)?.data;
+      setIsAdmin(!!meRow?.is_admin);
+      if (meRow) setSelfRow(meRow as P);
+      setRows(((dirRes as any)?.data as any) ?? []);
       setLoading(false);
     })();
   }, []);

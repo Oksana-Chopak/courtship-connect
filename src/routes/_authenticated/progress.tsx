@@ -62,29 +62,23 @@ function ProgressPage() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      const { data: prof } = await (supabase as any)
-        .from("profiles")
-        .select("games_played,rescues_count,referrals_count")
-        .eq("id", u.user.id)
-        .maybeSingle();
+      const uid = u.user?.id;
+      if (!uid) return;
+      // profile, hosted-count and game history all depend only on the user id —
+      // fetch them together instead of one after another.
+      const [profRes, hostedCount, hist] = await Promise.all([
+        (supabase as any).from("profiles").select("games_played,rescues_count,referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null),
+        (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0),
+        fetchMyGameHistory(uid, 200).catch(() => [] as any[]),
+      ]);
+      const prof = (profRes as any)?.data;
       if (prof) {
         setGames(prof.games_played ?? 0);
         setRescues(prof.rescues_count ?? 0);
         setReferrals(prof.referrals_count ?? 0);
       }
-      try {
-        const { count } = await (supabase as any)
-          .from("sos_requests")
-          .select("id", { count: "exact", head: true })
-          .eq("caller_id", u.user.id)
-          .eq("kind", "open");
-        setHosted(count ?? 0);
-      } catch {
-        /* ignore */
-      }
-      const hist = await fetchMyGameHistory(u.user.id, 200);
-      setDates(hist.map((g) => g.played_at));
+      setHosted((hostedCount as number) ?? 0);
+      setDates((hist as any[]).map((g) => g.played_at));
       setLoaded(true);
     })();
   }, []);
