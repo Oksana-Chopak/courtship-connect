@@ -1,14 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, CITIES, type City } from "@/lib/courtship";
-import { RescuerBadge } from "@/components/RescuerBadge";
-import { ActivityBadge } from "@/components/ActivityBadge";
+import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City } from "@/lib/courtship";
 import { TopRescuers } from "@/components/TopRescuers";
-import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds } from "@/lib/buddies";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/players/")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),
@@ -45,6 +43,7 @@ function Players() {
   const [meId, setMeId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRow, setSelfRow] = useState<P | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -74,16 +73,23 @@ function Players() {
       ),
     [rows, level, format, time, city, buddiesOnly],
   );
-  const hasFilters = level != null || format != null || time != null || city != null || buddiesOnly;
+  const activeCount = (level != null ? 1 : 0) + (format ? 1 : 0) + (time ? 1 : 0) + (city ? 1 : 0) + (buddiesOnly ? 1 : 0);
+  const hasFilters = activeCount > 0;
+  function clearFilters() { setLevel(null); setFormat(null); setTime(null); setCity(null); setBuddiesOnly(false); }
+  const ordered = selfRow ? [selfRow, ...filtered.filter((p) => p.id !== selfRow.id)] : filtered;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-4xl">{t("players.title")}</h1>
-        {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full mt-2 text-center block">{t("lucky.cta")}</Link>}
-        {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full mt-2 text-center block">{t("match.cta")}</Link>}
         <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
+
+      {/* Invite your crew first — the accent of this page */}
+      <InviteAccent />
+
+      {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
+      {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center block">{t("match.cta")}</Link>}
 
       <TopRescuers />
 
@@ -95,45 +101,25 @@ function Players() {
         <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
       </Link>
 
-      <div className="space-y-2">
-        <FilterRow label={t("city.label")}>
-          <Chip on={city == null} onClick={() => setCity(null)}>{t("city.any")}</Chip>
-          {CITIES.map((cy) => (
-            <Chip key={cy} on={city === cy} onClick={() => setCity(city === cy ? null : cy)}>
-              📍 {cy}
-            </Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label={t("players.filter_level")}>
-          <Chip on={level == null} onClick={() => setLevel(null)}>{t("common.all")}</Chip>
-          {LEVELS.map((l) => (
-            <Chip key={l.n} on={level === l.n} onClick={() => setLevel(level === l.n ? null : l.n)}>
-              <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
-              {l.name}
-            </Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label={t("players.filter_format")}>
-          <Chip on={!format} onClick={() => setFormat(null)}>{t("common.all")}</Chip>
-          {["singles", "doubles"].map((f) => (
-            <Chip key={f} on={format === f} onClick={() => setFormat(format === f ? null : f)}>
-              {f}
-            </Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label={t("players.filter_time")}>
-          <Chip on={!time} onClick={() => setTime(null)}>{t("common.any")}</Chip>
-          {PLAY_TIMES.map((t) => (
-            <Chip key={t} on={time === t} onClick={() => setTime(time === t ? null : t)}>
-              {t}
-            </Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label={t("players.filter_buddies")}>
-          <Chip on={buddiesOnly} onClick={() => setBuddiesOnly(!buddiesOnly)}>
-            {t("players.will_rescue")}
-          </Chip>
-        </FilterRow>
+      {/* Filters — collapsed to one row; tap opens the bottom sheet */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          className="inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm"
+          style={{ background: "var(--ink)", color: "#FFF6E8" }}
+        >
+          ⚙ {t("players.filters")}
+          {activeCount > 0 && (
+            <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "#FFF6E8" }}>{activeCount}</span>
+          )}
+        </button>
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>
+            {t("players.filters_clear")}
+          </button>
+        )}
+        <span className="ml-auto text-sm font-semibold" style={{ color: "rgba(43,33,24,0.7)" }}>{t("players.count", { n: filtered.length })}</span>
       </div>
 
       {loading ? (
@@ -143,12 +129,7 @@ function Players() {
           <div className="ccard p-6 text-center space-y-3">
             <div className="text-4xl">🎾</div>
             <div className="font-display text-2xl leading-tight">{t("empty.directory")}</div>
-            <button
-              className="cbtn cbtn-coral inline-flex"
-              onClick={() => { setLevel(null); setFormat(null); setTime(null); setCity(null); setBuddiesOnly(false); }}
-            >
-              {t("empty.directory_cta")}
-            </button>
+            <button className="cbtn cbtn-coral inline-flex" onClick={clearFilters}>{t("empty.directory_cta")}</button>
           </div>
         ) : (
           <div className="ccard p-6 text-center space-y-3">
@@ -159,16 +140,112 @@ function Players() {
         )
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {(selfRow ? [selfRow, ...filtered.filter((p) => p.id !== selfRow.id)] : filtered).map((p) => (
-            <PlayerCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
+          {ordered.map((p) => (
+            <DirCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
           ))}
         </div>
+      )}
+
+      {filtersOpen && (
+        <FilterSheet
+          level={level} setLevel={setLevel}
+          format={format} setFormat={setFormat}
+          time={time} setTime={setTime}
+          city={city} setCity={setCity}
+          buddiesOnly={buddiesOnly} setBuddiesOnly={setBuddiesOnly}
+          count={filtered.length}
+          onClear={clearFilters}
+          onClose={() => setFiltersOpen(false)}
+        />
       )}
     </div>
   );
 }
 
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+// Invite-a-friend accent — invite your crew first, then browse everyone else.
+function InviteAccent() {
+  const { t } = useI18n();
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("ensure_my_invite_code");
+        if (data) setCode(data as string);
+      } catch { /* invite RPC not deployed — accent still shows */ }
+    })();
+  }, []);
+  async function share() {
+    if (!code) return;
+    const link = `${window.location.origin}/auth?code=${code}`;
+    const msg = t("invite.message").replace("{link}", link).replace("{code}", code);
+    if (navigator.share) {
+      try { await navigator.share({ text: msg }); } catch { /* cancelled */ }
+      return;
+    }
+    try { await navigator.clipboard.writeText(msg); toast.success(t("invite.copied")); } catch { /* ignore */ }
+  }
+  return (
+    <div className="ccard p-4" style={{ background: "var(--green-pop)" }}>
+      <div className="font-display text-xl leading-tight">{t("players.invite_first_title")}</div>
+      <div className="text-sm font-semibold text-[var(--ink)] mt-1">{t("players.invite_first_sub")}</div>
+      <button onClick={share} className="cbtn cbtn-coral w-full mt-3">🔗 {t("invite.cta")}</button>
+    </div>
+  );
+}
+
+type SheetProps = {
+  level: number | null; setLevel: (v: number | null) => void;
+  format: string | null; setFormat: (v: string | null) => void;
+  time: string | null; setTime: (v: string | null) => void;
+  city: City | null; setCity: (v: City | null) => void;
+  buddiesOnly: boolean; setBuddiesOnly: (v: boolean) => void;
+  count: number; onClear: () => void; onClose: () => void;
+};
+
+function FilterSheet({ level, setLevel, format, setFormat, time, setTime, city, setCity, buddiesOnly, setBuddiesOnly, count, onClear, onClose }: SheetProps) {
+  const { t } = useI18n();
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(22,18,13,0.45)" }} role="dialog" aria-modal="true" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-md p-5 pb-7 space-y-3"
+        style={{ background: "var(--cream2)", border: "2.5px solid var(--ink)", borderRadius: "22px 22px 0 0", maxHeight: "82%", overflowY: "auto" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto rounded-full" style={{ width: 44, height: 5, background: "var(--ink)", opacity: 0.3 }} />
+        <div className="flex items-center justify-between">
+          <span className="font-display text-2xl">{t("players.filters")}</span>
+          <button onClick={onClear} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>{t("players.filters_clear")}</button>
+        </div>
+        <Group label={t("city.label")}>
+          <Chip on={city == null} onClick={() => setCity(null)}>{t("city.any")}</Chip>
+          {CITIES.map((cy) => <Chip key={cy} on={city === cy} onClick={() => setCity(city === cy ? null : cy)}>📍 {cy}</Chip>)}
+        </Group>
+        <Group label={t("players.filter_level")}>
+          <Chip on={level == null} onClick={() => setLevel(null)}>{t("common.all")}</Chip>
+          {LEVELS.map((l) => (
+            <Chip key={l.n} on={level === l.n} onClick={() => setLevel(level === l.n ? null : l.n)}>
+              <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />{l.name}
+            </Chip>
+          ))}
+        </Group>
+        <Group label={t("players.filter_format")}>
+          <Chip on={!format} onClick={() => setFormat(null)}>{t("common.all")}</Chip>
+          {["singles", "doubles"].map((f) => <Chip key={f} on={format === f} onClick={() => setFormat(format === f ? null : f)}>{f}</Chip>)}
+        </Group>
+        <Group label={t("players.filter_time")}>
+          <Chip on={!time} onClick={() => setTime(null)}>{t("common.any")}</Chip>
+          {PLAY_TIMES.map((pt) => <Chip key={pt} on={time === pt} onClick={() => setTime(time === pt ? null : pt)}>{pt}</Chip>)}
+        </Group>
+        <Group label={t("players.filter_buddies")}>
+          <Chip on={buddiesOnly} onClick={() => setBuddiesOnly(!buddiesOnly)}>{t("players.will_rescue")}</Chip>
+        </Group>
+        <button onClick={onClose} className="cbtn cbtn-green w-full">{t("players.filters_show", { n: count })}</button>
+      </div>
+    </div>
+  );
+}
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <div className="csection-label mb-1">{label}</div>
@@ -185,45 +262,49 @@ function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => void; c
   );
 }
 
-function PlayerCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string }) {
+// Directory card (DirCardA / MiniCardBig) — colorway/photo panel + compact info.
+function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string }) {
   const lm = levelMeta(p.level);
+  const [bg, fg] = monogramColors(p.id);
+  const hasPhoto = !!p.photo_url;
   return (
     <Link
       to="/players/$id"
       params={{ id: p.id }}
-      className="ccard p-3 block hover:translate-y-[-2px] transition-transform"
+      className="block rounded-2xl overflow-hidden hover:translate-y-[-2px] transition-transform"
+      style={{ border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.14)" }}
     >
-      <div className="flex justify-center mb-2">
-        <Avatar src={p.photo_url} name={p.name} seed={p.id} size={104} />
+      <div className="relative" style={{ height: 120, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}>
+        {hasPhoto ? (
+          <img src={p.photo_url!} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 58, color: fg, opacity: 0.92 }}>{p.name[0]}</div>
+        )}
+        <span
+          className="absolute top-2 left-2 font-extrabold rounded-full"
+          style={{ fontSize: 13, padding: "2px 6px", background: hasPhoto ? "rgba(22,18,13,0.45)" : "rgba(255,255,255,0.2)", border: `1.5px solid ${hasPhoto ? "transparent" : fg}` }}
+        >
+          {vibeEmoji(p.vibe)}
+        </span>
+        {isBuddy && <span className="absolute top-2 right-2" style={{ fontSize: 13 }}>🤝</span>}
+        {(p.rescues_count ?? 0) >= 5 && (
+          <span className="absolute bottom-2 right-2 font-extrabold rounded-full" style={{ fontSize: 10, padding: "2px 7px", color: "#FFF6E8", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
+        )}
+        {badge && <span className="absolute bottom-2 left-2 cchip-mini">{badge}</span>}
       </div>
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="font-display text-lg truncate min-w-0">{p.name}{p.last_name ? " " + p.last_name : ""}</span>
-          {isBuddy && <span className="shrink-0" title="Buddy">🤝</span>}
-          {badge && <span className="cchip-mini shrink-0">{badge}</span>}
+      <div className="px-3 py-2" style={{ background: "var(--cream2)" }}>
+        <div className="flex items-center justify-between gap-1">
+          <span className="font-display text-base truncate min-w-0">{p.name}{p.last_name ? " " + p.last_name[0] + "." : ""}</span>
+          <span className="inline-flex gap-0.5 shrink-0">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <span key={i} className="rounded-full" style={{ width: 7, height: 7, background: i <= p.level ? lm.color : "transparent", border: `1.5px solid ${i <= p.level ? lm.color : "var(--ink)"}`, opacity: i <= p.level ? 1 : 0.3, boxSizing: "border-box" }} />
+            ))}
+          </span>
         </div>
-        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} title={lm.name} />
+        <div className="text-[11px] font-bold mt-1" style={{ color: "rgba(43,33,24,0.7)" }}>
+          📍 {p.home_city ?? ""}{p.play_times?.[0] ? ` · ${p.play_times[0].replace(/Weekday |Weekend /, "")}` : ""}
+        </div>
       </div>
-      <div className="text-sm">{vibeEmoji(p.vibe)} <span className="text-[var(--ink)]">{lm.name}</span></div>
-      {((p.rescues_count ?? 0) >= 1 || (p.games_played ?? 0) >= 1) && (
-        <div className="mt-1 flex flex-wrap gap-1">
-          {(p.rescues_count ?? 0) >= 1 && <RescuerBadge count={p.rescues_count ?? 0} />}
-          {(p.games_played ?? 0) >= 1 && <ActivityBadge count={p.games_played ?? 0} />}
-        </div>
-      )}
-      {p.home_city && (
-        <div className="text-xs font-extrabold mt-1">📍 {p.home_city}</div>
-      )}
-      {p.play_times?.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {p.play_times.slice(0, 2).map((t) => (
-            <span key={t} className="cchip-mini">{t.replace(/Weekday |Weekend /, "")}</span>
-          ))}
-          {p.play_times.length > 2 && (
-            <span className="cchip-mini">+{p.play_times.length - 2}</span>
-          )}
-        </div>
-      )}
     </Link>
   );
 }
