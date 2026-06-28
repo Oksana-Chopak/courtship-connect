@@ -12,8 +12,7 @@ import {
 } from "@/lib/courtship";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { CourtCombobox } from "@/components/CourtCombobox";
-import { uploadAvatar } from "@/lib/avatar";
-import { Avatar } from "@/components/Avatar";
+import { uploadPhoto } from "@/lib/avatar";
 import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 
@@ -22,6 +21,7 @@ export type ProfileFormValues = {
   last_name: string;
   phone_e164: string;
   photo_url: string;
+  photos: string[];
   level: number;
   formats: string[];
   play_times: string[];
@@ -42,6 +42,7 @@ export const emptyProfile: ProfileFormValues = {
   last_name: "",
   phone_e164: "",
   photo_url: "",
+  photos: [],
   level: 3,
   formats: ["singles"],
   play_times: [],
@@ -95,19 +96,32 @@ export function ProfileWizard({
     setV((p) => ({ ...p, [k]: val }));
   }
 
-  async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function pickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const room = 10 - (v.photos?.length ?? 0);
+    const toAdd = files.slice(0, Math.max(0, room));
     setUploading(true);
     try {
-      const url = await uploadAvatar(userId, file);
-      set("photo_url", url);
+      const urls: string[] = [];
+      for (const f of toAdd) urls.push(await uploadPhoto(userId, f));
+      setV((p) => {
+        const photos = [...(p.photos ?? []), ...urls].slice(0, 10);
+        return { ...p, photos, photo_url: photos[0] ?? "" };
+      });
     } catch (err: any) {
       toast.error(err?.message ?? t("wiz.photo_fail"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  function removePhoto(i: number) {
+    setV((p) => {
+      const photos = (p.photos ?? []).filter((_, idx) => idx !== i);
+      return { ...p, photos, photo_url: photos[0] ?? "" };
+    });
   }
 
   function canAdvance(): boolean {
@@ -166,44 +180,27 @@ export function ProfileWizard({
       <div className="min-h-[260px]">
         {step === 0 && (
           <div className="flex flex-col items-center gap-5">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="relative"
-              disabled={uploading}
-              aria-label={t("wiz.add_photo")}
-            >
-              {v.photo_url ? (
-                <Avatar src={v.photo_url} name={v.name || "?"} seed={userId} size={140} />
-              ) : (
-                <div
-                  className="w-[140px] h-[140px] rounded-full flex flex-col items-center justify-center gap-1 bg-[var(--cream2)] text-[var(--ink)] font-bold text-sm"
-                  style={{ border: "2.5px dashed rgba(43,33,24,0.35)" }}
-                >
-                  <span className="text-3xl">📷</span>
-                  <span>{uploading ? t("wiz.uploading") : t("wiz.add_photo")}</span>
-                </div>
-              )}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={pickPhoto}
-              className="hidden"
-            />
-            {v.photo_url && (
-              <button
-                type="button"
-                onClick={() => set("photo_url", "")}
-                className="text-xs underline text-[var(--ink)]"
-              >
-                {t("wiz.remove_photo")}
-              </button>
-            )}
-            <p className="text-xs font-bold text-[var(--ink)] text-center">
-              {t("wiz.photo_hint")}
-            </p>
+            <div className="w-full">
+              <div className="grid grid-cols-3 gap-2">
+                {(v.photos ?? []).map((url, i) => (
+                  <div key={url} className="relative rounded-xl overflow-hidden" style={{ aspectRatio: "1 / 1", border: "2px solid var(--ink)" }}>
+                    <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute bottom-1 left-1 font-extrabold rounded-full" style={{ fontSize: 9, padding: "1px 6px", background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{t("wiz.main_photo")}</span>
+                    )}
+                    <button type="button" onClick={() => removePhoto(i)} aria-label={t("wiz.remove_photo")} className="absolute top-1 right-1 flex items-center justify-center rounded-full" style={{ width: 22, height: 22, background: "var(--ink)", color: "#FFF6E8", fontSize: 12 }}>✕</button>
+                  </div>
+                ))}
+                {(v.photos ?? []).length < 10 && (
+                  <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label={t("wiz.add_photo")} className="rounded-xl flex flex-col items-center justify-center gap-1 bg-[var(--cream2)] text-[var(--ink)] font-bold" style={{ aspectRatio: "1 / 1", border: "2.5px dashed rgba(43,33,24,0.35)" }}>
+                    <span className="text-2xl">📷</span>
+                    <span className="text-[11px] leading-tight text-center px-1">{uploading ? t("wiz.uploading") : t("wiz.add_photo")}</span>
+                  </button>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" multiple onChange={pickPhotos} className="hidden" />
+              <p className="text-xs font-bold text-[var(--ink)] mt-2">{t("wiz.photos_hint")}</p>
+            </div>
 
             <div className="w-full">
               <div className="csection-label mb-1">{t("wiz.first_name")}</div>

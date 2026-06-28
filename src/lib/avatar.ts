@@ -35,3 +35,17 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
   if (error || !data) throw error ?? new Error("Could not sign URL");
   return data.signedUrl;
 }
+/** Upload one resized JPEG to the user's folder (for multi-photo galleries). Returns a 5-year signed URL. */
+export async function uploadPhoto(userId: string, file: File): Promise<string> {
+  const blob = await resizeImage(file);
+  const path = `${userId}/p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error: upErr } = await supabase.storage
+    .from("avatars")
+    .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+  if (upErr) throw upErr;
+  const { data, error } = await supabase.storage
+    .from("avatars")
+    .createSignedUrl(path, 60 * 60 * 24 * 365 * 5); // 5 years
+  if (error || !data) throw error ?? new Error("Could not sign URL");
+  return data.signedUrl;
+}

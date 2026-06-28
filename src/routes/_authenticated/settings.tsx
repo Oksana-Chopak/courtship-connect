@@ -41,6 +41,7 @@ function SettingsPage() {
         fav_shot: d.fav_shot ?? "",
         phone_e164: d.phone_e164 ?? "",
         photo_url: d.photo_url ?? "",
+        photos: (d.photos && d.photos.length) ? d.photos : (d.photo_url ? [d.photo_url] : []),
         level: d.level ?? 3,
         formats: d.formats ?? [],
         play_times: d.play_times ?? [],
