@@ -103,16 +103,18 @@ function PeoplePage() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      const { data: prof } = await (supabase as any)
-        .from("profiles").select("referrals_count").eq("id", u.user.id).maybeSingle();
-      setReferrals(prof?.referrals_count ?? 0);
-      loadBuddies(u.user.id);
-      loadBuddyReqs(u.user.id);
-      try {
-        const { data: code } = await (supabase as any).rpc("ensure_my_invite_code");
-        if (code) setInviteCode(code as string);
-      } catch { /* invite RPC not deployed yet — block stays hidden */ }
+      const uid = u.user?.id;
+      if (!uid) return;
+      // Buddy lists load on their own; profile + invite code go together.
+      loadBuddies(uid);
+      loadBuddyReqs(uid);
+      const [profRes, codeRes] = await Promise.all([
+        (supabase as any).from("profiles").select("referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null),
+        (supabase as any).rpc("ensure_my_invite_code").then((r: any) => r, () => null),
+      ]);
+      setReferrals((profRes as any)?.data?.referrals_count ?? 0);
+      const code = (codeRes as any)?.data;
+      if (code) setInviteCode(code as string);
     })();
   }, []);
 

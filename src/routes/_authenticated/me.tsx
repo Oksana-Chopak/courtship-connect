@@ -64,9 +64,17 @@ function MePage() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      setUid(u.user.id);
-      const { data } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
+      const uid = u.user?.id;
+      if (!uid) return;
+      setUid(uid);
+      // Profile gates the redirect, but the hosted-count and pending requests only
+      // need the user id — fetch all three together rather than in sequence.
+      const [profRes, hostedCount, reqs] = await Promise.all([
+        (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null),
+        (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0),
+        fetchPendingRequestsTo(uid).then((r: any) => r, () => [] as any[]),
+      ]);
+      const data = (profRes as any)?.data;
       if (!data) {
         navigate({ to: "/onboarding" });
         return;
@@ -76,16 +84,8 @@ function MePage() {
       setRescues(d.rescues_count ?? 0);
       setGamesPlayed(d.games_played ?? 0);
       setReferrals(d.referrals_count ?? 0);
-      try {
-        const { count } = await (supabase as any)
-          .from("sos_requests").select("id", { count: "exact", head: true })
-          .eq("caller_id", u.user.id).eq("kind", "open");
-        setHosted(count ?? 0);
-      } catch { /* ignore */ }
-      try {
-        const reqs = await fetchPendingRequestsTo(u.user.id);
-        setPendingReqs(reqs.length);
-      } catch { /* ignore */ }
+      setHosted((hostedCount as number) ?? 0);
+      setPendingReqs((reqs as any[]).length);
     })();
   }, [navigate]);
 
