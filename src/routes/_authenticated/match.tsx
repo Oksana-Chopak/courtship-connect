@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { whatsappLink, levelMeta } from "@/lib/courtship";
+import { whatsappLink, levelMeta, monogramColors } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 import { oops } from "@/lib/oops";
 
@@ -89,19 +89,17 @@ function MatchDeck() {
         <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>
       ) : card ? (
         <>
-          <div className="ccard p-0 overflow-hidden">
-            <div className="flex justify-center pt-6"><Avatar src={card.photo_url} name={card.name} seed={card.id} size={200} /></div>
-            <div className="p-5 space-y-2 text-center">
-              <div className="font-display text-3xl">{card.name}</div>
-              <div className="font-extrabold">📍 {card.home_city ?? "—"} · L<span style={{ color: levelMeta(card.level).color }}>{card.level}</span></div>
-              {card.bio && <div className="text-[var(--ink)] italic">"{card.bio}"</div>}
-              {card.fav_shot && <div className="text-sm text-[var(--ink)]">🎾 {card.fav_shot}</div>}
-            </div>
+          <div className="relative flex justify-center" style={{ minHeight: 480 }}>
+            {deck[i + 1] && (
+              <div className="absolute" style={{ top: 10, width: 286, height: 460, borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(3deg)" }} />
+            )}
+            <SwipeCard card={card} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => swipe(false)} disabled={busy} className="cbtn cbtn-ghost" style={{ minHeight: 64, fontSize: "1.5rem" }}>❌ {t("match.pass")}</button>
-            <button onClick={() => swipe(true)} disabled={busy} className="cbtn cbtn-coral" style={{ minHeight: 64, fontSize: "1.5rem" }}>❤️ {t("match.like")}</button>
+          <div className="flex justify-center gap-6">
+            <button onClick={() => swipe(false)} disabled={busy} aria-label={t("match.pass")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--cream2)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>✕</button>
+            <button onClick={() => swipe(true)} disabled={busy} aria-label={t("match.like")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--green-pop)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>🎾</button>
           </div>
+          <div className="text-center text-xs font-bold" style={{ color: "rgba(43,33,24,0.5)" }}>{t("match.pass")} · {t("match.like")}</div>
         </>
       ) : (
         <div className="ccard p-6 text-center space-y-3">
@@ -110,6 +108,40 @@ function MatchDeck() {
           <Link to="/me" className="cbtn cbtn-coral inline-flex">{t("empty.dir_new_cta")}</Link>
         </div>
       )}
+    </div>
+  );
+}
+
+function SwipeCard({ card }: { card: Card }) {
+  const lm = levelMeta(card.level);
+  const [bg, fg] = monogramColors(card.id);
+  const hasPhoto = !!card.photo_url;
+  return (
+    <div className="relative overflow-hidden mx-auto" style={{ width: 300, maxWidth: "100%", aspectRatio: "300 / 468", borderRadius: 22, border: "2.5px solid var(--ink)", boxShadow: "5px 5px 0 rgba(43,33,24,0.18)", background: bg }}>
+      {hasPhoto ? (
+        <img src={card.photo_url!} alt={card.name} className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <>
+          <div className="absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }} />
+          <div className="absolute left-0 right-0 text-center font-display" style={{ top: "8%", fontSize: 150, lineHeight: 1, color: fg, opacity: 0.92 }}>{card.name[0]}</div>
+        </>
+      )}
+      <div className="absolute" style={{ top: 14, right: 14 }}>
+        <span className="font-extrabold rounded-full" style={{ fontSize: 12, padding: "3px 10px", color: "#FFF6E8", background: "rgba(22,18,13,0.5)", border: `1.5px solid ${lm.color}` }}>L{card.level}</span>
+      </div>
+      <div className="absolute left-0 right-0 bottom-0" style={{ padding: "46px 16px 16px", background: "linear-gradient(to top, rgba(22,18,13,0.92), rgba(22,18,13,0.55) 60%, transparent)" }}>
+        <div className="flex items-baseline gap-2">
+          <span className="font-display" style={{ fontSize: 26, color: "#FFF6E8" }}>{card.name}</span>
+          <span className="ml-auto inline-flex gap-1">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span key={n} className="rounded-full" style={{ width: 8, height: 8, background: n <= card.level ? lm.color : "transparent", border: `1.5px solid ${n <= card.level ? lm.color : "rgba(236,230,216,0.5)"}`, boxSizing: "border-box" }} />
+            ))}
+          </span>
+        </div>
+        {card.home_city && <div className="font-bold mt-1" style={{ fontSize: 12.5, color: "rgba(236,230,216,0.85)" }}>📍 {card.home_city}</div>}
+        {card.bio && <div className="font-display italic mt-2" style={{ fontSize: 14.5, color: "#FFF6E8", lineHeight: 1.3 }}>"{card.bio}"</div>}
+        {card.fav_shot && <div className="mt-2" style={{ fontSize: 12.5, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
+      </div>
     </div>
   );
 }
