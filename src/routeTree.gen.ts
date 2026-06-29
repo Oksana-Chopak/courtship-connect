@@ -33,6 +33,7 @@ import { Route as AuthenticatedPlayersIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedSosNewRouteImport } from './routes/_authenticated/sos.new'
 import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/sos.$id'
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
+import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -154,6 +155,11 @@ const AuthenticatedPlayersIdRoute = AuthenticatedPlayersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedPlayersRoute,
 } as any)
+const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/events/new': typeof AuthenticatedEventsNewRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/events/new': typeof AuthenticatedEventsNewRoute
   '/players/$id': typeof AuthenticatedPlayersIdRoute
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/rescue': typeof AuthenticatedRescueRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/players/$id': typeof AuthenticatedPlayersIdRoute
   '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
   '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/rescue'
     | '/settings'
+    | '/events/new'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/rescue'
     | '/settings'
+    | '/events/new'
     | '/players/$id'
     | '/sos/$id'
     | '/sos/new'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/_authenticated/progress'
     | '/_authenticated/rescue'
     | '/_authenticated/settings'
+    | '/_authenticated/events/new'
     | '/_authenticated/players/$id'
     | '/_authenticated/sos/$id'
     | '/_authenticated/sos/new'
@@ -487,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersIdRouteImport
       parentRoute: typeof AuthenticatedPlayersRoute
     }
+    '/_authenticated/events/new': {
+      id: '/_authenticated/events/new'
+      path: '/events/new'
+      fullPath: '/events/new'
+      preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -519,6 +538,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedSosIdRoute: typeof AuthenticatedSosIdRoute
   AuthenticatedSosNewRoute: typeof AuthenticatedSosNewRoute
 }
@@ -539,6 +559,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedRescueRoute: AuthenticatedRescueRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedSosIdRoute: AuthenticatedSosIdRoute,
   AuthenticatedSosNewRoute: AuthenticatedSosNewRoute,
 }

@@ -204,9 +204,12 @@ export type Database = {
           city: string | null
           created_at: string
           description: string | null
+          duration_min: number | null
           format: string | null
           host_id: string
           id: string
+          level_max: number | null
+          level_min: number | null
           location: string
           price_sek: number | null
           spots_taken: number
@@ -219,9 +222,12 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duration_min?: number | null
           format?: string | null
           host_id: string
           id?: string
+          level_max?: number | null
+          level_min?: number | null
           location: string
           price_sek?: number | null
           spots_taken?: number
@@ -234,9 +240,12 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duration_min?: number | null
           format?: string | null
           host_id?: string
           id?: string
+          level_max?: number | null
+          level_min?: number | null
           location?: string
           price_sek?: number | null
           spots_taken?: number
