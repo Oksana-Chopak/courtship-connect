@@ -727,6 +727,7 @@ export type Database = {
         Returns: undefined
       }
       count_matching_rescuers: { Args: { _sos_id: string }; Returns: number }
+      delete_my_event: { Args: { _id: string }; Returns: undefined }
       delete_push_subscription: {
         Args: { _endpoint: string }
         Returns: undefined
@@ -785,6 +786,16 @@ export type Database = {
       }
       ensure_my_invite_code: { Args: never; Returns: string }
       escalate_due_open_games: { Args: never; Returns: number }
+      event_attendee_contacts: {
+        Args: { _event_id: string }
+        Returns: {
+          id: string
+          name: string
+          phone_e164: string
+          status: string
+          user_id: string
+        }[]
+      }
       expire_old_sos: { Args: never; Returns: undefined }
       get_contact_phone: {
         Args: { _target: string }
@@ -976,6 +987,10 @@ export type Database = {
           rescues: number
           user_id: string
         }[]
+      }
+      update_my_event: {
+        Args: { _data: Json; _id: string }
+        Returns: undefined
       }
       withdraw_claim: {
         Args: { _sos_id: string }
