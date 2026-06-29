@@ -114,6 +114,21 @@ export async function fetchEventAttendees(eventId: string): Promise<Attendee[]> 
   return rows.map((r) => ({ id: r.id, user_id: r.user_id, status: r.status, name: nameById.get(r.user_id) ?? "Player" }));
 }
 
+export type AttendeeContact = Attendee & { phone: string | null };
+
+// Host-only: attendees with contact phone. Falls back to public names (no phone)
+// when the contacts RPC isn't deployed yet, so the list still renders.
+export async function fetchEventContacts(eventId: string): Promise<AttendeeContact[]> {
+  const { data, error } = await (supabase as any).rpc("event_attendee_contacts", { _event_id: eventId });
+  if (!error && Array.isArray(data)) {
+    return (data as any[]).map((r) => ({
+      id: r.id, user_id: r.user_id, status: r.status, name: r.name ?? "Player", phone: r.phone_e164 ?? null,
+    }));
+  }
+  const base = await fetchEventAttendees(eventId);
+  return base.map((a) => ({ ...a, phone: null }));
+}
+
 export async function markAttendeePaid(attendeeId: string): Promise<void> {
   const { error } = await (supabase as any)
     .from("event_attendees")

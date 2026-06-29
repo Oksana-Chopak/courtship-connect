@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { whenLabel } from "@/lib/courtship";
+import { whenLabel, whatsappLink } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
   leaveEvent,
   deleteEvent,
-  fetchEventAttendees,
+  fetchEventContacts,
   markAttendeePaid,
   fetchEventSwish,
   type EventRow,
-  type Attendee,
+  type AttendeeContact,
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { googleCalendarUrl } from "@/lib/calendar";
@@ -23,10 +23,10 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   const full = left === 0;
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [attendees, setAttendees] = useState<Attendee[] | null>(null);
+  const [attendees, setAttendees] = useState<AttendeeContact[] | null>(null);
 
   useEffect(() => {
-    if (isHost) fetchEventAttendees(e.id).then(setAttendees).catch(() => {});
+    if (isHost) fetchEventContacts(e.id).then(setAttendees).catch(() => {});
   }, [isHost, e.id, e.spots_taken]);
 
   async function join() {
@@ -98,13 +98,20 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
           {attendees && attendees.length > 0 ? (
             attendees.map((a) => (
               <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
-                <div className="font-extrabold truncate">{a.name}</div>
+                <div className="min-w-0">
+                  <div className="font-extrabold truncate">{a.name}</div>
+                  {a.phone && (
+                    <a href={whatsappLink(a.phone, a.name)} target="_blank" rel="noopener noreferrer" className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>
+                      💬 {t("ev.message")}
+                    </a>
+                  )}
+                </div>
                 {a.status === "paid" ? (
-                  <span className="text-sm font-extrabold">✓ {t("ev.paid")}</span>
+                  <span className="text-sm font-extrabold shrink-0">✓ {t("ev.paid")}</span>
                 ) : a.status === "booked" ? (
-                  <button className="cbtn cbtn-green text-sm" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
+                  <button className="cbtn cbtn-green text-sm shrink-0" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
                 ) : (
-                  <span className="text-sm text-[var(--ink)]">{t("ev.interested")}</span>
+                  <span className="text-sm text-[var(--ink)] shrink-0">{t("ev.interested")}</span>
                 )}
               </div>
             ))
