@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, weeklyStreak, type CourtType } from "@/lib/courtship";
+import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -34,6 +34,10 @@ function BoardPage() {
   const [mine, setMine] = useState<EligibleSosRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ctFilter, setCtFilter] = useState<CourtType | "any">("any");
+  const [fCity, setFCity] = useState<City | null>(null);
+  const [fLevel, setFLevel] = useState<number | null>(null);
+  const [fType, setFType] = useState<"any" | "urgent" | "planned" | "event">("any");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
@@ -95,59 +99,55 @@ function BoardPage() {
     toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
     load();
   }
-  const byTime = (a: EligibleSosRow, b: EligibleSosRow) => new Date(a.play_at).getTime() - new Date(b.play_at).getTime();
-  const filt = (arr: EligibleSosRow[]) => (ctFilter === "any" ? arr : arr.filter((r) => r.court_type === ctFilter));
-  // Buddies float to the top of each section, then everyone else — both sorted nearest-first.
-  const buddyFirst = (arr: EligibleSosRow[]) => [
-    ...arr.filter((r) => r.is_buddy).sort(byTime),
-    ...arr.filter((r) => !r.is_buddy).sort(byTime),
-  ];
-  const urgentRows = buddyFirst(urgent);
-  const plannedRows = buddyFirst(filt(planned));
-  const mineAll = [...mine].sort(byTime);
-  const nothing = !loading && urgentRows.length === 0 && plannedRows.length === 0 && mineAll.length === 0 && events.length === 0;
+  // One match predicate per kind. Court / city / level apply to games; events
+  // carry only a city. The Type filter decides which kinds appear at all.
+  const gameMatch = (r: EligibleSosRow) =>
+    (ctFilter === "any" || r.court_type === ctFilter) &&
+    (fCity == null || r.court_city === fCity) &&
+    (fLevel == null || (r.level_min <= fLevel && fLevel <= r.level_max));
+  const eventMatch = (e: EventRow) => fCity == null || e.city === fCity;
+  const showKind = (k: "urgent" | "planned" | "event") => fType === "any" || fType === k;
+  const nothing = !loading && urgent.length === 0 && planned.length === 0 && mine.length === 0 && events.length === 0;
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
-  const weekdayLabel = new Date().toLocaleDateString(locale, { weekday: "long" });
-  const openCount = urgentRows.length + plannedRows.length + mineAll.length;
+  const filterCount =
+    (ctFilter !== "any" ? 1 : 0) + (fCity != null ? 1 : 0) + (fLevel != null ? 1 : 0) + (fType !== "any" ? 1 : 0);
   type TLItem =
     | { id: string; t: number; kind: "sos" | "open" | "mine"; r: EligibleSosRow }
     | { id: string; t: number; kind: "event"; e: EventRow };
   const timeline: TLItem[] = [
-    ...filt(urgent).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
-    ...filt(planned).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "open", r })),
-    ...filt(mine).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "mine", r })),
-    ...events.map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
+    ...(showKind("urgent") ? urgent.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
+    ...(showKind("planned") ? planned.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "open", r })),
+    ...(showKind("planned") ? mine.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "mine", r })),
+    ...(showKind("event") ? events.filter(eventMatch) : []).map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
   ].sort((a, b) => a.t - b.t);
 
   return (
     <div className="space-y-5">
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
-      {/* Tonight — header */}
-      <div>
-        <div className="csection-label">{weekdayLabel}</div>
-        <h1 className="font-display text-3xl leading-none mt-0.5">{t("tonight.title")}</h1>
-      </div>
-
-      {/* live pulse + streak — quiet status line, only when there's something to show */}
-      {(openCount > 0 || streakWeeks >= 1) && (
-        <div className="flex items-center gap-2 px-1">
-          <span className="flex-1 font-bold text-sm" style={{ color: "rgba(43,33,24,0.6)" }}>
-            {openCount > 0 ? t("tonight.pulse", { n: openCount }) : t("tonight.pulse_quiet")}
-          </span>
-          {streakWeeks >= 1 && (
-            <span className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>
-              🔥 {streakWeeks}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* PRIMARY actions — New game + SOS, right under the streak */}
+      {/* PRIMARY actions — New game + SOS */}
       <div className="grid grid-cols-2 gap-3">
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
+      </div>
+
+      {/* count + filters, right under the create buttons */}
+      <div className="flex items-center gap-2">
+        <span className="font-bold text-sm" style={{ color: "rgba(43,33,24,0.65)" }}>
+          {timeline.length > 0 ? t("tonight.pulse", { n: timeline.length }) : t("tonight.pulse_quiet")}
+        </span>
+        {streakWeeks >= 1 && (
+          <span className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
+            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>🔥 {streakWeeks}</span>
+        )}
+        <button type="button" onClick={() => setFiltersOpen(true)}
+          className="ml-auto inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm shrink-0"
+          style={{ background: "var(--ink)", color: "#FFF6E8" }}>
+          ⚙ {t("players.filters")}
+          {filterCount > 0 && (
+            <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "#FFF6E8" }}>{filterCount}</span>
+          )}
+        </button>
       </div>
 
       <AttentionStrip onChange={load} />
@@ -173,18 +173,6 @@ function BoardPage() {
           ))}
         </div>
       )}
-
-      <div role="radiogroup" aria-label={t("ct.filter_label")} className="flex gap-2 flex-wrap">
-        <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
-        {COURT_TYPES.map((ct) => {
-          const meta = courtTypeMeta(ct, lang);
-          return (
-            <FilterChip key={ct} on={ctFilter === ct} onClick={() => setCtFilter(ct)}>
-              {meta.emoji} {meta.label}
-            </FilterChip>
-          );
-        })}
-      </div>
 
       {/* The evening — games, SOS and events woven together by time */}
       {!loading && timeline.length > 0 && (
@@ -217,6 +205,17 @@ function BoardPage() {
       {showEventForm && (
         <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
       )}
+      {filtersOpen && (
+        <BoardFilterSheet
+          ctFilter={ctFilter} setCtFilter={setCtFilter}
+          fCity={fCity} setFCity={setFCity}
+          fLevel={fLevel} setFLevel={setFLevel}
+          fType={fType} setFType={setFType}
+          count={timeline.length}
+          onClear={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); }}
+          onClose={() => setFiltersOpen(false)}
+        />
+      )}
 
       <div className="flex justify-end">
         <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
@@ -244,6 +243,64 @@ function BoardPage() {
       )}
 
       <CommunityStatsWidget city={cityForStats} />
+    </div>
+  );
+}
+
+function BoardGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="csection-label mb-1">{label}</div>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function BoardFilterSheet({ ctFilter, setCtFilter, fCity, setFCity, fLevel, setFLevel, fType, setFType, count, onClear, onClose }: {
+  ctFilter: CourtType | "any"; setCtFilter: (v: CourtType | "any") => void;
+  fCity: City | null; setFCity: (v: City | null) => void;
+  fLevel: number | null; setFLevel: (v: number | null) => void;
+  fType: "any" | "urgent" | "planned" | "event"; setFType: (v: "any" | "urgent" | "planned" | "event") => void;
+  count: number; onClear: () => void; onClose: () => void;
+}) {
+  const { t, lang } = useI18n();
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(22,18,13,0.45)" }} role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="w-full sm:max-w-md p-5 pb-7 space-y-3"
+        style={{ background: "var(--cream2)", border: "2.5px solid var(--ink)", borderRadius: "22px 22px 0 0", maxHeight: "82%", overflowY: "auto" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="mx-auto rounded-full" style={{ width: 44, height: 5, background: "var(--ink)", opacity: 0.3 }} />
+        <div className="flex items-center justify-between">
+          <span className="font-display text-2xl">{t("players.filters")}</span>
+          <button onClick={onClear} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>{t("players.filters_clear")}</button>
+        </div>
+        <BoardGroup label={t("board.f_type")}>
+          <FilterChip on={fType === "any"} onClick={() => setFType("any")}>{t("common.all")}</FilterChip>
+          <FilterChip on={fType === "urgent"} onClick={() => setFType(fType === "urgent" ? "any" : "urgent")}>🚨 {t("board.f_urgent")}</FilterChip>
+          <FilterChip on={fType === "planned"} onClick={() => setFType(fType === "planned" ? "any" : "planned")}>🎾 {t("board.f_planned")}</FilterChip>
+          <FilterChip on={fType === "event"} onClick={() => setFType(fType === "event" ? "any" : "event")}>🎉 {t("board.f_event")}</FilterChip>
+        </BoardGroup>
+        <BoardGroup label={t("ct.filter_label")}>
+          <FilterChip on={ctFilter === "any"} onClick={() => setCtFilter("any")}>{t("ct.any")}</FilterChip>
+          {COURT_TYPES.map((ct) => {
+            const meta = courtTypeMeta(ct, lang);
+            return <FilterChip key={ct} on={ctFilter === ct} onClick={() => setCtFilter(ctFilter === ct ? "any" : ct)}>{meta.emoji} {meta.label}</FilterChip>;
+          })}
+        </BoardGroup>
+        <BoardGroup label={t("city.label")}>
+          <FilterChip on={fCity == null} onClick={() => setFCity(null)}>{t("city.any")}</FilterChip>
+          {CITIES.map((cy) => <FilterChip key={cy} on={fCity === cy} onClick={() => setFCity(fCity === cy ? null : cy)}>📍 {cy}</FilterChip>)}
+        </BoardGroup>
+        <BoardGroup label={t("players.filter_level")}>
+          <FilterChip on={fLevel == null} onClick={() => setFLevel(null)}>{t("common.all")}</FilterChip>
+          {LEVELS.map((l) => (
+            <FilterChip key={l.n} on={fLevel === l.n} onClick={() => setFLevel(fLevel === l.n ? null : l.n)}>
+              <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: l.color }} />{l.name}
+            </FilterChip>
+          ))}
+        </BoardGroup>
+        <button onClick={onClose} className="cbtn cbtn-green w-full">{t("board.filters_show", { n: count })}</button>
+      </div>
     </div>
   );
 }
