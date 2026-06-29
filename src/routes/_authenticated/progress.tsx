@@ -58,6 +58,7 @@ function ProgressPage() {
   const [hosted, setHosted] = useState(0);
   const [dates, setDates] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [openTrack, setOpenTrack] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -103,7 +104,6 @@ function ProgressPage() {
     );
   }
 
-  const [openTrack, setOpenTrack] = useState<string | null>(null);
   const tracks: { track: string; tier: Tier; count: number }[] = [
     { track: "activity", tier: activityTier(games), count: games },
     { track: "rescuer", tier: rescuerTier(rescues), count: rescues },

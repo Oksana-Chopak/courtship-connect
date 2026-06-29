@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -35,7 +36,9 @@ function AuthedShell() {
       </header>
       <main ref={mainRef} className="flex-1 overflow-y-auto">
         <div className="max-w-md mx-auto px-5 py-6">
-          <Outlet />
+          <RouteErrorBoundary resetKey={loc.pathname}>
+            <Outlet />
+          </RouteErrorBoundary>
         </div>
       </main>
       <BottomTabBar />
