@@ -50,7 +50,7 @@ export function BottomTabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-[var(--ink)]"
+      className="shrink-0 border-t-2 border-[var(--ink)]"
       style={{ background: "var(--cream2)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="grid grid-cols-3 max-w-md mx-auto">

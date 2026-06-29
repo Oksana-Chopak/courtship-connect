@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomTabBar } from "@/components/BottomTabBar";
 
@@ -16,17 +17,26 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedShell() {
+  const loc = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  // App-shell scrolls inside <main>, not the window, so the fixed-position bar
+  // can't jump with the mobile toolbar/keyboard. Reset to top on each new page.
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [loc.pathname]);
   return (
-    <div className="terry-bg min-h-screen font-body text-[var(--ink)]">
-      <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)]">
+    <div className="terry-bg app-shell font-body text-[var(--ink)] flex flex-col">
+      <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)] shrink-0">
         <div className="max-w-md mx-auto px-5 py-3 flex items-center justify-between">
           <Link to="/board" className="font-display text-2xl">
             Courtship
           </Link>
         </div>
       </header>
-      <main className="max-w-md mx-auto px-5 py-6 pb-32">
-        <Outlet />
+      <main ref={mainRef} className="flex-1 overflow-y-auto">
+        <div className="max-w-md mx-auto px-5 py-6">
+          <Outlet />
+        </div>
       </main>
       <BottomTabBar />
     </div>

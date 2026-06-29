@@ -192,6 +192,11 @@
 }
 
 /* Courtship custom classes */
+.app-shell {
+  height: 100vh;
+  height: 100dvh; /* tracks the dynamic viewport so the tab bar never jumps */
+}
+
 .terry-bg {
   background-color: var(--cream);
   background-image:
