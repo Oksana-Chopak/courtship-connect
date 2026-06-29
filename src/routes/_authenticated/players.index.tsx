@@ -28,6 +28,7 @@ type P = {
   home_cities: string[] | null;
   rescues_count: number | null;
   games_played: number | null;
+  bio: string | null;
 };
 
 function Players() {
@@ -143,7 +144,7 @@ function Players() {
           </div>
         )
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {ordered.map((p) => (
             <DirCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
           ))}
@@ -271,43 +272,55 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
   const lm = levelMeta(p.level);
   const [bg, fg] = monogramColors(p.id);
   const hasPhoto = !!p.photo_url;
+  const times = (p.play_times ?? []).map((x) => x.replace(/Weekday |Weekend /, "")).filter(Boolean);
   return (
     <Link
       to="/players/$id"
       params={{ id: p.id }}
-      className="block rounded-2xl overflow-hidden hover:translate-y-[-2px] transition-transform"
-      style={{ border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.14)" }}
+      className="flex gap-3 rounded-2xl overflow-hidden hover:translate-y-[-2px] transition-transform"
+      style={{ border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.14)", background: "var(--cream2)" }}
     >
-      <div className="relative" style={{ height: 120, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}>
+      <div
+        className="relative shrink-0 self-stretch"
+        style={{ width: 104, minHeight: 104, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}
+      >
         {hasPhoto ? (
           <img src={p.photo_url!} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 58, color: fg, opacity: 0.92 }}>{p.name[0]}</div>
+          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 52, color: fg, opacity: 0.92 }}>{p.name[0]}</div>
         )}
-        <span
-          className="absolute top-2 left-2 font-extrabold rounded-full"
-          style={{ fontSize: 13, padding: "2px 6px", background: hasPhoto ? "rgba(22,18,13,0.45)" : "rgba(255,255,255,0.2)", border: `1.5px solid ${hasPhoto ? "transparent" : fg}` }}
-        >
-          {vibeEmoji(p.vibe)}
-        </span>
-        {isBuddy && <span className="absolute top-2 right-2" style={{ fontSize: 13 }}>🤝</span>}
         {(p.rescues_count ?? 0) >= 5 && (
-          <span className="absolute bottom-2 right-2 font-extrabold rounded-full" style={{ fontSize: 10, padding: "2px 7px", color: "#FFF6E8", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
+          <span className="absolute bottom-1.5 left-1.5 font-extrabold rounded-full" style={{ fontSize: 10, padding: "1px 6px", color: "#FFF6E8", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
         )}
-        {badge && <span className="absolute bottom-2 left-2 cchip-mini">{badge}</span>}
       </div>
-      <div className="px-3 py-2" style={{ background: "var(--cream2)" }}>
-        <div className="flex items-center justify-between gap-1">
-          <span className="font-display text-base truncate min-w-0">{p.name}{p.last_name ? " " + p.last_name[0] + "." : ""}</span>
-          <span className="inline-flex gap-0.5 shrink-0">
+      <div className="flex-1 min-w-0 py-2.5 pr-3">
+        <div className="flex items-start justify-between gap-2">
+          <span className="font-display text-lg leading-tight">{p.name}{p.last_name ? " " + p.last_name : ""}</span>
+          <span className="inline-flex gap-0.5 shrink-0 mt-1.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <span key={i} className="rounded-full" style={{ width: 7, height: 7, background: i <= p.level ? lm.color : "transparent", border: `1.5px solid ${i <= p.level ? lm.color : "var(--ink)"}`, opacity: i <= p.level ? 1 : 0.3, boxSizing: "border-box" }} />
             ))}
           </span>
         </div>
-        <div className="text-[11px] font-bold mt-1" style={{ color: "rgba(43,33,24,0.7)" }}>
-          📍 {p.home_city ?? ""}{p.play_times?.[0] ? ` · ${p.play_times[0].replace(/Weekday |Weekend /, "")}` : ""}
+        <div className="text-[13px] font-bold mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: "rgba(43,33,24,0.7)" }}>
+          <span>{vibeEmoji(p.vibe)}</span>
+          {p.home_city && <span>📍 {p.home_city}</span>}
+          {isBuddy && <span>🤝</span>}
         </div>
+        {times.length > 0 && (
+          <div className="text-[12px] font-semibold mt-1" style={{ color: "rgba(43,33,24,0.6)" }}>🎾 {times.slice(0, 3).join(" · ")}</div>
+        )}
+        {p.bio && (
+          <div
+            className="text-[13px] italic mt-1 leading-snug"
+            style={{ color: "rgba(43,33,24,0.85)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            "{p.bio}"
+          </div>
+        )}
+        {badge && (
+          <div className="text-[11px] font-bold uppercase tracking-wide mt-1.5" style={{ color: "rgba(43,33,24,0.45)" }}>{badge}</div>
+        )}
       </div>
     </Link>
   );
