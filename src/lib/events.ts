@@ -153,3 +153,19 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const { error } = await (supabase as any).rpc("delete_my_event", { _id: eventId });
   if (error) throw error;
 }
+
+export async function updateMyEvent(eventId: string, input: {
+  title: string;
+  starts_at: string;
+  city: string | null;
+  location: string;
+  format: string | null;
+  capacity: number | null;
+  price_sek: number | null;
+  swish_number: string | null;
+  description: string | null;
+  contact: string | null;
+}): Promise<void> {
+  const { error } = await (supabase as any).rpc("update_my_event", { _id: eventId, _data: input });
+  if (error) throw error;
+}

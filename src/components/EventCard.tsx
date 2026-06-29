@@ -14,6 +14,7 @@ import {
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { EventFormModal } from "@/components/EventFormModal";
 
 export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
   const { t } = useI18n();
@@ -23,6 +24,7 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   const full = left === 0;
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [attendees, setAttendees] = useState<AttendeeContact[] | null>(null);
 
   useEffect(() => {
@@ -128,7 +130,10 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
                 </div>
               </div>
             ) : (
-              <button className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }} onClick={() => setConfirming(true)}>{t("ev.delete")}</button>
+              <div className="flex items-center gap-4">
+                <button className="text-sm font-extrabold underline" onClick={() => setEditing(true)}>✏️ {t("ev.edit")}</button>
+                <button className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }} onClick={() => setConfirming(true)}>{t("ev.delete")}</button>
+              </div>
             )}
           </div>
         </div>
@@ -143,6 +148,9 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
             {full ? t("ev.full_label") : isPaid ? t("ev.book_spot", { n: e.price_sek as number }) : t("ev.express_interest")}
           </button>
         </div>
+      )}
+      {isHost && editing && (
+        <EventFormModal event={e} onClose={() => setEditing(false)} onSubmitted={() => { setEditing(false); onChange(); }} />
       )}
     </div>
   );

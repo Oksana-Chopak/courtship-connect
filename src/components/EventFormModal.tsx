@@ -1,31 +1,45 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createEventRequest } from "@/lib/events";
+import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
 import { fetchCourtsForPicker, shortCourtName, type CourtFull } from "@/lib/courts";
 import { CITIES } from "@/lib/courtship";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 
-export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitted?: () => void }) {
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function EventFormModal({ onClose, onSubmitted, event }: { onClose: () => void; onSubmitted?: () => void; event?: EventRow }) {
   const { t } = useI18n();
-  const [title, setTitle] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [city, setCity] = useState<string | null>(null);
+  const editing = !!event;
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [startsAt, setStartsAt] = useState(event ? toLocalInput(event.starts_at) : "");
+  const [city, setCity] = useState<string | null>(event?.city ?? null);
   const [courts, setCourts] = useState<CourtFull[]>([]);
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState(event?.location ?? "");
   const [customLoc, setCustomLoc] = useState(false);
-  const [format, setFormat] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [price, setPrice] = useState("");
+  const [format, setFormat] = useState(event?.format ?? "");
+  const [capacity, setCapacity] = useState(event?.capacity != null ? String(event.capacity) : "");
+  const [price, setPrice] = useState(event?.price_sek != null ? String(event.price_sek) : "");
   const [swish, setSwish] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(event?.description ?? "");
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
-      try { setCourts(await fetchCourtsForPicker()); } catch { /* ignore */ }
+      let cs: CourtFull[] = [];
+      try { cs = await fetchCourtsForPicker(); setCourts(cs); } catch { /* ignore */ }
+      if (editing && event) {
+        try { const sw = await fetchEventSwish(event.id); if (sw) setSwish(sw); } catch { /* ignore */ }
+        try { const ct = await fetchEventContact(event.id); if (ct) setContact(ct); } catch { /* ignore */ }
+        if (event.location && !cs.some((c) => c.name === event.location)) setCustomLoc(true);
+        return;
+      }
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
@@ -39,20 +53,26 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
   async function submit() {
     if (!valid) { toast.error(t("ev.fill_required")); return; }
     setBusy(true);
+    const payload = {
+      title: title.trim(),
+      starts_at: new Date(startsAt).toISOString(),
+      city,
+      location: location.trim(),
+      format: format.trim() || null,
+      capacity: capacity ? Math.max(1, parseInt(capacity, 10)) : null,
+      price_sek: price ? Math.max(0, parseInt(price, 10)) : null,
+      swish_number: swish.trim() || null,
+      description: description.trim() || null,
+      contact: contact.trim() || null,
+    };
     try {
-      await createEventRequest({
-        title: title.trim(),
-        starts_at: new Date(startsAt).toISOString(),
-        city,
-        location: location.trim(),
-        format: format.trim() || null,
-        capacity: capacity ? Math.max(1, parseInt(capacity, 10)) : null,
-        price_sek: price ? Math.max(0, parseInt(price, 10)) : null,
-        swish_number: swish.trim() || null,
-        description: description.trim() || null,
-        contact: contact.trim() || null,
-      });
-      toast.success(t("ev.submitted"));
+      if (editing && event) {
+        await updateMyEvent(event.id, payload);
+        toast.success(t("ev.updated"));
+      } else {
+        await createEventRequest(payload);
+        toast.success(t("ev.submitted"));
+      }
       onSubmitted?.();
       onClose();
     } catch (e: any) {
@@ -74,8 +94,8 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
         style={{ background: "var(--cream2)" }}
       >
         <div>
-          <h2 className="font-display text-3xl leading-tight">{t("ev.title")}</h2>
-          <p className="text-base font-semibold text-[var(--ink)] mt-1">{t("ev.sub")}</p>
+          <h2 className="font-display text-3xl leading-tight">{editing ? t("ev.edit_title") : t("ev.title")}</h2>
+          <p className="text-base font-semibold text-[var(--ink)] mt-1">{editing ? t("ev.edit_sub") : t("ev.sub")}</p>
         </div>
 
         <Field label={t("ev.f_title")}>
@@ -151,12 +171,12 @@ export function EventFormModal({ onClose, onSubmitted }: { onClose: () => void; 
           <input className="cinput" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={t("ev.f_contact_ph")} />
         </Field>
 
-        <div className="text-sm text-[var(--ink)] font-semibold">{t("ev.review_note")}</div>
+        {!editing && <div className="text-sm text-[var(--ink)] font-semibold">{t("ev.review_note")}</div>}
 
         <div className="flex gap-2">
           <button type="button" className="cbtn cbtn-ghost flex-1" onClick={onClose}>{t("court.cancel")}</button>
           <button type="button" className="cbtn cbtn-coral flex-1" disabled={busy || !valid} onClick={submit}>
-            {busy ? "..." : t("ev.submit")}
+            {busy ? "..." : editing ? t("ev.save") : t("ev.submit")}
           </button>
         </div>
       </div>
