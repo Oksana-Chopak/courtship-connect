@@ -190,15 +190,27 @@ function BoardPage() {
       {!loading && timeline.length > 0 && (
         <div className="space-y-3">
           <div className="csection-label">{t("tonight.evening")}</div>
-          {timeline.map((it) =>
-            it.kind === "event" ? (
-              <EventCard key={it.id} e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
-            ) : it.kind === "mine" ? (
-              <MineLink key={it.id} r={it.r} />
-            ) : (
-              <Card key={it.id} sos={it.r} onChange={load} />
-            )
-          )}
+          <div>
+            {timeline.map((it, idx) => {
+              const dot = it.kind === "sos" ? "var(--coral)" : it.kind === "event" ? "var(--wood)" : "var(--green-pop)";
+              return (
+                <RailItem
+                  key={it.id}
+                  time={new Date(it.t).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+                  dot={dot}
+                  last={idx === timeline.length - 1}
+                >
+                  {it.kind === "event" ? (
+                    <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
+                  ) : it.kind === "mine" ? (
+                    <MineLink r={it.r} />
+                  ) : (
+                    <Card sos={it.r} onChange={load} />
+                  )}
+                </RailItem>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -342,6 +354,22 @@ function SoonCard({ emoji, title }: { emoji: string; title: string }) {
       >
         {t("soon.badge")}
       </div>
+    </div>
+  );
+}
+
+// A vertical time-rail row: the time + a type-coloured dot + a connector line
+// down to the next item, with the card to its right. Threads tonight's games,
+// SOS flares and events into one connected timeline (not loose tiles).
+function RailItem({ time, dot, last, children }: { time: string; dot: string; last?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center shrink-0" style={{ width: 44 }}>
+        <span className="font-display text-sm" style={{ color: "rgba(43,33,24,0.7)", lineHeight: 1.1 }}>{time}</span>
+        <span className="rounded-full mt-1" style={{ width: 11, height: 11, background: dot, border: "2px solid var(--ink)", boxSizing: "border-box" }} />
+        {!last && <span className="flex-1 mt-1 rounded-full" style={{ width: 2, background: "rgba(43,33,24,0.22)", minHeight: 16 }} />}
+      </div>
+      <div className="flex-1 min-w-0 pb-3">{children}</div>
     </div>
   );
 }
