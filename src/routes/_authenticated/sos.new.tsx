@@ -15,6 +15,7 @@ import { SlotPicker } from "@/components/SlotPicker";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
+  validateSearch: (sp: Record<string, unknown>): { edit?: string } => ({ edit: typeof sp.edit === "string" ? sp.edit : undefined }),
   component: NewSos,
 });
 
@@ -24,6 +25,8 @@ function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMin
 function NewSos() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
+  const { edit: editId } = Route.useSearch();
+  const editing = !!editId;
   const [courts, setCourts] = useState<CourtFull[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
@@ -86,6 +89,26 @@ function NewSos() {
         .maybeSingle();
       const lastCt = (last as any)?.court_type as CourtType | undefined;
       if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
+
+      // Edit mode: load the existing game and prefill (RLS lets the owner update it directly).
+      if (editing && editId) {
+        const { data: g } = await (supabase as any).from("sos_requests").select("*").eq("id", editId).maybeSingle();
+        if (g && g.caller_id === u.user.id) {
+          const pa = new Date(g.play_at);
+          const day = new Date(pa); day.setHours(0, 0, 0, 0);
+          setDate(day);
+          setTime(`${pad(pa.getHours())}:${pad(pa.getMinutes())}`);
+          const court = cs.find((c) => c.id === g.court_id);
+          if (court) { setCity(court.city as City); setCourtId(court.id); }
+          if (g.court_type === "indoor" || g.court_type === "outdoor") setCourtType(g.court_type);
+          if (g.format) setFormat(g.format);
+          if (g.level_min === 1 && g.level_max === 5) { setAnyone(true); }
+          else { setAnyone(false); setLevelMin(g.level_min); setLevelMax(g.level_max); }
+          if (g.court_status) setCourtStatus(g.court_status);
+          if (g.duration_min) setDuration(g.duration_min);
+          setNote(g.note ?? "");
+        }
+      }
     })();
   }, []);
 
@@ -122,6 +145,24 @@ function NewSos() {
     if (!courtId) { toast.error(t("sos.err_pick_court")); return; }
     if (playAt.getTime() < Date.now()) { toast.error(t("sos.err_time_gone")); return; }
     setBusy(true);
+    if (editing && editId) {
+      const { error } = await (supabase as any).from("sos_requests").update({
+        play_at: playAt.toISOString(),
+        court_id: courtId,
+        format,
+        level_min: anyone ? 1 : levelMin,
+        level_max: anyone ? 5 : levelMax,
+        court_status: courtStatus,
+        note: note.trim() || null,
+        court_type: courtType,
+        duration_min: duration,
+      }).eq("id", editId).eq("caller_id", uid);
+      setBusy(false);
+      if (error) { oops(error); return; }
+      toast.success(t("sos.edit_saved"));
+      navigate({ to: "/sos/$id", params: { id: editId } });
+      return;
+    }
     if (urgent) {
       const count = await activeSosCount(uid);
       if (count >= 3) {
@@ -176,6 +217,7 @@ function NewSos() {
 
   function onSubmitClick() {
     if (!canSubmit) return;
+    if (editing) { doSubmit(); return; }
     if (urgent) { setShowConfirm(true); return; }
     doSubmit();
   }
@@ -184,7 +226,7 @@ function NewSos() {
     <div className="space-y-5">
       <Link to="/board" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
       <div>
-        <h1 className="font-display text-4xl">{t("post.new_title")}</h1>
+        <h1 className="font-display text-4xl">{editing ? t("sos.edit_title") : t("post.new_title")}</h1>
       </div>
 
       <Section label={t("sos.when")}>
@@ -308,7 +350,7 @@ function NewSos() {
         />
       </Section>
 
-      {!urgent && (
+      {!urgent && !editing && (
         <Section label={t("post.auto_flare_label")}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-base text-[var(--ink)] font-semibold flex-1">
@@ -321,7 +363,7 @@ function NewSos() {
         </Section>
       )}
 
-      {buddies.length > 0 && (
+      {!editing && buddies.length > 0 && (
         <Section label={t("sos.invite_buddies")}>
           <div className="flex gap-2 flex-wrap">
             {buddies.map((b) => {
@@ -342,7 +384,7 @@ function NewSos() {
         onClick={onSubmitClick}
         className={`cbtn w-full ${urgent ? "cbtn-coral" : "cbtn-green"}`}
       >
-        {busy ? "..." : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
+        {busy ? "..." : editing ? t("sos.edit_save") : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
       </button>
 
       {showConfirm && (

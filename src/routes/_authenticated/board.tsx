@@ -189,7 +189,7 @@ function BoardPage() {
                   {it.kind === "event" ? (
                     <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
                   ) : it.kind === "mine" ? (
-                    <MineLink r={it.r} />
+                    <Card sos={it.r} onChange={load} mine />
                   ) : (
                     <Card sos={it.r} onChange={load} />
                   )}
@@ -310,7 +310,7 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
   );
 }
 
-function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) {
+function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const lmMin = levelMeta(sos.level_min);
@@ -321,18 +321,26 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
 
   const inner = (
     <>
-      {sos.is_buddy && (
+      {mine ? (
+        <div className="inline-block text-xs font-extrabold uppercase tracking-wide px-2 py-1 rounded-full mb-2"
+          style={{ background: "var(--green-pop)", border: "1px solid var(--ink)" }}>
+          {t("board.your_game")}
+        </div>
+      ) : sos.is_buddy ? (
         <div className="inline-block text-base font-extrabold uppercase px-2 py-1 rounded-full mb-2"
           style={{ background: "var(--coral)", color: "#FFF6E8" }}>
           🤝 {sos.caller_name ? t("buddy.your_buddy", { name: sos.caller_name }) : t("buddy.from_buddies")}
         </div>
-      )}
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-tight">{whenLabel(sos.play_at)}</div>
           <div className="font-extrabold truncate">
             📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
           </div>
+          {!mine && !sos.is_buddy && sos.caller_name && (
+            <div className="text-base font-semibold text-[var(--ink)] mt-0.5">🎾 {sos.caller_name}</div>
+          )}
           <div className="mt-2"><CourtStatusBadge status={sos.court_status} /></div>
           <div className="text-base text-[var(--ink)] mt-2">
             {formatLabel(sos.format)} · L
@@ -346,6 +354,17 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
     </>
   );
 
+  if (mine) {
+    return (
+      <div className="ccard p-4">
+        {inner}
+        <div className="flex gap-2 mt-3">
+          <Link to="/sos/new" search={{ edit: sos.id }} className="cbtn cbtn-ghost flex-1 text-center">✏️ {t("board.edit")}</Link>
+          <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-green flex-1 text-center">{t("board.manage")}</Link>
+        </div>
+      </div>
+    );
+  }
   if (isUrgent) {
     return (
       <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
@@ -378,21 +397,6 @@ function Card({ sos, onChange }: { sos: EligibleSosRow; onChange: () => void }) 
   );
 }
 
-function MineLink({ r }: { r: EligibleSosRow }) {
-  const { t, lang } = useI18n();
-  return (
-    <Link to="/sos/$id" params={{ id: r.id }} className="ccard p-4 flex items-center justify-between">
-      <div>
-        <div className="font-display text-lg">{whenLabel(r.play_at)} · {r.court_name ?? "—"}</div>
-        <div className="text-base text-[var(--ink)] font-semibold">
-          📍 {r.court_city ?? "—"} · {courtTypeMeta(r.court_type, lang).emoji}{" "}
-          {r.status === "claimed" ? t("board.claimed") : t("board.live")}
-        </div>
-      </div>
-      <span className="text-2xl">›</span>
-    </Link>
-  );
-}
 
 function SoonCard({ emoji, title }: { emoji: string; title: string }) {
   const { t } = useI18n();
