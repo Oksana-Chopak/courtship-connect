@@ -97,7 +97,7 @@ function MePage() {
 
   return (
     <div className="space-y-4">
-      <div className="ccard p-4 flex items-center gap-3">
+      <Link to="/settings" className="ccard p-4 flex items-center gap-3">
         <Avatar src={profile.photo_url} name={profile.name} seed={uid} size={64} />
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}</div>
@@ -107,7 +107,14 @@ function MePage() {
             <span className="text-sm">· {vibeEmoji(profile.vibe)}</span>
           </div>
         </div>
-      </div>
+        <span
+          className="shrink-0 flex items-center justify-center rounded-full"
+          style={{ width: 36, height: 36, background: "var(--cream2)", border: "2px solid var(--ink)" }}
+          aria-label={t("me.edit_profile")}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
+        </span>
+      </Link>
 
       <StreakCard />
 
@@ -122,7 +129,6 @@ function MePage() {
         <MenuLink to="/progress" icon="📈" label={t("prog.title")} sub={t("menu.progress_sub")} />
         <MenuLink to="/matches" icon="🎾" label={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />
         <MenuLink to="/people" icon="🤝" label={t("people.title")} sub={t("menu.people_sub")} badge={pendingReqs} />
-        <MenuLink to="/settings" icon="⚙️" label={t("settings.title")} sub={t("menu.settings_sub")} />
         <MenuLink to="/help" icon="💬" label={t("help.title")} sub={t("menu.help_sub")} />
       </div>
     </div>
