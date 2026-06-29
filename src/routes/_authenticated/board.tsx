@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
-import { EventFormModal } from "@/components/EventFormModal";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
@@ -39,7 +38,6 @@ function BoardPage() {
   const [fType, setFType] = useState<"any" | "urgent" | "planned" | "event">("any");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [showEventForm, setShowEventForm] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
@@ -202,9 +200,6 @@ function BoardPage() {
         </div>
       )}
 
-      {showEventForm && (
-        <EventFormModal onClose={() => setShowEventForm(false)} onSubmitted={load} />
-      )}
       {filtersOpen && (
         <BoardFilterSheet
           ctFilter={ctFilter} setCtFilter={setCtFilter}
@@ -218,7 +213,7 @@ function BoardPage() {
       )}
 
       <div className="flex justify-end">
-        <button type="button" className="cbtn cbtn-ghost" onClick={() => setShowEventForm(true)}>🎉 {t("board.host_event")}</button>
+        <Link to="/events/new" className="cbtn cbtn-ghost">🎉 {t("board.host_event")}</Link>
       </div>
 
       {/* Coming soon — flag-gated features shown as teasers */}

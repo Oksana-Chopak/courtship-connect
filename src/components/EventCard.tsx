@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { whenLabel, whatsappLink } from "@/lib/courtship";
+import { whenLabel, whatsappLink, durationLabel } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
@@ -14,7 +15,6 @@ import {
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { EventFormModal } from "@/components/EventFormModal";
 
 export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
   const { t } = useI18n();
@@ -24,7 +24,6 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   const full = left === 0;
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [attendees, setAttendees] = useState<AttendeeContact[] | null>(null);
 
   useEffect(() => {
@@ -85,6 +84,12 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
         🎟 {isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}
         {e.capacity != null ? ` · ${full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number })}` : ""}
       </div>
+      {(() => {
+        const parts: string[] = [];
+        if (e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5)) parts.push(`L${e.level_min}–${e.level_max}`);
+        if (e.duration_min) parts.push(durationLabel(e.duration_min));
+        return parts.length ? <div className="text-base text-[var(--ink)] mt-1">{parts.join(" · ")}</div> : null;
+      })()}
       {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
       {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
       <a
@@ -131,7 +136,7 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <button className="text-sm font-extrabold underline" onClick={() => setEditing(true)}>✏️ {t("ev.edit")}</button>
+                <Link to="/events/new" search={{ id: e.id }} className="text-sm font-extrabold underline">✏️ {t("ev.edit")}</Link>
                 <button className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }} onClick={() => setConfirming(true)}>{t("ev.delete")}</button>
               </div>
             )}
@@ -148,9 +153,6 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
             {full ? t("ev.full_label") : isPaid ? t("ev.book_spot", { n: e.price_sek as number }) : t("ev.express_interest")}
           </button>
         </div>
-      )}
-      {isHost && editing && (
-        <EventFormModal event={e} onClose={() => setEditing(false)} onSubmitted={() => { setEditing(false); onChange(); }} />
       )}
     </div>
   );

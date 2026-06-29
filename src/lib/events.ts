@@ -11,6 +11,9 @@ export type EventRow = {
   capacity: number | null;
   spots_taken: number;
   price_sek: number | null;
+  level_min: number | null;
+  level_max: number | null;
+  duration_min: number | null;
   description: string | null;
   status: string;
   created_at: string;
@@ -26,6 +29,9 @@ export async function createEventRequest(input: {
   format: string | null;
   capacity: number | null;
   price_sek: number | null;
+  level_min: number | null;
+  level_max: number | null;
+  duration_min: number | null;
   swish_number: string | null;
   description: string | null;
   contact: string | null;
@@ -33,11 +39,21 @@ export async function createEventRequest(input: {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) throw new Error("Not signed in");
   const { swish_number, contact, ...ev } = input;
-  const { data, error } = await (supabase as any)
+  let res = await (supabase as any)
     .from("event_requests")
     .insert({ ...ev, host_id: u.user.id, status: "pending" })
     .select("id")
     .single();
+  if (res.error && /(level_min|level_max|duration_min)/i.test(res.error.message || "")) {
+    // new columns not migrated yet — create without them so hosting never breaks
+    const { level_min: _a, level_max: _b, duration_min: _c, ...base } = ev;
+    res = await (supabase as any)
+      .from("event_requests")
+      .insert({ ...base, host_id: u.user.id, status: "pending" })
+      .select("id")
+      .single();
+  }
+  const { data, error } = res;
   if (error) throw error;
   if (swish_number || contact) {
     const { error: e2 } = await (supabase as any)
@@ -162,6 +178,9 @@ export async function updateMyEvent(eventId: string, input: {
   format: string | null;
   capacity: number | null;
   price_sek: number | null;
+  level_min: number | null;
+  level_max: number | null;
+  duration_min: number | null;
   swish_number: string | null;
   description: string | null;
   contact: string | null;
