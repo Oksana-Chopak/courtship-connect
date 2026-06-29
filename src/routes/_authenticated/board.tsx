@@ -126,21 +126,23 @@ function BoardPage() {
       {/* Tonight — header */}
       <div>
         <div className="csection-label">{weekdayLabel}</div>
-        <h1 className="font-display text-3xl leading-none mt-0.5">{t("tonight.title", { city: cityForStats })}</h1>
+        <h1 className="font-display text-3xl leading-none mt-0.5">{t("tonight.title")}</h1>
       </div>
 
-      {/* live pulse + streak */}
-      <div className="ccard p-3 flex items-center gap-3" style={{ background: "var(--green-pop)" }}>
-        <span className="flex-1 font-extrabold text-sm" style={{ color: "var(--ink)" }}>
-          {openCount > 0 ? t("tonight.pulse", { n: openCount }) : t("tonight.pulse_quiet")}
-        </span>
-        {streakWeeks >= 1 && (
-          <span className="inline-flex items-center gap-1 font-extrabold text-sm px-2.5 py-1 rounded-full shrink-0"
-            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>
-            🔥 {streakWeeks}
+      {/* live pulse + streak — quiet status line, only when there's something to show */}
+      {(openCount > 0 || streakWeeks >= 1) && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="flex-1 font-bold text-sm" style={{ color: "rgba(43,33,24,0.6)" }}>
+            {openCount > 0 ? t("tonight.pulse", { n: openCount }) : t("tonight.pulse_quiet")}
           </span>
-        )}
-      </div>
+          {streakWeeks >= 1 && (
+            <span className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
+              style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>
+              🔥 {streakWeeks}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* PRIMARY actions — New game + SOS, right under the streak */}
       <div className="grid grid-cols-2 gap-3">
@@ -213,7 +215,7 @@ function BoardPage() {
         <div className="csection-label">{t("soon.title")}</div>
         <div className="grid grid-cols-2 gap-3">
           <SoonCard emoji="🎰" title={t("soon.lucky")} />
-          <SoonCard emoji="💘" title={t("soon.swipe")} />
+          <SoonCard emoji="🎾❔" title={t("soon.swipe")} />
         </div>
       </div>
 

@@ -150,7 +150,7 @@ const en: Dict = {
 
   "board.title": "Board",
   "board.sub": "Urgent rescues and planned hits.",
-  "tonight.title": "Tonight in {city}",
+  "tonight.title": "Tonight",
   "tonight.pulse": "{n} games on the board",
   "tonight.pulse_quiet": "All quiet — fire a flare 🚨",
   "tonight.new_game": "New game",
@@ -885,7 +885,7 @@ const sv: Dict = {
 
   "board.title": "Tavlan",
   "board.sub": "Akuta räddningar och planerade matcher.",
-  "tonight.title": "Ikväll i {city}",
+  "tonight.title": "Ikväll",
   "tonight.pulse": "{n} matcher på tavlan",
   "tonight.pulse_quiet": "Lugnt — skicka en signal 🚨",
   "tonight.new_game": "Ny match",

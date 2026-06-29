@@ -5,7 +5,7 @@ import { activeSosCount } from "@/lib/sos";
 import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, cityGranularity, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType } from "@/lib/courtship";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -192,8 +192,13 @@ function NewSos() {
         <div className="mt-3">
           <div className="csection-label mb-1">{t("slot.label")}</div>
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
-          <div className="mt-1 text-base font-semibold text-[var(--ink)]">
-            {cityGranularity(city) === 30 ? t("slot.help_stockholm") : t("slot.help_uppsala")}
+        </div>
+        <div className="mt-3">
+          <div className="csection-label mb-1">{t("sos.duration")}</div>
+          <div className="flex gap-2 flex-wrap">
+            {DURATIONS.map((d) => (
+              <Chip key={d} on={duration === d} onClick={() => setDuration(d)}>{durationLabel(d)}</Chip>
+            ))}
           </div>
         </div>
         {time && (
@@ -259,14 +264,6 @@ function NewSos() {
             <Chip key={f.value} on={format === f.value} onClick={() => setFormat(f.value)}>
               {f.label}
             </Chip>
-          ))}
-        </div>
-      </Section>
-
-      <Section label={t("sos.duration")}>
-        <div className="flex gap-2 flex-wrap">
-          {DURATIONS.map((d) => (
-            <Chip key={d} on={duration === d} onClick={() => setDuration(d)}>{durationLabel(d)}</Chip>
           ))}
         </div>
       </Section>
