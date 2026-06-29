@@ -5,6 +5,7 @@ import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
   leaveEvent,
+  deleteEvent,
   fetchEventAttendees,
   markAttendeePaid,
   fetchEventSwish,
@@ -21,6 +22,7 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
   const full = left === 0;
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[] | null>(null);
 
   useEffect(() => {
@@ -59,6 +61,20 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
     } catch (er: any) { toast.error(er?.message ?? "Error"); }
   }
 
+  async function doDelete() {
+    setBusy(true);
+    try {
+      await deleteEvent(e.id);
+      toast.success(t("ev.deleted"));
+      onChange();
+    } catch (er: any) {
+      toast.error(er?.message ?? "Error");
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
+  }
+
   return (
     <div className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
       <div className="font-display text-2xl leading-tight">{e.title}</div>
@@ -95,6 +111,19 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
           ) : (
             <div className="text-sm text-[var(--ink)]">{t("ev.no_attendees")}</div>
           )}
+          <div className="border-t border-[var(--ink)]/15 pt-3">
+            {confirming ? (
+              <div className="space-y-2">
+                <div className="text-sm font-extrabold text-[var(--ink)]">{t("ev.delete_confirm")}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="cbtn cbtn-ghost text-sm" disabled={busy} onClick={() => setConfirming(false)}>{t("ev.delete_keep")}</button>
+                  <button className="cbtn text-sm" style={{ background: "var(--coral)", color: "#FFF6E8", border: "2px solid var(--ink)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
+                </div>
+              </div>
+            ) : (
+              <button className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }} onClick={() => setConfirming(true)}>{t("ev.delete")}</button>
+            )}
+          </div>
         </div>
       ) : myStatus ? (
         <div className="mt-3 space-y-2">

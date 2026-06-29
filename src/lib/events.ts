@@ -133,3 +133,8 @@ export async function fetchEventContact(eventId: string): Promise<string | null>
   if (error) return null;
   return (data as string | null) ?? null;
 }
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  const { error } = await (supabase as any).rpc("delete_my_event", { _id: eventId });
+  if (error) throw error;
+}
