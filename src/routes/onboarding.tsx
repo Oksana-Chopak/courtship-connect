@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { consumeNext } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
+import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/onboarding")({
 function Onboarding() {
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
+  const [initial, setInitial] = useState<ProfileFormValues | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   // If the invite gate ever rejects the save, we stash the filled-in answers
@@ -27,10 +28,18 @@ function Onboarding() {
   const { t } = useI18n();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate({ to: "/auth", search: { mode: "signup" } });
-      else setUid(data.session.user.id);
-    });
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) { navigate({ to: "/auth", search: { mode: "signup" } }); return; }
+      setUid(data.session.user.id);
+      // Resume anything saved on a previous (possibly unfinished) visit.
+      try {
+        const { data: prof } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
+        setInitial(prof ? rowToProfile(prof) : emptyProfile);
+      } catch {
+        setInitial(emptyProfile);
+      }
+    })();
   }, [navigate]);
 
   async function finishSuccess() {
@@ -73,6 +82,19 @@ function Onboarding() {
     if (res === "invite") { setPendingProfile(v); setRetryCode(""); }
   }
 
+  // Persist progress on each step so an unfinished onboarding never loses data
+  // (photos, name, etc.). Best-effort: the final submit remains the source of truth.
+  async function saveProgress(v: ProfileFormValues) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const code =
+        ((u.user?.user_metadata as any)?.signup_code as string | undefined) ||
+        (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) || "" : "") ||
+        "";
+      await (supabase as any).rpc("save_my_profile", { _data: { ...v, signup_code: code } });
+    } catch { /* ignore — final submit will surface any real error */ }
+  }
+
   async function handleRetry() {
     const code = retryCode.trim().toUpperCase();
     if (code.length < 3) { toast.error(t("auth.invite_bad")); return; }
@@ -86,7 +108,7 @@ function Onboarding() {
     if (res === "ok") { setPendingProfile(null); await finishSuccess(); }
   }
 
-  if (!uid) return <div className="terry-bg min-h-screen" />;
+  if (!uid || !initial) return <div className="terry-bg min-h-screen" />;
 
   if (done) {
     return (
@@ -133,11 +155,12 @@ function Onboarding() {
 
         <div className="ccard p-5">
           <ProfileWizard
-            initial={emptyProfile}
+            initial={initial}
             userId={uid}
             submitLabel={t("wiz.save_see")}
             busy={busy}
             onSubmit={handleSubmit}
+            onProgress={saveProgress}
           />
         </div>
       </div>

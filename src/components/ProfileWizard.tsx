@@ -62,6 +62,32 @@ function toggle<T>(arr: T[], v: T) {
   return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 }
 
+/** Map a profiles row (from get_my_full_profile) into wizard form values. Used by
+ *  both onboarding (resume) and settings (edit) so they stay in sync. Seeds the
+ *  photo grid from the legacy single avatar when the photos array is still empty. */
+export function rowToProfile(d: any): ProfileFormValues {
+  return {
+    name: d.name ?? "",
+    last_name: d.last_name ?? "",
+    bio: d.bio ?? "",
+    fav_shot: d.fav_shot ?? "",
+    phone_e164: d.phone_e164 ?? "",
+    photo_url: d.photo_url ?? "",
+    photos: (d.photos && d.photos.length) ? d.photos : (d.photo_url ? [d.photo_url] : []),
+    level: d.level ?? 3,
+    formats: d.formats ?? [],
+    play_times: d.play_times ?? [],
+    vibe: d.vibe ?? "friendly",
+    looking_for: d.looking_for ?? "both",
+    home_courts: d.home_courts ?? "",
+    home_city: d.home_city ?? "Uppsala",
+    home_cities: d.home_cities ?? [d.home_city ?? "Uppsala"],
+    buddy_optin: d.buddy_optin ?? "sometimes",
+    buddy_radius_km: d.buddy_radius_km ?? 10,
+    buddy_sos_optin: d.buddy_sos_optin ?? true,
+  };
+}
+
 export function ProfileWizard({
   initial,
   userId,
@@ -70,6 +96,7 @@ export function ProfileWizard({
   savedState = false,
   savedLabel = "Saved ✓",
   busy,
+  onProgress,
 }: {
   initial: ProfileFormValues;
   userId: string;
@@ -78,6 +105,7 @@ export function ProfileWizard({
   savedState?: boolean;
   savedLabel?: string;
   busy?: boolean;
+  onProgress?: (v: ProfileFormValues) => void | Promise<void>;
 }) {
   const [step, setStep] = useState(0);
   const { t } = useI18n();
@@ -140,9 +168,14 @@ export function ProfileWizard({
       toast.error(step === 0 ? t("wiz.err_name_phone") : t("wiz.err_pick"));
       return;
     }
-    if (step === 0) set("phone_e164", toE164(v.phone_e164));
-    if (step < 4) setStep(step + 1);
-    else onSubmit({ ...v, phone_e164: toE164(v.phone_e164) });
+    const normalized = { ...v, phone_e164: toE164(v.phone_e164) };
+    if (step === 0) set("phone_e164", normalized.phone_e164);
+    if (step < 4) {
+      void onProgress?.(normalized); // best-effort: persist progress so nothing is lost mid-onboarding
+      setStep(step + 1);
+    } else {
+      onSubmit(normalized);
+    }
   }
 
   const lm = levelMeta(v.level);

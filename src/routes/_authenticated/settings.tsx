@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { oops } from "@/lib/oops";
 import { useI18n, LangToggle } from "@/lib/i18n";
-import { ProfileWizard, emptyProfile, type ProfileFormValues } from "@/components/ProfileWizard";
+import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { PushControls } from "@/components/PushControls";
 import { Collapsible } from "@/components/Collapsible";
 
@@ -34,26 +34,7 @@ function SettingsPage() {
       }
       const d = data as any;
       setIsAdmin(!!d.is_admin);
-      setInitial({
-        name: d.name ?? "",
-        last_name: d.last_name ?? "",
-        bio: d.bio ?? "",
-        fav_shot: d.fav_shot ?? "",
-        phone_e164: d.phone_e164 ?? "",
-        photo_url: d.photo_url ?? "",
-        photos: (d.photos && d.photos.length) ? d.photos : (d.photo_url ? [d.photo_url] : []),
-        level: d.level ?? 3,
-        formats: d.formats ?? [],
-        play_times: d.play_times ?? [],
-        vibe: d.vibe ?? "friendly",
-        looking_for: d.looking_for ?? "both",
-        home_courts: d.home_courts ?? "",
-        home_city: d.home_city ?? "Uppsala",
-        home_cities: d.home_cities ?? [d.home_city ?? "Uppsala"],
-        buddy_optin: d.buddy_optin ?? "sometimes",
-        buddy_radius_km: d.buddy_radius_km ?? 10,
-        buddy_sos_optin: d.buddy_sos_optin ?? true,
-      });
+      setInitial(rowToProfile(d));
     })();
   }, [navigate]);
 
@@ -87,6 +68,9 @@ function SettingsPage() {
             }
             setInitial(v);
             toast.success(t("me.updated"));
+          }}
+          onProgress={async (v: ProfileFormValues) => {
+            try { await (supabase as any).rpc("save_my_profile", { _data: v }); } catch { /* best-effort auto-save */ }
           }}
         />
       </div>
