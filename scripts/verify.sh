@@ -31,6 +31,13 @@ else
   echo "✅ no hooks violations"
 fi
 
+echo "→ Unit tests (core reward / streak / date logic)…"
+if npx vitest run >/tmp/vitest_out.txt 2>&1; then
+  echo "✅ tests pass"
+else
+  echo "❌ tests failed:"; tail -30 /tmp/vitest_out.txt; fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
 fi
