@@ -230,7 +230,9 @@ export function whenLabel(iso: string): string {
   const hhmm = d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
   if (sameDay(d, today)) return `${lang === "sv" ? "Idag" : "Today"} ${hhmm}`;
   if (sameDay(d, tomorrow)) return `${lang === "sv" ? "Imorgon" : "Tomorrow"} ${hhmm}`;
-  return d.toLocaleString(loc, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const wd = d.toLocaleDateString(loc, { weekday: "short" });
+  const dm = d.toLocaleDateString(loc, { day: "numeric", month: "short" });
+  return `${wd} ${dm} · ${hhmm}`;
 }
 const RESCUER_TIERS = [
   { level: 1, name: "Set Saver", emoji: "🎾", at: 1 },
