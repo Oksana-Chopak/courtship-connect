@@ -61,6 +61,24 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
     toast.success(t("push.saved"));
   }
 
+  async function sendTest() {
+    setBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) { setBusy(false); return; }
+      const { data, error } = await (supabase as any).functions.invoke("notify-users", {
+        body: { user_ids: [u.user.id], title: "🎾 Courtship", body: t("push.test_body"), url: "/board", tag: "courtship-test" },
+      });
+      if (error) { toast.error(t("push.test_fail")); return; }
+      if (data && typeof data.sent === "number" && data.sent > 0) toast.success(t("push.test_sent"));
+      else toast.message(t("push.test_nosub"));
+    } catch {
+      toast.error(t("push.test_fail"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const supported = isPushSupported();
 
   return (
@@ -84,6 +102,9 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
         </button>
       )}
       {status === "subscribed" && <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>{t("push.enabled")}</div>}
+      {status === "subscribed" && (
+        <button onClick={sendTest} disabled={busy} className="cbtn cbtn-ghost w-full">🧪 {t("push.test")}</button>
+      )}
 
       <div className="border-t border-[var(--ink)]/15" />
 
