@@ -155,6 +155,19 @@ function BoardPage() {
       <InstallBanner />
       <StandaloneNotifPrompt />
 
+      {!loading && urgent.length > 0 && (
+        <div
+          className="rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
+          style={{ background: "var(--coral)", color: "#FFF6E8", boxShadow: "4px 4px 0 var(--ink)" }}
+          role="status"
+        >
+          <div className="font-display text-lg leading-tight">
+            🚨 {t(urgent.length === 1 ? "board.rescue_one" : "board.rescue_many", { n: urgent.length })}
+          </div>
+          <div className="text-sm font-semibold" style={{ opacity: 0.9 }}>{t("board.rescue_sub")}</div>
+        </div>
+      )}
+
       {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
 
       {myClaims.length > 0 && (

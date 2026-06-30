@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { ensurePushSubscribed } from "@/lib/push";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -25,6 +26,10 @@ function AuthedShell() {
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [loc.pathname]);
+  // Silently (re)create the push subscription for users who already granted
+  // permission — without this, a granted user can have no live subscription
+  // and never receive SOS pushes.
+  useEffect(() => { void ensurePushSubscribed(); }, []);
   return (
     <div className="terry-bg app-shell font-body text-[var(--ink)] flex flex-col">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)] shrink-0">
