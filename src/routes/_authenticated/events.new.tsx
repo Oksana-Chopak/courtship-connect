@@ -237,7 +237,7 @@ function NewEvent() {
       {!editing && <div className="text-sm text-[var(--ink)] font-semibold">{t("ev.review_note")}</div>}
 
       <button disabled={busy || !canSubmit} onClick={submit} className="cbtn cbtn-coral w-full">
-        {busy ? "..." : editing ? t("ev.save") : t("ev.submit")}
+        {busy ? "..." : editing ? t("ev.save") : !title.trim() ? t("ev.need_title") : !startsAt ? t("ev.need_time") : !courtId ? t("ev.need_court") : t("ev.submit")}
       </button>
     </div>
   );

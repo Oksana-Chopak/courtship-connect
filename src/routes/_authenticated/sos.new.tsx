@@ -243,7 +243,7 @@ function NewSos() {
             ))}
           </div>
         </div>
-        {time && (
+        {time && !editing && (
           <div
             className="mt-2 rounded-2xl border-2 border-[var(--ink)] px-3 py-2 font-semibold"
             style={{
