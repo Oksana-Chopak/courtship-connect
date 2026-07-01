@@ -624,6 +624,16 @@ export type Database = {
         Args: { _a: string; _b: string; _source: string }
         Returns: undefined
       }
+      _push_users: {
+        Args: {
+          _body: string
+          _ids: string[]
+          _tag: string
+          _title: string
+          _url: string
+        }
+        Returns: undefined
+      }
       active_sos_count: { Args: { _uid: string }; Returns: number }
       admin_courts_list: {
         Args: never
