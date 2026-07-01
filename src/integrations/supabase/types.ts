@@ -360,6 +360,7 @@ export type Database = {
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          events_optin: boolean
           fav_shot: string | null
           formats: string[]
           games_played: number
@@ -391,6 +392,7 @@ export type Database = {
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          events_optin?: boolean
           fav_shot?: string | null
           formats?: string[]
           games_played?: number
@@ -422,6 +424,7 @@ export type Database = {
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          events_optin?: boolean
           fav_shot?: string | null
           formats?: string[]
           games_played?: number
@@ -833,6 +836,7 @@ export type Database = {
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          events_optin: boolean
           fav_shot: string | null
           formats: string[]
           games_played: number
@@ -944,6 +948,7 @@ export type Database = {
       save_my_profile: { Args: { _data: Json }; Returns: undefined }
       save_push_prefs: {
         Args: {
+          _events_optin?: boolean
           _max_per_week: number
           _radius: number
           _sos_optin: boolean
