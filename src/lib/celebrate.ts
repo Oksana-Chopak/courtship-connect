@@ -11,7 +11,7 @@ import { activityTier, rescuerTier, recruiterTier, matchmakerTier } from "@/lib/
 const PROGRESS_KEY = "courtship.progress";
 
 export type Celebration = {
-  kind: "game" | "rescue" | "recruit" | "host";
+  kind: "game" | "rescue" | "recruit" | "host" | "joined";
   count: number;
   leveledUp: boolean;
   tierName: string;

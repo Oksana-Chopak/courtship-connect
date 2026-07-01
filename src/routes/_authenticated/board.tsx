@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
@@ -44,6 +44,7 @@ function BoardPage() {
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const seenClaimedRef = useRef<Set<string> | null>(null);
   const [streakWeeks, setStreakWeeks] = useState(0);
 
   const load = useCallback(async () => {
@@ -78,6 +79,18 @@ function BoardPage() {
     }
     setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
     setMyClaims(claims as any);
+    // Confetti when one of MY games is freshly claimed (session-scoped; seed on
+    // first load so pre-existing claims never retro-fire).
+    const claimedIds = (m as EligibleSosRow[]).filter((g) => g.status === "claimed").map((g) => g.id);
+    if (seenClaimedRef.current === null) {
+      seenClaimedRef.current = new Set(claimedIds);
+    } else {
+      const fresh = claimedIds.filter((id) => !seenClaimedRef.current!.has(id));
+      if (fresh.length) {
+        fresh.forEach((id) => seenClaimedRef.current!.add(id));
+        setCelebration({ kind: "joined", count: 0, leveledUp: false, tierName: "", tierEmoji: "", toNext: null, nextName: null });
+      }
+    }
     setLoading(false);
   }, []);
 
@@ -331,13 +344,14 @@ function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => vo
   const [busy, setBusy] = useState(false);
   const ctMeta = courtTypeMeta(sos.court_type, lang);
   const isUrgent = sos.kind === "sos";
+  const claimed = sos.status === "claimed";
 
   const inner = (
     <>
       {mine ? (
         <div className="inline-block text-xs font-extrabold uppercase tracking-wide px-2 py-1 rounded-full mb-2"
           style={{ background: "var(--green-pop)", border: "1px solid var(--ink)" }}>
-          {t("board.your_game")}
+          {claimed ? `✅ ${t("board.game_claimed")}` : t("board.your_game")}
         </div>
       ) : sos.is_buddy ? (
         <div className="inline-block text-base font-extrabold uppercase px-2 py-1 rounded-full mb-2"
@@ -369,10 +383,12 @@ function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => vo
 
   if (mine) {
     return (
-      <div className="ccard p-4">
+      <div className="ccard p-4" style={claimed ? { borderColor: "var(--green-pop)", boxShadow: "4px 4px 0 var(--ink)" } : undefined}>
         {inner}
         <div className="flex gap-2 mt-3">
+          {!claimed && (
           <Link to="/sos/new" search={{ edit: sos.id }} className="cbtn cbtn-ghost flex-1 text-center">✏️ {t("board.edit")}</Link>
+          )}
           <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-green flex-1 text-center">{t("board.manage")}</Link>
         </div>
       </div>

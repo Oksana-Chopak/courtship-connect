@@ -56,6 +56,10 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
     title = t("celebrate.host_title");
     subtitle = t("celebrate.host_sub", { n: c.count });
     bigEmoji = "🎪";
+  } else if (c.kind === "joined") {
+    title = t("celebrate.joined_title");
+    subtitle = t("celebrate.joined_sub");
+    bigEmoji = "🎾";
   } else {
     title = t("celebrate.game_title");
     subtitle = t("celebrate.game_sub", { n: c.count });
