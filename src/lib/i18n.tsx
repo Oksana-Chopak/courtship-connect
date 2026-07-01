@@ -449,7 +449,7 @@ const en: Dict = {
   "date.pick": "Pick a date",
   "date.pick_title": "Pick a date",
   "date.close": "Close",
-  "date.window_help": "Up to 21 days ahead. Pick a time below.",
+  "date.window_help": "Up to {days} days ahead. Pick a time below.",
 
   "court.search_placeholder": "Search your court...",
   "court.group_seeded": "Club courts",
@@ -1215,7 +1215,7 @@ const sv: Dict = {
   "date.pick": "Välj datum",
   "date.pick_title": "Välj ett datum",
   "date.close": "Stäng",
-  "date.window_help": "Upp till 21 dagar framåt. Välj tid nedan.",
+  "date.window_help": "Upp till {days} dagar framåt. Välj tid nedan.",
 
   "court.search_placeholder": "Sök din bana...",
   "court.group_seeded": "Klubbens banor",

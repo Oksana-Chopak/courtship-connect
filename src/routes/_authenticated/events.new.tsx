@@ -166,7 +166,7 @@ function NewEvent() {
       </Section>
 
       <Section label={t("sos.when")}>
-        <DateChipPicker value={date} onChange={setDate} />
+        <DateChipPicker value={date} onChange={setDate} maxDays={180} />
         <div className="mt-3">
           <div className="csection-label mb-1">{t("slot.label")}</div>
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />

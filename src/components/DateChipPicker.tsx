@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 
-const MAX_DAYS = 21;
-
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function sameDay(a: Date, b: Date) { return a.toDateString() === b.toDateString(); }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -12,12 +10,12 @@ function fmtChip(d: Date, lang: Lang): string {
 }
 
 /** Day chips: Today, Tomorrow, [picked date if any], "Pick a date" → calendar. */
-export function DateChipPicker({ value, onChange }: { value: Date; onChange: (d: Date) => void }) {
+export function DateChipPicker({ value, onChange, maxDays = 21 }: { value: Date; onChange: (d: Date) => void; maxDays?: number }) {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
-  const maxDate = addDays(today, MAX_DAYS);
+  const maxDate = addDays(today, maxDays);
   const v = startOfDay(value);
   const mode: "today" | "tomorrow" | "custom" = sameDay(v, today) ? "today" : sameDay(v, tomorrow) ? "tomorrow" : "custom";
 
@@ -49,7 +47,7 @@ export function DateChipPicker({ value, onChange }: { value: Date; onChange: (d:
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
           style={{ background: "rgba(43,33,24,0.5)" }}
           onClick={() => setOpen(false)}>
-          <div className="ccard p-4 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
+          <div className="ccard p-4 w-full max-w-md space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
             <div className="flex items-center justify-between">
               <div className="font-display text-2xl">{t("date.pick_title")}</div>
               <button type="button" onClick={() => setOpen(false)} className="text-base font-extrabold underline">{t("date.close")}</button>
@@ -61,7 +59,7 @@ export function DateChipPicker({ value, onChange }: { value: Date; onChange: (d:
               lang={lang}
               onPick={(d) => { pickPreset(d); setOpen(false); }}
             />
-            <div className="text-base font-semibold text-[var(--ink)]">{t("date.window_help")}</div>
+            <div className="text-base font-semibold text-[var(--ink)]">{t("date.window_help", { days: maxDays })}</div>
           </div>
         </div>
       )}
@@ -73,10 +71,15 @@ function CalendarMonths({ selected, today, maxDate, lang, onPick }: {
   selected: Date; today: Date; maxDate: Date; lang: Lang; onPick: (d: Date) => void;
 }) {
   const months = useMemo(() => {
-    const first = new Date(today.getFullYear(), today.getMonth(), 1);
-    const second = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    return [first, second];
-  }, [today]);
+    const list: Date[] = [];
+    let m = new Date(today.getFullYear(), today.getMonth(), 1);
+    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+    while (m <= end) {
+      list.push(m);
+      m = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+    }
+    return list;
+  }, [today, maxDate]);
   return (
     <div className="space-y-5">
       {months.map((m) => (
