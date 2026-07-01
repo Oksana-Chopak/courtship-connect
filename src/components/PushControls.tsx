@@ -15,6 +15,7 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
   const [radius, setRadius] = useState(10);
   const [maxWeek, setMaxWeek] = useState(10);
   const [wakeMe, setWakeMe] = useState(false);
+  const [eventsOptin, setEventsOptin] = useState(true);
   const [busy, setBusy] = useState(false);
   const [testResult, setTestResult] = useState<string>("");
 
@@ -28,6 +29,7 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
         setRadius(d.buddy_radius_km ?? 10);
         setMaxWeek(d.push_max_per_week ?? 10);
         setWakeMe(d.push_wake_me ?? false);
+        setEventsOptin(d.events_optin ?? true);
       }
     })();
   }, []);
@@ -56,6 +58,7 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
       _sos_optin: sosOptin,
       _max_per_week: maxWeek,
       _wake_me: wakeMe,
+      _events_optin: eventsOptin,
     });
     setBusy(false);
     if (error) { toast.error(error.message ?? t("push.save")); return; }
@@ -133,6 +136,9 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
 
       {/* SOS opt-in */}
       <Toggle on={sosOptin} onClick={() => setSosOptin((v) => !v)} label={t("push.sos_optin")} />
+
+      {/* Events opt-in */}
+      <Toggle on={eventsOptin} onClick={() => setEventsOptin((v) => !v)} label={t("push.events_optin")} />
 
       {/* Radius */}
       <div>
