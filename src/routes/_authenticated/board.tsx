@@ -1,9 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, fetchMyHostedJoined, withdrawClaim, whatsappClaimLink, formatLabel, claimSos, type EligibleSosRow, type HostedJoinedRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -43,13 +41,10 @@ function BoardPage() {
   const [meId, setMeId] = useState<string | null>(null);
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
-  const [hostJoined, setHostJoined] = useState<HostedJoinedRow[]>([]);
-  const [myName, setMyName] = useState<string>("");
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [streakWeeks, setStreakWeeks] = useState(0);
-  const getPhone = useServerFn(getProfilePhone);
 
   const load = useCallback(async () => {
     const { data: au } = await supabase.auth.getUser();
@@ -60,24 +55,22 @@ function BoardPage() {
     // parallel instead of waterfalling. Each personal fetch degrades on its own
     // so one hiccup never blanks the board.
     const profileQ = uid
-      ? (supabase as any).from("profiles").select("name,home_city,games_played,rescues_count,referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
+      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
       : Promise.resolve(null);
     const countQ = uid
       ? (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0)
       : Promise.resolve(0);
     const histQ = uid ? fetchMyGameHistory(uid, 150).catch(() => [] as any[]) : Promise.resolve([] as any[]);
     const claimsQ = uid ? fetchMyUpcomingClaims(uid).catch(() => [] as any[]) : Promise.resolve([] as any[]);
-    const hostedJoinedQ = uid ? fetchMyHostedJoined(uid).catch(() => [] as any[]) : Promise.resolve([] as any[]);
 
-    const [u, p, m, ev, att, profRes, hostedCount, hist, claims, hostedJoined] = await Promise.all([
+    const [u, p, m, ev, att, profRes, hostedCount, hist, claims] = await Promise.all([
       fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance(),
-      profileQ, countQ, histQ, claimsQ, hostedJoinedQ,
+      profileQ, countQ, histQ, claimsQ,
     ]);
 
     setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att);
     const prof = (profRes as any)?.data;
     if (prof) {
-      setMyName(prof.name ?? "");
       setCityForStats(prof.home_city ?? "Uppsala");
       setGamesPlayed(prof.games_played ?? 0);
       const cel = checkCelebration(prof.games_played ?? 0, prof.rescues_count ?? 0, prof.referrals_count ?? 0, (hostedCount as number) ?? 0);
@@ -85,7 +78,6 @@ function BoardPage() {
     }
     setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
     setMyClaims(claims as any);
-    setHostJoined(hostedJoined as any);
     setLoading(false);
   }, []);
 
@@ -97,20 +89,6 @@ function BoardPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load]);
-
-  async function messageClaimer(targetId: string, whenIso: string, court: string | null) {
-    // open the tab inside the click gesture, redirect after the async phone fetch
-    const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
-    try {
-      const { phone } = await getPhone({ data: { targetId } });
-      const url = whatsappClaimLink(phone, myName, whenLabel(whenIso), court || "the court");
-      if (w) w.location.href = url;
-      else if (typeof window !== "undefined") window.location.href = url;
-    } catch (e: any) {
-      if (w) w.close();
-      toast.error(e?.message ?? "Could not open WhatsApp");
-    }
-  }
 
   async function onWithdraw(sos: EligibleSosRow) {
     if (typeof window !== "undefined" && !window.confirm(t("home.cant_make_confirm"))) return;
@@ -191,21 +169,6 @@ function BoardPage() {
       )}
 
       {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
-
-      {hostJoined.length > 0 && (
-        <div className="space-y-3">
-          <div className="csection-label">🎾 {t("board.joined_title")}</div>
-          {hostJoined.map((s) => (
-            <div key={s.game_id} className="ccard p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-display text-lg truncate">{s.claimer_name ?? t("board.someone")} {t("board.joined_you")}</div>
-                <div className="text-base text-[var(--ink)] font-semibold truncate">{whenLabel(s.when_iso)}{s.court_name ? ` \u00B7 ${s.court_name}` : ""}</div>
-              </div>
-              <button onClick={() => messageClaimer(s.claimer_id, s.when_iso, s.court_name)} className="cbtn cbtn-green shrink-0">{t("sos.message_wa")}</button>
-            </div>
-          ))}
-        </div>
-      )}
 
       {myClaims.length > 0 && (
         <div className="space-y-3">
