@@ -166,12 +166,28 @@ function RootComponent() {
         <Outlet />
         <Toaster
           position="top-center"
-          richColors
           closeButton
           expand
-          duration={8000}
+          duration={Infinity}
           toastOptions={{
-            style: { fontSize: "1.05rem", fontWeight: 600, padding: "16px 18px", minHeight: "64px" },
+            style: {
+              fontSize: "1.15rem",
+              fontWeight: 600,
+              lineHeight: 1.35,
+              padding: "18px 20px",
+              minHeight: "68px",
+              background: "var(--cream2, #FFF9EE)",
+              color: "var(--ink, #2B2118)",
+              border: "2px solid var(--ink, #2B2118)",
+              borderRadius: "18px",
+              boxShadow: "5px 5px 0 var(--ink, #2B2118)",
+            },
+            classNames: {
+              title: "font-extrabold",
+              description: "font-semibold",
+              actionButton: "!bg-[var(--coral)] !text-white !font-extrabold !rounded-full !px-4",
+              closeButton: "!bg-[var(--cream2)] !text-[var(--ink)] !border-[var(--ink)]",
+            },
           }}
         />
       </I18nProvider>
