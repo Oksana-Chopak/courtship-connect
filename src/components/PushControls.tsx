@@ -111,7 +111,7 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
         </button>
       )}
       {status === "subscribed" && <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>{t("push.enabled")}</div>}
-      {status === "subscribed" && (
+      {supported && status !== "denied" && (
         <button onClick={sendTest} disabled={busy} className="cbtn cbtn-ghost w-full">🧪 {t("push.test")}</button>
       )}
 
