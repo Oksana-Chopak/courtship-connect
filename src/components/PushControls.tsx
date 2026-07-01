@@ -69,9 +69,18 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
       const { data, error } = await (supabase as any).functions.invoke("notify-users", {
         body: { user_ids: [u.user.id], title: "🎾 Courtship", body: t("push.test_body"), url: "/board", tag: "courtship-test" },
       });
-      if (error) { toast.error(t("push.test_fail")); return; }
-      if (data && typeof data.sent === "number" && data.sent > 0) toast.success(t("push.test_sent"));
-      else toast.message(t("push.test_nosub"));
+      if (error) {
+        // Surface the real reason (e.g. "VAPID keys not configured") instead of a generic fail.
+        let detail = "";
+        try { const ctx = (error as any)?.context; if (ctx && typeof ctx.text === "function") detail = await ctx.text(); } catch { /* ignore */ }
+        toast.error(detail ? `${t("push.test_fail")}: ${String(detail).slice(0, 140)}` : t("push.test_fail"));
+        return;
+      }
+      const targets = typeof data?.targets === "number" ? data.targets : 0;
+      const sent = typeof data?.sent === "number" ? data.sent : 0;
+      if (sent > 0) toast.success(t("push.test_sent"));
+      else if (targets === 0) toast.message(t("push.test_nosub"));
+      else toast.error(t("push.test_sendfail", { n: targets }));
     } catch {
       toast.error(t("push.test_fail"));
     } finally {
