@@ -50,7 +50,7 @@ const en: Dict = {
   "sos.invite_hint": "They get a ping. Leave empty to post for everyone on the board.",
   "cal.add": "📅 Add to calendar",
   // Iteration 1 — Save My Set push controls
-  "push.title": "Last-minute SOS alerts",
+  "push.title": "Notifications",
   "push.sub": "Get pinged when a player nearby needs a partner. You set the rules.",
   "push.enable": "Turn on alerts",
   "push.enabled": "You're on the rescue squad ✓",
@@ -824,7 +824,7 @@ const sv: Dict = {
   "sos.invite_hint": "De får en pling. Lämna tomt för att posta för alla på tavlan.",
   "cal.add": "📅 Lägg i kalender",
   // Iteration 1 — Save My Set push controls
-  "push.title": "SOS-aviseringar i sista minuten",
+  "push.title": "Aviseringar",
   "push.sub": "Bli pingad när en spelare i närheten behöver en partner. Du bestämmer reglerna.",
   "push.enable": "Slå på aviseringar",
   "push.enabled": "Du är med i räddningsstyrkan ✓",
