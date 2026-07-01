@@ -92,6 +92,61 @@ export async function withdrawClaim(sosId: string): Promise<{ ok: boolean; re_fl
 }
 
 /** SOS / open games I claimed and that haven't started yet. */
+export type HostedJoinedRow = {
+  game_id: string;
+  sos_id: string | null;
+  claimer_id: string;
+  claimer_name: string | null;
+  when_iso: string;
+  court_name: string | null;
+  court_city: string | null;
+};
+
+/** Games I HOSTED that someone has joined and that haven't started yet.
+ *  = games where I'm player_a (the caller/host). This is the mirror of
+ *  fetchMyUpcomingClaims (player_b side) and is what surfaces "someone
+ *  joined your game" to the host — a signal that previously existed nowhere. */
+export async function fetchMyHostedJoined(uid: string): Promise<HostedJoinedRow[]> {
+  const nowIso = new Date().toISOString();
+  const { data: gs } = await (supabase as any)
+    .from("games")
+    .select("id,sos_id,player_b,played_at")
+    .eq("player_a", uid)
+    .gt("played_at", nowIso)
+    .order("played_at", { ascending: true });
+  const games = ((gs as any[]) ?? []);
+  if (!games.length) return [];
+  const claimerIds = Array.from(new Set(games.map((g) => g.player_b).filter(Boolean)));
+  const sosIds = Array.from(new Set(games.map((g) => g.sos_id).filter(Boolean)));
+  const [{ data: ps }, srsRes] = await Promise.all([
+    (supabase as any).rpc("players_directory", { _ids: claimerIds }),
+    sosIds.length
+      ? (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const nameMap = new Map<string, string>(((ps as any[]) ?? []).map((p) => [p.id, p.name]));
+  const sosRows = ((srsRes as any)?.data as any[]) ?? [];
+  const sosCourt = new Map<string, string>(sosRows.map((r) => [r.id, r.court_id]));
+  const courtIds = Array.from(new Set(sosRows.map((r) => r.court_id).filter(Boolean)));
+  const { data: cs } = courtIds.length
+    ? await (supabase as any).from("courts").select("id,name,city").in("id", courtIds)
+    : { data: [] as any[] };
+  const courtMap = new Map<string, any>(((cs as any[]) ?? []).map((c) => [c.id, c]));
+  return games.map((g) => {
+    const courtId = g.sos_id ? sosCourt.get(g.sos_id) : undefined;
+    const court = courtId ? courtMap.get(courtId) : undefined;
+    return {
+      game_id: g.id,
+      sos_id: g.sos_id ?? null,
+      claimer_id: g.player_b,
+      claimer_name: nameMap.get(g.player_b) ?? null,
+      when_iso: g.played_at,
+      court_name: court?.name ?? null,
+      court_city: court?.city ?? null,
+    };
+  });
+}
+
 export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow[]> {
   const nowIso = new Date().toISOString();
   // "Claims I made" = games where I'm player_b (the claimer). sos_requests.claimed_by
