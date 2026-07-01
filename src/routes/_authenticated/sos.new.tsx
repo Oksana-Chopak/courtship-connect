@@ -60,7 +60,7 @@ function NewSos() {
       setUid(u.user.id);
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("name,level,home_city")
+        .select("name,level,home_city,home_courts")
         .eq("id", u.user.id)
         .maybeSingle();
       const lv = (p as any)?.level ?? 3;
@@ -75,8 +75,12 @@ function NewSos() {
           setBuddies(((dir as any[]) ?? []).map((x) => ({ id: x.id, name: x.name })));
         }
       } catch { /* ignore */ }
-      const first = cs.find((c) => c.city === hc) ?? cs[0];
-      if (first) setCourtId(first.id);
+      // Default the court to MY home club (from profile home_courts), not the
+      // alphabetically-first court. Fall back to first-in-my-city, then first overall.
+      const homeCourtName = String((p as any)?.home_courts ?? "").split(",").map((x) => x.trim()).filter(Boolean)[0];
+      const homeCourt = homeCourtName ? cs.find((c) => c.name.toLowerCase() === homeCourtName.toLowerCase()) : undefined;
+      const first = homeCourt ?? cs.find((c) => c.city === hc) ?? cs[0];
+      if (first) { setCourtId(first.id); if (homeCourt) setCity(homeCourt.city as City); }
       setLevelMin(Math.max(1, lv - 1));
       setLevelMax(Math.min(5, lv + 1));
       // Default court_type from this user's most recent post
