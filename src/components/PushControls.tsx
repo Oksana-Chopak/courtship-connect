@@ -16,6 +16,7 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
   const [maxWeek, setMaxWeek] = useState(10);
   const [wakeMe, setWakeMe] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [testResult, setTestResult] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -63,6 +64,8 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
 
   async function sendTest() {
     setBusy(true);
+    setTestResult("");
+    let msg = "";
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { setBusy(false); return; }
@@ -70,21 +73,24 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
         body: { user_ids: [u.user.id], title: "🎾 Courtship", body: t("push.test_body"), url: "/board", tag: "courtship-test" },
       });
       if (error) {
-        // Surface the real reason (e.g. "VAPID keys not configured") instead of a generic fail.
+        // Surface the real reason (e.g. "VAPID keys not configured" / function not deployed).
         let detail = "";
         try { const ctx = (error as any)?.context; if (ctx && typeof ctx.text === "function") detail = await ctx.text(); } catch { /* ignore */ }
-        toast.error(detail ? `${t("push.test_fail")}: ${String(detail).slice(0, 140)}` : t("push.test_fail"));
+        msg = detail ? `${t("push.test_fail")}: ${detail}` : t("push.test_fail");
+        toast.error(msg.slice(0, 140));
         return;
       }
       const targets = typeof data?.targets === "number" ? data.targets : 0;
       const sent = typeof data?.sent === "number" ? data.sent : 0;
-      if (sent > 0) toast.success(t("push.test_sent"));
-      else if (targets === 0) toast.message(t("push.test_nosub"));
-      else toast.error(t("push.test_sendfail", { n: targets }));
-    } catch {
+      if (sent > 0) { msg = t("push.test_sent"); toast.success(msg); }
+      else if (targets === 0) { msg = t("push.test_nosub"); toast.message(msg); }
+      else { msg = t("push.test_sendfail", { n: targets }); toast.error(msg); }
+    } catch (e: any) {
+      msg = `${t("push.test_fail")}: ${e?.message ?? String(e)}`;
       toast.error(t("push.test_fail"));
     } finally {
       setBusy(false);
+      if (msg) setTestResult(msg);
     }
   }
 
@@ -113,6 +119,14 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
       {status === "subscribed" && <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>{t("push.enabled")}</div>}
       {supported && status !== "denied" && (
         <button onClick={sendTest} disabled={busy} className="cbtn cbtn-ghost w-full">🧪 {t("push.test")}</button>
+      )}
+      {testResult && (
+        <div className="text-xs text-[var(--ink)] break-words" style={{ userSelect: "text", WebkitUserSelect: "text" }}>
+          <span>{testResult}</span>
+          <button type="button"
+            onClick={() => { try { navigator.clipboard?.writeText(testResult); toast.success(t("push.copied")); } catch { /* ignore */ } }}
+            className="underline ml-2 font-extrabold whitespace-nowrap">{t("push.copy")}</button>
+        </div>
       )}
 
       <div className="border-t border-[var(--ink)]/15" />

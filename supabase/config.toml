@@ -1,1 +1,7 @@
 project_id = "ycsidxtrizgycfumkrnq"
+
+[functions.notify-users]
+verify_jwt = true
+
+[functions.sos-notify]
+verify_jwt = true
