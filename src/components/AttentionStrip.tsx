@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchPendingPostGameChecks, confirmGame, reportNoshow, archiveGame, type GameRow } from "@/lib/games";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";

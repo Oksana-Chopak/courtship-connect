@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/lib/i18n";
 
 function isStandalone(): boolean {

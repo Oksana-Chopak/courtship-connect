@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/lib/i18n";
 
 // Friendly, no-pressure "chip in via Swish" card. The Swish number lives in the DB

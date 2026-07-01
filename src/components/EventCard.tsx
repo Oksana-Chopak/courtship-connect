@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { whenLabel, whatsappLink, durationLabel } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { addCustomCourt, fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useI18n } from "@/lib/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 
 /** Searchable, accessible court picker with "Add your own" action. */

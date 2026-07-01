@@ -11,7 +11,7 @@ import { whenLabel, levelMeta } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 

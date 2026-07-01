@@ -5,7 +5,7 @@ import { fetchMyGameHistory } from "@/lib/games";
 import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak, RANK_LADDERS } from "@/lib/courtship";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { useI18n } from "@/lib/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/_authenticated/progress")({
   head: () => ({ meta: [{ title: "Your season — Courtship" }] }),

@@ -15,7 +15,7 @@ import { GetStarted } from "@/components/GetStarted";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { useI18n } from "@/lib/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),

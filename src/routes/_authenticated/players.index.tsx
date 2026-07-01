@@ -6,7 +6,7 @@ import { TopRescuers } from "@/components/TopRescuers";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds } from "@/lib/buddies";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/_authenticated/players/")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { LEVELS, CITIES, DURATIONS, durationLabel, type City } from "@/lib/courtship";
 import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
