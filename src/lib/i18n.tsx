@@ -604,6 +604,8 @@ const en: Dict = {
 
   // SOS detail
   "sos.broadcasting": "Broadcasting to {n} rescuers...",
+  "sos.widen": "Open to all levels",
+  "sos.widen_done": "Opened up — pinging more rescuers 🚨",
   "sos.im_in": "I'm in! 🎾",
   "sos.youre_in": "You're in! 🎾",
   "sos.your_host": "Your host",
@@ -1369,6 +1371,8 @@ const sv: Dict = {
   "sos.edit_saved": "Sparat ✓",
 
   "sos.broadcasting": "Sänder ut till {n} räddare...",
+  "sos.widen": "Öppna för alla nivåer",
+  "sos.widen_done": "Öppnat — pingar fler räddare 🚨",
   "sos.im_in": "Jag är med! 🎾",
   "sos.youre_in": "Du är med! 🎾",
   "sos.your_host": "Din värd",

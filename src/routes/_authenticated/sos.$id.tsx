@@ -142,6 +142,20 @@ function SosDetail() {
     navigate({ to: "/board" });
   }
 
+  // Owner one-tap widen: open the SOS to all levels and re-flare, so the
+  // existing notify_on_flare trigger re-blasts the now-wider rescuer audience.
+  async function widenLevels() {
+    setBusy(true);
+    const { error } = await (supabase as any)
+      .from("sos_requests")
+      .update({ level_min: 1, level_max: 5, flared_at: new Date().toISOString() })
+      .eq("id", sos!.id);
+    setBusy(false);
+    if (error) { oops(error); return; }
+    toast.success(t("sos.widen_done"));
+    load();
+  }
+
   async function shareSos() {
     const link = await myInviteLink("/sos/" + sos!.id);
     const msg = t(sos!.kind === "open" ? "share.game_msg" : "share.sos_msg", {
@@ -235,6 +249,9 @@ function SosDetail() {
           </div>
         )}
 
+        {!full && !isOpen && (sos.level_min > 1 || sos.level_max < 5) && (
+          <button className="cbtn cbtn-coral w-full" disabled={busy} onClick={widenLevels}>🎯 {t("sos.widen")}</button>
+        )}
         {!full && (
           <button className="cbtn cbtn-green w-full" onClick={shareSos}>{t("share.button")}</button>
         )}
