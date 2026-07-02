@@ -15,7 +15,10 @@ import { SlotPicker } from "@/components/SlotPicker";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
-  validateSearch: (sp: Record<string, unknown>): { edit?: string } => ({ edit: typeof sp.edit === "string" ? sp.edit : undefined }),
+  validateSearch: (sp: Record<string, unknown>): { edit?: string; planned?: boolean } => ({
+    edit: typeof sp.edit === "string" ? sp.edit : undefined,
+    planned: sp.planned === true || sp.planned === "1" ? true : undefined,
+  }),
   component: NewSos,
 });
 
