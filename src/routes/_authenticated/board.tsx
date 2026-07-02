@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { shareInvite } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
@@ -258,6 +259,7 @@ function BoardPage() {
           <div className="text-base text-[var(--ink)] font-semibold">{t("rescue.empty_sub")}</div>
           <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
             <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral">📅 {t("board.plan_game")}</Link>
+            <button type="button" className="cbtn cbtn-green" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
             <Link to="/me" className="cbtn cbtn-ghost">🎾 {t("empty.dir_new_cta")}</Link>
           </div>
         </div>

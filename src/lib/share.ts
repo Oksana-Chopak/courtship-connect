@@ -46,6 +46,17 @@ export async function myInviteLink(next?: string): Promise<string> {
   return `${origin}/auth?${params.toString()}`;
 }
 
+// One-tap "invite a friend" — builds my invite link + code and opens the share
+// sheet. Pass the already-translated message template ("{link}"/"{code}") and
+// the copied-toast text so this lib stays i18n-free.
+export async function shareInvite(messageTemplate: string, copiedNote: string): Promise<void> {
+  const link = await myInviteLink();
+  let code = "";
+  try { code = new URL(link).searchParams.get("code") ?? ""; } catch { /* ignore */ }
+  const msg = messageTemplate.replace("{link}", link).replace("{code}", code);
+  await shareMessage(msg, copiedNote);
+}
+
 // Native share sheet (WhatsApp / Telegram / etc.) with a clipboard fallback.
 export async function shareMessage(message: string, copiedNote: string): Promise<void> {
   if (typeof navigator !== "undefined" && (navigator as any).share) {

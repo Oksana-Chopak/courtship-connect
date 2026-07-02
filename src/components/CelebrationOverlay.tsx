@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import type { Celebration } from "@/lib/celebrate";
 import { useI18n } from "@/lib/i18n";
+import { shareInvite } from "@/lib/share";
 
 // Dark "celebration moment" — the elevated reward screen. Driven entirely by our
 // own tracks (games/rescues/recruits + tier crossings). No points currency.
@@ -139,6 +140,13 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
 
         <button type="button" className="cbtn cbtn-green w-full mt-8" onClick={onClose}>
           {t("celebrate.cta")}
+        </button>
+        <button
+          type="button"
+          className="cbtn cbtn-ghost w-full mt-2"
+          onClick={(e) => { e.stopPropagation(); void shareInvite(t("invite.message"), t("invite.copied")); }}
+        >
+          {t("invite.friend_cta")}
         </button>
       </div>
     </div>
