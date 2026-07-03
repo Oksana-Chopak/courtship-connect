@@ -18,9 +18,9 @@ function prevHalfHour(): string {
 
 type P = { id: string; name: string };
 
-export function LogGameCard() {
+export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [players, setPlayers] = useState<P[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [search, setSearch] = useState("");

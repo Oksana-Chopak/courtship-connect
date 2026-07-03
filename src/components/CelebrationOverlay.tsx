@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import type { Celebration } from "@/lib/celebrate";
 import { useI18n } from "@/lib/i18n";
 import { shareInvite } from "@/lib/share";
+import { Link } from "@tanstack/react-router";
 
 // Dark "celebration moment" — the elevated reward screen. Driven entirely by our
 // own tracks (games/rescues/recruits + tier crossings). No points currency.
@@ -148,6 +149,14 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
         >
           {t("invite.friend_cta")}
         </button>
+        <Link
+          to="/progress"
+          onClick={onClose}
+          className="block text-center font-extrabold underline mt-3"
+          style={{ color: "#FFF6E8" }}
+        >
+          📈 {t("celebrate.season")}
+        </Link>
       </div>
     </div>
   );

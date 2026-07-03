@@ -142,6 +142,7 @@ function BoardPage() {
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
       </div>
+      <Link to="/matches" search={{ log: true }} className="cbtn cbtn-ghost w-full text-center block">✅ {t("board.log_cta")}</Link>
 
       {/* count + filters, right under the create buttons */}
       <div className="flex items-center gap-2">
@@ -149,8 +150,8 @@ function BoardPage() {
           {timeline.length > 0 ? t("tonight.pulse", { n: timeline.length }) : t("tonight.pulse_quiet")}
         </span>
         {streakWeeks >= 1 && (
-          <span className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
-            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>🔥 {streakWeeks}</span>
+          <Link to="/progress" className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
+            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>🔥 {streakWeeks}</Link>
         )}
         <button type="button" onClick={() => setFiltersOpen(true)}
           className="ml-auto inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm shrink-0"

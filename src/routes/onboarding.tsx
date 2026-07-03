@@ -119,6 +119,7 @@ function Onboarding() {
             <h1 className="font-display text-3xl leading-tight">{t("ob.first_title")}</h1>
             <p className="font-semibold" style={{ opacity: 0.75 }}>{t("ob.first_sub")}</p>
             <button onClick={() => navigate({ to: "/board" })} className="cbtn cbtn-coral w-full">{t("ob.first_go")}</button>
+            <button onClick={() => navigate({ to: "/matches", search: { log: true } })} className="cbtn cbtn-green w-full">✅ {t("ob.first_log")}</button>
             <button onClick={() => navigate({ to: "/players" })} className="cbtn cbtn-ghost w-full">{t("ob.first_browse")}</button>
           </div>
         </div>
