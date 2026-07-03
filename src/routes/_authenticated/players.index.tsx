@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City } from "@/lib/courtship";
-import { TopRescuers } from "@/components/TopRescuers";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds } from "@/lib/buddies";
@@ -95,8 +94,6 @@ function Players() {
 
       {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
       {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center block">{t("match.cta")}</Link>}
-
-      <TopRescuers />
 
       <Link to="/leaders" className="ccard p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">

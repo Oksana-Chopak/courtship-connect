@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { shareInvite } from "@/lib/share";
+import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
@@ -339,6 +339,19 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
   );
 }
 
+function ShareRow({ sos }: { sos: EligibleSosRow }) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); void shareTo("/sos/" + sos.id, t("share.game_fwd"), t("invite.copied")); }}
+      className="absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-extrabold border-2 border-[var(--ink)]"
+      style={{ background: "var(--cream2)" }}
+      aria-label={t("share.spread")}
+    >↗ {t("share.spread")}</button>
+  );
+}
+
 function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -399,17 +412,21 @@ function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => vo
   }
   if (isUrgent) {
     return (
-      <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
-        style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}>
-        {inner}
-        <div className="mt-3">
-          <span className="cbtn cbtn-coral w-full" style={{ pointerEvents: "none" }}>{t("sos.im_in")}</span>
-        </div>
-      </Link>
+      <div className="relative">
+        <ShareRow sos={sos} />
+        <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
+          style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}>
+          {inner}
+          <div className="mt-3">
+            <span className="cbtn cbtn-coral w-full" style={{ pointerEvents: "none" }}>{t("sos.im_in")}</span>
+          </div>
+        </Link>
+      </div>
     );
   }
   return (
-    <div className="ccard p-4">
+    <div className="ccard p-4 relative">
+      <ShareRow sos={sos} />
       {inner}
       <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
         onClick={async () => {

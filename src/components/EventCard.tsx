@@ -14,6 +14,7 @@ import {
   type AttendeeContact,
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
+import { shareTo } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
 
 export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
@@ -154,6 +155,12 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
           </button>
         </div>
       )}
+      <button
+        type="button"
+        onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}
+        className="mt-3 text-sm font-extrabold underline"
+        style={{ color: "var(--wood, #8a6d3b)" }}
+      >↗ {t("share.spread")}</button>
     </div>
   );
 }

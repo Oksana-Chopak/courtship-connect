@@ -58,6 +58,13 @@ export async function shareInvite(messageTemplate: string, copiedNote: string): 
 }
 
 // Native share sheet (WhatsApp / Telegram / etc.) with a clipboard fallback.
+// Share any in-app destination (a game / event) with your invite link baked in,
+// so whoever a friend forwards it to lands on it and can sign up in one flow.
+export async function shareTo(next: string, messageTemplate: string, copiedNote: string): Promise<void> {
+  const link = await myInviteLink(next);
+  await shareMessage(messageTemplate.replace("{link}", link), copiedNote);
+}
+
 export async function shareMessage(message: string, copiedNote: string): Promise<void> {
   if (typeof navigator !== "undefined" && (navigator as any).share) {
     try {
