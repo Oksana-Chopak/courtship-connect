@@ -4,8 +4,7 @@ import { fetchMyGameHistory } from "@/lib/games";
 import { useI18n } from "@/lib/i18n";
 
 // Collection layer: which courts you've actually played at. Derived purely from
-// game history (game → sos → court), so no new tables or SQL. Games logged
-// without an SOS (no court) simply don't contribute a stamp.
+// game history: a game's own court_id (logged games) or its SOS's court.
 export function CourtsPassport() {
   const { t } = useI18n();
   const [courts, setCourts] = useState<string[]>([]);
@@ -15,10 +14,15 @@ export function CourtsPassport() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const hist = await fetchMyGameHistory(u.user.id, 200);
+      const directIds = hist.map((g) => g.court_id).filter(Boolean) as string[];
       const sosIds = Array.from(new Set(hist.map((g) => g.sos_id).filter(Boolean) as string[]));
-      if (!sosIds.length) return;
-      const { data: sosRows } = await (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds);
-      const courtIds = Array.from(new Set(((sosRows as any[]) ?? []).map((s) => s.court_id).filter(Boolean)));
+      const { data: sosRows } = sosIds.length
+        ? await (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds)
+        : { data: [] as any[] };
+      const courtIds = Array.from(new Set([
+        ...((sosRows as any[]) ?? []).map((s) => s.court_id).filter(Boolean),
+        ...directIds,
+      ]));
       if (!courtIds.length) return;
       const { data: cs } = await (supabase as any).from("courts").select("id,name").in("id", courtIds);
       const names = Array.from(

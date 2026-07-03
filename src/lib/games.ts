@@ -13,6 +13,7 @@ export type GameRow = {
   created_at?: string | null;
   score?: string | null;
   winner?: string | null;
+  court_id?: string | null;
 };
 
 /** Games this user played that are ≥ 2h after play time, not archived by them,
