@@ -17,6 +17,7 @@ export function BottomTabBar() {
   const path = loc.pathname;
   const [boardBadge, setBoardBadge] = useState(0);
   const [profileBadge, setProfileBadge] = useState(0);
+  const [plusOpen, setPlusOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,60 +42,113 @@ export function BottomTabBar() {
     return () => { cancelled = true; clearInterval(i); supabase.removeChannel(ch); };
   }, []);
 
-  const tabs: Tab[] = [
+  const left: Tab[] = [
     { to: "/board", icon: "📋", label: t("tabs.board"), match: (p) => p.startsWith("/board") || p.startsWith("/rescue") || p.startsWith("/games") || p.startsWith("/sos"), badge: boardBadge },
-    { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") || p.startsWith("/leaders") },
+    { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") },
+  ];
+  const right: Tab[] = [
+    { to: "/leaders", icon: "🏆", label: t("tabs.leaders"), match: (p) => p.startsWith("/leaders") },
     { to: "/me", icon: "🙂", label: t("tabs.profile"), match: (p) => p === "/me" || p.startsWith("/admin") || p.startsWith("/progress") || p.startsWith("/matches") || p.startsWith("/people") || p.startsWith("/settings") || p.startsWith("/help"), badge: profileBadge },
   ];
 
+  const TabItem = ({ tab }: { tab: Tab }) => {
+    const active = tab.match(path);
+    return (
+      <li key={tab.to}>
+        <Link
+          to={tab.to}
+          className="relative flex flex-col items-center justify-center gap-1 px-1 py-2"
+          style={{ minHeight: 64, color: "var(--ink)" }}
+        >
+          <span aria-hidden="true" className="text-2xl" style={{ filter: active ? "none" : "grayscale(0.4)", opacity: active ? 1 : 0.85 }}>
+            {tab.icon}
+          </span>
+          <span className="text-sm font-extrabold leading-none">{tab.label}</span>
+          {tab.badge ? (
+            <span
+              className="absolute top-1 right-2 rounded-full px-1.5 flex items-center justify-center border-2"
+              style={{ background: "var(--coral)", color: "#FFF6E8", borderColor: "var(--ink)", minWidth: 22, height: 22, fontSize: "0.875rem", fontWeight: 800 }}
+            >
+              {tab.badge > 99 ? "99+" : tab.badge}
+            </span>
+          ) : null}
+          {active && (
+            <span aria-hidden="true" className="absolute left-3 right-3 bottom-0 rounded-t-full" style={{ height: 4, background: "var(--coral)" }} />
+          )}
+        </Link>
+      </li>
+    );
+  };
+
   return (
-    <nav
-      aria-label="Primary"
-      className="shrink-0 border-t-2 border-[var(--ink)]"
-      style={{ background: "var(--cream2)", paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
-      <ul className="grid grid-cols-3 max-w-md mx-auto">
-        {tabs.map((tab) => {
-          const active = tab.match(path);
-          return (
-            <li key={tab.to}>
-              <Link
-                to={tab.to}
-                className="relative flex flex-col items-center justify-center gap-1 px-1 py-2"
-                style={{ minHeight: 64, color: "var(--ink)" }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="text-2xl"
-                  style={{ filter: active ? "none" : "grayscale(0.4)", opacity: active ? 1 : 0.85 }}
-                >
-                  {tab.icon}
+    <>
+      {plusOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(43,33,24,0.5)" }}
+          onClick={() => setPlusOpen(false)}
+        >
+          <div className="w-full max-w-md p-4 pb-24" onClick={(e) => e.stopPropagation()}>
+            <div className="ccard p-4 space-y-2" style={{ background: "var(--cream2)" }}>
+              <div className="csection-label">{t("plus.title")}</div>
+              <Link to="/sos/new" search={{ planned: undefined }} onClick={() => setPlusOpen(false)}
+                className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
+                style={{ background: "var(--cream)" }}>
+                <span className="text-2xl" aria-hidden="true">🎾</span>
+                <span className="min-w-0">
+                  <span className="block font-display text-lg leading-tight">{t("plus.post")}</span>
+                  <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.post_sub")}</span>
                 </span>
-                <span className="text-base font-extrabold leading-none">{tab.label}</span>
-                {tab.badge ? (
-                  <span
-                    className="absolute top-1 right-3 rounded-full px-1.5 flex items-center justify-center border-2"
-                    style={{
-                      background: "var(--coral)", color: "#FFF6E8",
-                      borderColor: "var(--ink)", minWidth: 22, height: 22,
-                      fontSize: "0.875rem", fontWeight: 800,
-                    }}
-                  >
-                    {tab.badge > 99 ? "99+" : tab.badge}
-                  </span>
-                ) : null}
-                {active && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-3 right-3 bottom-0 rounded-t-full"
-                    style={{ height: 4, background: "var(--coral)" }}
-                  />
-                )}
               </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+              <Link to="/matches" search={{ log: true }} onClick={() => setPlusOpen(false)}
+                className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
+                style={{ background: "var(--green-pop)" }}>
+                <span className="text-2xl" aria-hidden="true">✅</span>
+                <span className="min-w-0">
+                  <span className="block font-display text-lg leading-tight">{t("plus.log")}</span>
+                  <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.log_sub")}</span>
+                </span>
+              </Link>
+              <Link to="/events/new" onClick={() => setPlusOpen(false)}
+                className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
+                style={{ background: "var(--cream)" }}>
+                <span className="text-2xl" aria-hidden="true">🎪</span>
+                <span className="min-w-0">
+                  <span className="block font-display text-lg leading-tight">{t("plus.host")}</span>
+                  <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.host_sub")}</span>
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      <nav
+        aria-label="Primary"
+        className="shrink-0 border-t-2 border-[var(--ink)]"
+        style={{ background: "var(--cream2)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <ul className="grid grid-cols-5 max-w-md mx-auto items-end">
+          {left.map((tab) => <TabItem key={tab.to} tab={tab} />)}
+          <li className="flex items-center justify-center" style={{ minHeight: 64 }}>
+            <button
+              type="button"
+              aria-label={t("plus.title")}
+              aria-expanded={plusOpen}
+              onClick={() => setPlusOpen((v) => !v)}
+              className="flex items-center justify-center rounded-full font-extrabold"
+              style={{
+                width: 58, height: 58, transform: "translateY(-14px)",
+                background: "var(--coral)", color: "#FFF6E8",
+                border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
+                fontSize: 32, lineHeight: 1,
+              }}
+            >
+              {plusOpen ? "×" : "＋"}
+            </button>
+          </li>
+          {right.map((tab) => <TabItem key={tab.to} tab={tab} />)}
+        </ul>
+      </nav>
+    </>
   );
 }
