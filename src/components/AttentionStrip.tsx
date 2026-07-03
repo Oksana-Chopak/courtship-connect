@@ -31,7 +31,10 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
           sosIds.length ? (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds) : Promise.resolve({ data: [] }),
           (supabase as any).rpc("players_directory", { _ids: otherIds }),
         ]);
-        const courtIds = Array.from(new Set(((sosRows as any[]) ?? []).map((s) => s.court_id).filter(Boolean)));
+        const courtIds = Array.from(new Set([
+          ...((sosRows as any[]) ?? []).map((s) => s.court_id).filter(Boolean),
+          ...pendingRows.map((g) => g.court_id).filter(Boolean),
+        ]));
         const { data: cs } = courtIds.length
           ? await (supabase as any).from("courts").select("id,name").in("id", courtIds)
           : { data: [] as any[] };
@@ -41,7 +44,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
         const meta: Record<string, { court: string; other: string; otherName: string }> = {};
         for (const g of pendingRows) {
           const otherId = g.player_a === u.user!.id ? g.player_b : g.player_a;
-          const cid = g.sos_id ? sosToCourt.get(g.sos_id) : undefined;
+          const cid = g.court_id ?? (g.sos_id ? sosToCourt.get(g.sos_id) : undefined);
           meta[g.id] = {
             court: (cid && courtName.get(cid)) || "the court",
             other: otherId,
