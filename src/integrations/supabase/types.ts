@@ -260,6 +260,7 @@ export type Database = {
           archived_by: string[]
           confirmed_a: boolean
           confirmed_b: boolean
+          court_id: string | null
           created_at: string
           id: string
           played_at: string
@@ -274,6 +275,7 @@ export type Database = {
           archived_by?: string[]
           confirmed_a?: boolean
           confirmed_b?: boolean
+          court_id?: string | null
           created_at?: string
           id?: string
           played_at: string
@@ -288,6 +290,7 @@ export type Database = {
           archived_by?: string[]
           confirmed_a?: boolean
           confirmed_b?: boolean
+          court_id?: string | null
           created_at?: string
           id?: string
           played_at?: string
@@ -299,6 +302,13 @@ export type Database = {
           winner?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "games_court_id_fkey"
+            columns: ["court_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "games_sos_id_fkey"
             columns: ["sos_id"]
@@ -891,6 +901,7 @@ export type Database = {
       leave_event: { Args: { _event_id: string }; Returns: undefined }
       log_game: {
         Args: {
+          _court_id?: string
           _other_id: string
           _played_at: string
           _score?: string
