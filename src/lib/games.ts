@@ -47,15 +47,30 @@ export async function fetchPendingPostGameChecks(uid: string): Promise<GameRow[]
 /** Log a game you played (even one not arranged through the app). Creates a
  *  game already confirmed on your side; the other player confirms theirs, then
  *  it counts for both (via the existing bump trigger). Needs the log_game RPC. */
-export async function logGame(otherId: string, playedAtISO: string, score?: string, winner?: string | null): Promise<void> {
+export async function logGame(
+  otherId: string,
+  playedAtISO: string,
+  score?: string,
+  winner?: string | null,
+  courtId?: string | null,
+): Promise<{ courtSaved: boolean }> {
   const params: Record<string, any> = {
     _other_id: otherId,
     _played_at: playedAtISO,
     _score: score && score.trim() ? score.trim() : null,
   };
   if (winner) params._winner = winner; // only send when set — resilient if the RPC isn't upgraded yet
-  const { error } = await (supabase as any).rpc("log_game", params);
+  if (courtId) params._court_id = courtId;
+  let { error } = await (supabase as any).rpc("log_game", params);
+  // Graceful path if the 5-arg RPC (court) isn't applied yet: retry without the
+  // court so the game itself is never lost, and tell the caller.
+  if (error && courtId && /(_court_id|does not exist|PGRST202|schema cache)/i.test(error.message ?? "")) {
+    delete params._court_id;
+    ({ error } = await (supabase as any).rpc("log_game", params));
+    if (!error) return { courtSaved: false };
+  }
   if (error) throw new Error(error.message);
+  return { courtSaved: !!courtId };
 }
 
 export async function confirmGame(gameId: string, score?: string, winner?: string | null) {

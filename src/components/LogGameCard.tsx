@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { logGame } from "@/lib/games";
+import { CourtCombobox } from "@/components/CourtCombobox";
+import { DateChipPicker } from "@/components/DateChipPicker";
+import { SlotPicker } from "@/components/SlotPicker";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 
-function localNow(): string {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm for datetime-local
+function today(): Date { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+/** "We just finished" default: the previous half-hour mark. */
+function prevHalfHour(): string {
+  const n = new Date();
+  const m = n.getMinutes() >= 30 ? 30 : 0;
+  return `${String(n.getHours()).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 type P = { id: string; name: string };
@@ -21,7 +26,10 @@ export function LogGameCard() {
   const [search, setSearch] = useState("");
   const [otherId, setOtherId] = useState<string | null>(null);
   const [otherName, setOtherName] = useState("");
-  const [when, setWhen] = useState(localNow());
+  const [date, setDate] = useState<Date>(() => today());
+  const [time, setTime] = useState<string>(() => prevHalfHour());
+  const [city, setCity] = useState("Uppsala");
+  const [courtId, setCourtId] = useState("");
   const [score, setScore] = useState("");
   const [winner, setWinner] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -31,6 +39,10 @@ export function LogGameCard() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       setMeId(u.user?.id ?? null);
+      if (u.user) {
+        const { data: p } = await (supabase as any).from("profiles").select("home_city").eq("id", u.user.id).maybeSingle();
+        if (p?.home_city) setCity(p.home_city);
+      }
       const { data } = await (supabase as any).rpc("players_directory");
       setPlayers(((data as any[]) ?? []).map((p) => ({ id: p.id, name: p.name ?? "Player" })));
     })();
@@ -48,15 +60,21 @@ export function LogGameCard() {
     }
     setBusy(true);
     try {
-      await logGame(otherId, new Date(when).toISOString(), score, winner || null);
+      const [hh, mm] = (time || prevHalfHour()).split(":").map(Number);
+      const playedAt = new Date(date);
+      playedAt.setHours(hh, mm, 0, 0);
+      const res = await logGame(otherId, playedAt.toISOString(), score, winner || null, courtId || null);
       toast.success(t("log.done", { name: otherName }));
+      if (courtId && !res.courtSaved) toast.message(t("log.court_later"));
       setOpen(false);
       setOtherId(null);
       setOtherName("");
       setSearch("");
       setScore("");
       setWinner("");
-      setWhen(localNow());
+      setCourtId("");
+      setDate(today());
+      setTime(prevHalfHour());
     } catch (e: any) {
       oops(e);
     } finally {
@@ -114,8 +132,14 @@ export function LogGameCard() {
       )}
 
       <div>
+        <div className="csection-label">{t("log.court")}</div>
+        <CourtCombobox city={city} valueId={courtId} onChange={(id) => setCourtId(id)} />
+      </div>
+
+      <div className="space-y-2">
         <div className="csection-label">{t("log.when")}</div>
-        <input type="datetime-local" className="cinput" value={when} onChange={(e) => setWhen(e.target.value)} />
+        <DateChipPicker value={date} onChange={setDate} maxDays={0} pastDays={30} />
+        <SlotPicker city={city} date={date} value={time} onChange={setTime} allowPast ariaLabel={t("log.when")} />
       </div>
 
       <div>

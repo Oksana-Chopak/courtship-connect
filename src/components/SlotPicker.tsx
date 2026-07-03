@@ -9,16 +9,23 @@ export function SlotPicker({
   value,
   onChange,
   ariaLabel,
+  allowPast = false,
 }: {
   city: string;
   date: Date;
   value: string; // "HH:MM"
   onChange: (v: string) => void;
   ariaLabel?: string;
+  /** For logging past games: offer the whole day's slots, not just future ones. */
+  allowPast?: boolean;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const slots = useMemo(() => generateSlots(city, date), [city, date]);
+  const slots = useMemo(() => {
+    if (!allowPast) return generateSlots(city, date);
+    const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
+    return generateSlots(city, date, dayStart);
+  }, [city, date, allowPast]);
 
   return (
     <div>

@@ -10,14 +10,17 @@ function fmtChip(d: Date, lang: Lang): string {
 }
 
 /** Day chips: Today, Tomorrow, [picked date if any], "Pick a date" → calendar. */
-export function DateChipPicker({ value, onChange, maxDays = 21 }: { value: Date; onChange: (d: Date) => void; maxDays?: number }) {
+export function DateChipPicker({ value, onChange, maxDays = 21, pastDays = 0 }: { value: Date; onChange: (d: Date) => void; maxDays?: number; pastDays?: number }) {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const today = startOfDay(new Date());
-  const tomorrow = addDays(today, 1);
+  const minDate = addDays(today, -pastDays);
   const maxDate = addDays(today, maxDays);
+  // Logging mode (past window, no future): the second preset is Yesterday, not Tomorrow.
+  const pastMode = pastDays > 0 && maxDays === 0;
+  const altDay = pastMode ? addDays(today, -1) : addDays(today, 1);
   const v = startOfDay(value);
-  const mode: "today" | "tomorrow" | "custom" = sameDay(v, today) ? "today" : sameDay(v, tomorrow) ? "tomorrow" : "custom";
+  const mode: "today" | "alt" | "custom" = sameDay(v, today) ? "today" : sameDay(v, altDay) ? "alt" : "custom";
 
   function pickPreset(d: Date) {
     const next = new Date(d);
@@ -31,8 +34,8 @@ export function DateChipPicker({ value, onChange, maxDays = 21 }: { value: Date;
         <button type="button" className={`cchip ${mode === "today" ? "cchip-on" : ""}`} onClick={() => pickPreset(today)}>
           {t("sos.today")}
         </button>
-        <button type="button" className={`cchip ${mode === "tomorrow" ? "cchip-on" : ""}`} onClick={() => pickPreset(tomorrow)}>
-          {t("sos.tomorrow")}
+        <button type="button" className={`cchip ${mode === "alt" ? "cchip-on" : ""}`} onClick={() => pickPreset(altDay)}>
+          {pastMode ? t("date.yesterday") : t("sos.tomorrow")}
         </button>
         {mode === "custom" && (
           <button type="button" className="cchip cchip-on" onClick={() => setOpen(true)}>
@@ -55,11 +58,12 @@ export function DateChipPicker({ value, onChange, maxDays = 21 }: { value: Date;
             <CalendarMonths
               selected={v}
               today={today}
+              minDate={minDate}
               maxDate={maxDate}
               lang={lang}
               onPick={(d) => { pickPreset(d); setOpen(false); }}
             />
-            <div className="text-base font-semibold text-[var(--ink)]">{t("date.window_help", { days: maxDays })}</div>
+            <div className="text-base font-semibold text-[var(--ink)]">{pastMode ? t("date.window_help_past", { days: pastDays }) : t("date.window_help", { days: maxDays })}</div>
           </div>
         </div>
       )}
@@ -67,30 +71,30 @@ export function DateChipPicker({ value, onChange, maxDays = 21 }: { value: Date;
   );
 }
 
-function CalendarMonths({ selected, today, maxDate, lang, onPick }: {
-  selected: Date; today: Date; maxDate: Date; lang: Lang; onPick: (d: Date) => void;
+function CalendarMonths({ selected, today, minDate, maxDate, lang, onPick }: {
+  selected: Date; today: Date; minDate: Date; maxDate: Date; lang: Lang; onPick: (d: Date) => void;
 }) {
   const months = useMemo(() => {
     const list: Date[] = [];
-    let m = new Date(today.getFullYear(), today.getMonth(), 1);
+    let m = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
     const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
     while (m <= end) {
       list.push(m);
       m = new Date(m.getFullYear(), m.getMonth() + 1, 1);
     }
     return list;
-  }, [today, maxDate]);
+  }, [minDate, maxDate]);
   return (
     <div className="space-y-5">
       {months.map((m) => (
-        <MonthGrid key={m.toISOString()} month={m} selected={selected} today={today} maxDate={maxDate} lang={lang} onPick={onPick} />
+        <MonthGrid key={m.toISOString()} month={m} selected={selected} today={today} minDate={minDate} maxDate={maxDate} lang={lang} onPick={onPick} />
       ))}
     </div>
   );
 }
 
-function MonthGrid({ month, selected, today, maxDate, lang, onPick }: {
-  month: Date; selected: Date; today: Date; maxDate: Date; lang: Lang; onPick: (d: Date) => void;
+function MonthGrid({ month, selected, today, minDate, maxDate, lang, onPick }: {
+  month: Date; selected: Date; today: Date; minDate: Date; maxDate: Date; lang: Lang; onPick: (d: Date) => void;
 }) {
   const monthLabel = month.toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB", { month: "long", year: "numeric" });
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
@@ -112,7 +116,7 @@ function MonthGrid({ month, selected, today, maxDate, lang, onPick }: {
       <div className="grid grid-cols-7 gap-1">
         {cells.map((d, i) => {
           if (!d) return <div key={i} />;
-          const disabled = d < today || d > maxDate;
+          const disabled = d < minDate || d > maxDate;
           const isSel = d.toDateString() === selected.toDateString();
           const isToday = d.toDateString() === today.toDateString();
           return (
