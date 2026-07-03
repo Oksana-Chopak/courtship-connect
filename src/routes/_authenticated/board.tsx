@@ -142,6 +142,11 @@ function BoardPage() {
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
       </div>
+      {gamesPlayed === 0 && (
+        <p className="text-sm font-semibold text-center -mt-2" style={{ color: "rgba(43,33,24,0.6)" }}>
+          {t("tonight.hero_hint")}
+        </p>
+      )}
       <Link to="/matches" search={{ log: true }} className="cbtn cbtn-ghost w-full text-center block">✅ {t("board.log_cta")}</Link>
 
       {/* count + filters, right under the create buttons */}

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
 import { StreakCard } from "@/components/StreakCard";
+import { CourtsPassport } from "@/components/CourtsPassport";
 import { fetchPendingRequestsTo } from "@/lib/buddies";
 import { activityTier, rescuerTier, recruiterTier, matchmakerTier, levelMeta, vibeEmoji } from "@/lib/courtship";
 
@@ -20,33 +21,13 @@ function RankCircle({ tier, fallbackEmoji, label }: { tier: Tier; fallbackEmoji:
     <div className="flex flex-col items-center text-center gap-1">
       <div
         className="flex items-center justify-center rounded-full"
-        style={{ width: 52, height: 52, background: started ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: started ? 1 : 0.5 }}
+        style={{ width: 54, height: 54, background: started ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: started ? 1 : 0.5 }}
       >
-        <span style={{ fontSize: 24 }}>{started ? tier!.emoji : fallbackEmoji}</span>
+        <span style={{ fontSize: 25 }}>{started ? tier!.emoji : fallbackEmoji}</span>
       </div>
       <div className="font-extrabold text-[10px] leading-tight">{started ? tier!.name : "—"}</div>
       <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: "var(--wood, #8a6d3b)" }}>{label}</div>
     </div>
-  );
-}
-
-function MenuLink({ to, icon, label, sub, badge }: { to: string; icon: string; label: string; sub?: string; badge?: number }) {
-  return (
-    <Link to={to} className="ccard p-4 flex items-center justify-between gap-2">
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-xl shrink-0">{icon}</span>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-display text-lg">{label}</span>
-            {badge && badge > 0 ? (
-              <span className="text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{badge}</span>
-            ) : null}
-          </div>
-          {sub && <div className="text-xs font-semibold leading-tight" style={{ color: "var(--ink)", opacity: 0.55 }}>{sub}</div>}
-        </div>
-      </div>
-      <span className="text-2xl shrink-0" style={{ opacity: 0.4 }}>›</span>
-    </Link>
   );
 }
 
@@ -67,18 +48,13 @@ function MePage() {
       const uid = u.user?.id;
       if (!uid) return;
       setUid(uid);
-      // Profile gates the redirect, but the hosted-count and pending requests only
-      // need the user id — fetch all three together rather than in sequence.
       const [profRes, hostedCount, reqs] = await Promise.all([
         (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null),
         (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0),
         fetchPendingRequestsTo(uid).then((r: any) => r, () => [] as any[]),
       ]);
       const data = (profRes as any)?.data;
-      if (!data) {
-        navigate({ to: "/onboarding" });
-        return;
-      }
+      if (!data) { navigate({ to: "/onboarding" }); return; }
       const d = data as any;
       setProfile({ name: d.name ?? "", photo_url: d.photo_url ?? null, level: d.level ?? 3, vibe: d.vibe ?? "friendly" });
       setRescues(d.rescues_count ?? 0);
@@ -97,7 +73,8 @@ function MePage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/settings" className="ccard p-4 flex items-center gap-3">
+      {/* Header: identity + edit + settings gear */}
+      <div className="ccard p-4 flex items-center gap-3">
         <Avatar src={profile.photo_url} name={profile.name} seed={uid} size={64} />
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}</div>
@@ -107,15 +84,17 @@ function MePage() {
             <span className="text-sm">· {vibeEmoji(profile.vibe)}</span>
           </div>
         </div>
-        <span
+        <Link
+          to="/settings"
           className="shrink-0 flex items-center justify-center rounded-full"
-          style={{ width: 36, height: 36, background: "var(--cream2)", border: "2px solid var(--ink)" }}
-          aria-label={t("me.edit_profile")}
+          style={{ width: 40, height: 40, background: "var(--cream2)", border: "2px solid var(--ink)" }}
+          aria-label={t("settings.title")}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
-        </span>
-      </Link>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+        </Link>
+      </div>
 
+      {/* PROGRESS FIRST — the whole point of the profile */}
       <StreakCard />
 
       <div className="ccard p-3 grid grid-cols-4 gap-2">
@@ -125,12 +104,30 @@ function MePage() {
         <RankCircle tier={matchmakerTier(hosted)} fallbackEmoji="🎪" label={t("prog.track_matchmaker")} />
       </div>
 
-      <div className="space-y-2">
-        <MenuLink to="/progress" icon="📈" label={t("prog.title")} sub={t("menu.progress_sub")} />
-        <MenuLink to="/matches" icon="🎾" label={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />
-        <MenuLink to="/people" icon="🤝" label={t("people.title")} sub={t("menu.people_sub")} badge={pendingReqs} />
-        <MenuLink to="/help" icon="💬" label={t("help.title")} sub={t("menu.help_sub")} />
+      <Link to="/progress" className="cbtn cbtn-coral w-full text-center block">📈 {t("me.see_season")}</Link>
+
+      <CourtsPassport />
+
+      {/* Quick links: matches + people (people as its own destination, with pending badge) */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/matches" className="ccard p-4 flex flex-col items-center text-center gap-1">
+          <span className="text-2xl">🎾</span>
+          <span className="font-display text-lg leading-tight">{t("matches.title")}</span>
+          <span className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.matches_sub", { n: gamesPlayed })}</span>
+        </Link>
+        <Link to="/people" className="ccard p-4 flex flex-col items-center text-center gap-1 relative">
+          {pendingReqs > 0 && (
+            <span className="absolute top-2 right-2 text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{pendingReqs}</span>
+          )}
+          <span className="text-2xl">🤝</span>
+          <span className="font-display text-lg leading-tight">{t("people.title")}</span>
+          <span className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.people_sub")}</span>
+        </Link>
       </div>
+
+      <Link to="/help" className="block text-center text-sm font-extrabold underline py-2" style={{ color: "var(--wood, #8a6d3b)" }}>
+        💬 {t("help.title")}
+      </Link>
     </div>
   );
 }
