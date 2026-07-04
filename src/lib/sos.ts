@@ -84,6 +84,79 @@ export async function claimSos(sosId: string): Promise<{ ok: boolean; reason: st
   return { ok: !!row?.ok, reason: row?.reason ?? "unknown", game_id: row?.game_id ?? null };
 }
 
+// ── Planned-game applications: players raise a hand, the HOST picks ──
+// (Urgent SOS keeps first-claim-wins.) All fns are resilient: before the SQL
+// is applied they fall back gracefully so nothing breaks mid-rollout.
+
+const MISSING_RPC = /(does not exist|PGRST202|schema cache|not_applicable)/i;
+
+/** Apply to a planned game. Falls back to the old instant claim if the
+ *  applications RPC isn't deployed yet (fallbackClaimed=true then). */
+export async function applyToGame(sosId: string): Promise<{ ok: boolean; reason: string; fallbackClaimed?: boolean }> {
+  const { data, error } = await (supabase as any).rpc("apply_to_game", { _sos_id: sosId });
+  if (error) {
+    if (MISSING_RPC.test(error.message ?? "")) {
+      const r = await claimSos(sosId);
+      return { ok: r.ok, reason: r.reason, fallbackClaimed: true };
+    }
+    return { ok: false, reason: error.message };
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return { ok: !!row?.ok, reason: row?.reason ?? "unknown" };
+}
+
+export async function withdrawApplication(sosId: string): Promise<boolean> {
+  const { data, error } = await (supabase as any).rpc("withdraw_application", { _sos_id: sosId });
+  if (error) return false;
+  return !!data;
+}
+
+/** Which planned games have I applied to (pending)? Empty pre-SQL. */
+export async function fetchMyApplicationSosIds(uid: string): Promise<Set<string>> {
+  try {
+    const { data } = await (supabase as any)
+      .from("sos_applications").select("sos_id").eq("applicant_id", uid).eq("status", "pending");
+    return new Set(((data as any[]) ?? []).map((r) => r.sos_id));
+  } catch { return new Set(); }
+}
+
+export type ApplicantRow = { id: string; name: string; photo_url: string | null; level: number; vibe: string; rescues_count: number | null };
+
+/** Pending candidates for MY game (host view). Empty pre-SQL. */
+export async function fetchApplicants(sosId: string): Promise<ApplicantRow[]> {
+  try {
+    const { data: apps } = await (supabase as any)
+      .from("sos_applications").select("applicant_id,created_at").eq("sos_id", sosId).eq("status", "pending").order("created_at");
+    const ids = ((apps as any[]) ?? []).map((a) => a.applicant_id);
+    if (!ids.length) return [];
+    const { data: ps } = await (supabase as any).rpc("players_directory", { _ids: ids });
+    const byId = new Map<string, any>(((ps as any[]) ?? []).map((p) => [p.id, p]));
+    return ids.map((id) => {
+      const p = byId.get(id) ?? {};
+      return { id, name: p.name ?? "Player", photo_url: p.photo_url ?? null, level: p.level ?? 3, vibe: p.vibe ?? "friendly", rescues_count: p.rescues_count ?? 0 };
+    });
+  } catch { return []; }
+}
+
+/** Pending-candidate counts for a set of my games (board badge). Empty pre-SQL. */
+export async function fetchApplicantCounts(sosIds: string[]): Promise<Map<string, number>> {
+  const m = new Map<string, number>();
+  if (!sosIds.length) return m;
+  try {
+    const { data } = await (supabase as any)
+      .from("sos_applications").select("sos_id").in("sos_id", sosIds).eq("status", "pending");
+    for (const r of ((data as any[]) ?? [])) m.set(r.sos_id, (m.get(r.sos_id) ?? 0) + 1);
+  } catch { /* pre-SQL */ }
+  return m;
+}
+
+export async function pickApplicant(sosId: string, applicantId: string): Promise<{ ok: boolean; reason: string; game_id: string | null }> {
+  const { data, error } = await (supabase as any).rpc("pick_applicant", { _sos_id: sosId, _applicant: applicantId });
+  if (error) return { ok: false, reason: error.message, game_id: null };
+  const row = Array.isArray(data) ? data[0] : data;
+  return { ok: !!row?.ok, reason: row?.reason ?? "unknown", game_id: row?.game_id ?? null };
+}
+
 export async function withdrawClaim(sosId: string): Promise<{ ok: boolean; re_flared: boolean; reason: string }> {
   const { data, error } = await (supabase as any).rpc("withdraw_claim", { _sos_id: sosId });
   if (error) return { ok: false, re_flared: false, reason: error.message };

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -42,6 +42,8 @@ function BoardPage() {
   const [meId, setMeId] = useState<string | null>(null);
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [candCounts, setCandCounts] = useState<Map<string, number>>(new Map());
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
@@ -64,10 +66,11 @@ function BoardPage() {
       : Promise.resolve(0);
     const histQ = uid ? fetchMyGameHistory(uid, 150).catch(() => [] as any[]) : Promise.resolve([] as any[]);
     const claimsQ = uid ? fetchMyUpcomingClaims(uid).catch(() => [] as any[]) : Promise.resolve([] as any[]);
+    const myAppsQ = uid ? fetchMyApplicationSosIds(uid) : Promise.resolve(new Set<string>());
 
-    const [u, p, m, ev, att, profRes, hostedCount, hist, claims] = await Promise.all([
+    const [u, p, m, ev, att, profRes, hostedCount, hist, claims, myApps] = await Promise.all([
       fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance(),
-      profileQ, countQ, histQ, claimsQ,
+      profileQ, countQ, histQ, claimsQ, myAppsQ,
     ]);
 
     setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att);
@@ -80,6 +83,9 @@ function BoardPage() {
     }
     setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
     setMyClaims(claims as any);
+    setAppliedIds(myApps as Set<string>);
+    const myOpenIds = (m as EligibleSosRow[]).filter((g) => g.kind === "open" && g.status === "active").map((g) => g.id);
+    setCandCounts(await fetchApplicantCounts(myOpenIds));
     // Confetti when one of MY games is freshly claimed (session-scoped; seed on
     // first load so pre-existing claims never retro-fire).
     const claimedIds = (m as EligibleSosRow[]).filter((g) => g.status === "claimed").map((g) => g.id);
@@ -223,9 +229,9 @@ function BoardPage() {
                   {it.kind === "event" ? (
                     <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
                   ) : it.kind === "mine" ? (
-                    <Card sos={it.r} onChange={load} mine />
+                    <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} />
                   ) : (
-                    <Card sos={it.r} onChange={load} />
+                    <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} />
                   )}
                 </RailItem>
               );
@@ -358,7 +364,7 @@ function ShareRow({ sos }: { sos: EligibleSosRow }) {
   );
 }
 
-function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean }) {
+function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const lmMin = levelMeta(sos.level_min);
@@ -407,6 +413,11 @@ function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => vo
     return (
       <div className="ccard p-4" style={claimed ? { borderColor: "var(--green-pop)", boxShadow: "4px 4px 0 var(--ink)" } : undefined}>
         {inner}
+        {!claimed && !isUrgent && (candidates ?? 0) > 0 && (
+          <Link to="/sos/$id" params={{ id: sos.id }} className="block font-extrabold text-sm mt-2" style={{ color: "var(--coral)" }}>
+            🙋 {t("app.candidates_line", { n: candidates ?? 0 })}
+          </Link>
+        )}
         <div className="flex gap-2 mt-3">
           {!claimed && (
           <Link to="/sos/new" search={{ edit: sos.id }} className="cbtn cbtn-ghost flex-1 text-center">✏️ {t("board.edit")}</Link>
@@ -434,20 +445,31 @@ function Card({ sos, onChange, mine }: { sos: EligibleSosRow; onChange: () => vo
     <div className="ccard p-4 relative">
       <ShareRow sos={sos} />
       {inner}
-      <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          const r = await claimSos(sos.id);
-          setBusy(false);
-          if (!r.ok) {
-            toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason);
-            return;
-          }
-          // Complete the flow: land on the contact screen (host + Message on WhatsApp), not a 2s toast
-          navigate({ to: "/sos/$id", params: { id: sos.id } });
-        }}>
-        {t("games.im_in")}
-      </button>
+      {applied ? (
+        <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-ghost w-full mt-3 text-center block">
+          🙋 {t("app.applied_chip")}
+        </Link>
+      ) : (
+        <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await applyToGame(sos.id);
+            setBusy(false);
+            if (!r.ok) {
+              toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason);
+              return;
+            }
+            if (r.fallbackClaimed) {
+              // pre-SQL fallback: instant claim — land on the contact screen as before
+              navigate({ to: "/sos/$id", params: { id: sos.id } });
+              return;
+            }
+            toast.success(t("app.sent"));
+            onChange();
+          }}>
+          🙋 {t("app.im_interested")}
+        </button>
+      )}
     </div>
   );
 }

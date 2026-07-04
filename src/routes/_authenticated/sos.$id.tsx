@@ -6,8 +6,8 @@ import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { notifyUsers } from "@/lib/push";
 import { myInviteLink, shareMessage } from "@/lib/share";
-import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, type SosRow } from "@/lib/sos";
-import { whenLabel, levelMeta } from "@/lib/courtship";
+import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
+import { whenLabel, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
@@ -32,6 +32,8 @@ function SosDetail() {
   const [me, setMe] = useState<{ id: string; name: string } | null>(null);
   const [other, setOther] = useState<any>(null);          // the host, shown to a joiner
   const [claimers, setClaimers] = useState<Claimer[]>([]); // joiners, shown to the host
+  const [applicants, setApplicants] = useState<ApplicantRow[]>([]); // pending candidates (host, open games)
+  const [myApplied, setMyApplied] = useState(false);
   const [gamePlayerBs, setGamePlayerBs] = useState<string[]>([]);
   const [rescuerCount, setRescuerCount] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -83,12 +85,26 @@ function SosDetail() {
   }, [sos?.id, sos?.status]);
 
   const isCaller = !!(sos && me && sos.caller_id === me.id);
+
+  useEffect(() => {
+    if (!sos || !me || isCaller || sos.kind !== "open") { setMyApplied(false); return; }
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("sos_applications").select("id").eq("sos_id", sos.id).eq("applicant_id", me.id).eq("status", "pending").maybeSingle();
+        setMyApplied(!!data);
+      } catch { setMyApplied(false); }
+    })();
+  }, [sos?.id, sos?.kind, me?.id, isCaller]);
   const iJoined = !!(me && gamePlayerBs.includes(me.id));
 
   // Host loads joiner profiles; a joiner loads the host profile.
   useEffect(() => {
     if (!sos || !me) return;
     if (isCaller) {
+      if (sos.kind === "open" && sos.status === "active") {
+        fetchApplicants(sos.id).then(setApplicants).catch(() => setApplicants([]));
+      } else setApplicants([]);
       if (!gamePlayerBs.length) { setClaimers([]); return; }
       (async () => {
         const { data } = await (supabase as any).rpc("players_directory", { _ids: gamePlayerBs });
@@ -249,6 +265,37 @@ function SosDetail() {
           </div>
         )}
 
+        {isOpen && !full && (
+          <div className="ccard p-4 space-y-3">
+            <div className="csection-label">🙋 {t("app.candidates")}</div>
+            {applicants.length === 0 ? (
+              <div className="text-sm font-semibold text-[var(--ink)]/70">{t("app.none_hint")}</div>
+            ) : applicants.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 border-t border-[var(--ink)]/15 pt-3 first:border-t-0 first:pt-0">
+                <Avatar src={a.photo_url} name={a.name} seed={a.id} size={52} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-extrabold truncate">{a.name}</div>
+                  <div className="text-xs font-bold" style={{ color: "rgba(43,33,24,0.6)" }}>
+                    L{a.level} · {vibeEmoji(a.vibe)}{(a.rescues_count ?? 0) >= 1 ? ` · 🚑 ${a.rescues_count}` : ""}
+                  </div>
+                </div>
+                <button className="cbtn cbtn-coral shrink-0" disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    const r = await pickApplicant(sos.id, a.id);
+                    setBusy(false);
+                    if (!r.ok) { toast.error(r.reason); return; }
+                    toast.success(t("app.picked_toast", { name: a.name }));
+                    await load();
+                    fetchApplicants(sos.id).then(setApplicants).catch(() => {});
+                  }}>
+                  {t("app.pick")}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {!full && !isOpen && (sos.level_min > 1 || sos.level_max < 5) && (
           <button className="cbtn cbtn-coral w-full" disabled={busy} onClick={widenLevels}>🎯 {t("sos.widen")}</button>
         )}
@@ -321,6 +368,44 @@ function SosDetail() {
         </div>
         {sos.note && <div className="text-[var(--ink)] italic">"{sos.note}"</div>}
       </div>
+      {sos.kind === "open" ? (
+        myApplied ? (
+          <div className="ccard p-4 text-center space-y-2" style={{ background: "var(--green-pop)" }}>
+            <div className="font-display text-xl">🙋 {t("app.you_applied_title")}</div>
+            <div className="text-sm font-semibold">{t("app.you_applied_sub")}</div>
+            <button className="cbtn cbtn-ghost w-full" disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const ok = await withdrawApplication(sos.id);
+                setBusy(false);
+                if (ok) { setMyApplied(false); toast.success(t("app.withdrawn")); }
+              }}>
+              {t("app.withdraw")}
+            </button>
+          </div>
+        ) : (
+          <button className="cbtn cbtn-coral w-full" disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              const r = await applyToGame(sos.id);
+              setBusy(false);
+              if (!r.ok) {
+                if (r.reason === "taken") toast.error(t("sos.taken_toast"));
+                else if (r.reason === "expired") toast.error(t("sos.err_expired"));
+                else if (r.reason === "already_applied") { setMyApplied(true); toast.message(t("app.already")); }
+                else if (r.reason === "already_in") toast.error(t("sos.already_in"));
+                else toast.error(r.reason);
+                await load();
+                return;
+              }
+              if (r.fallbackClaimed) { toast.success(t("claim.in")); await load(); return; }
+              setMyApplied(true);
+              toast.success(t("app.sent"));
+            }}>
+            🙋 {t("app.im_interested")}
+          </button>
+        )
+      ) : (
       <button
         className="cbtn cbtn-coral w-full"
         disabled={busy}
@@ -343,6 +428,7 @@ function SosDetail() {
       >
         {multi ? t("sos.join_spots", { n: remaining }) : t("sos.im_in")}
       </button>
+      )}
     </div>
   );
 }
