@@ -530,6 +530,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sos_applications: {
+        Row: {
+          applicant_id: string
+          created_at: string
+          id: string
+          sos_id: string
+          status: string
+        }
+        Insert: {
+          applicant_id: string
+          created_at?: string
+          id?: string
+          sos_id: string
+          status?: string
+        }
+        Update: {
+          applicant_id?: string
+          created_at?: string
+          id?: string
+          sos_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_applications_sos_id_fkey"
+            columns: ["sos_id"]
+            isOneToOne: false
+            referencedRelation: "sos_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sos_requests: {
         Row: {
           auto_flare: boolean
@@ -726,6 +765,13 @@ export type Database = {
         Args: { _area: string; _court_id: string; _name: string }
         Returns: undefined
       }
+      apply_to_game: {
+        Args: { _sos_id: string }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       archive_game: { Args: { _game_id: string }; Returns: undefined }
       cancel_game: {
         Args: { _sos_id: string }
@@ -909,6 +955,14 @@ export type Database = {
         }
         Returns: string
       }
+      pick_applicant: {
+        Args: { _applicant: string; _sos_id: string }
+        Returns: {
+          game_id: string
+          ok: boolean
+          reason: string
+        }[]
+      }
       players_directory: {
         Args: { _ids?: string[] }
         Returns: {
@@ -1027,6 +1081,7 @@ export type Database = {
         Args: { _data: Json; _id: string }
         Returns: undefined
       }
+      withdraw_application: { Args: { _sos_id: string }; Returns: boolean }
       withdraw_claim: {
         Args: { _sos_id: string }
         Returns: {
