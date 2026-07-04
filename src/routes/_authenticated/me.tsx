@@ -5,7 +5,6 @@ import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
 import { SeasonPanel } from "@/components/SeasonPanel";
 import { CourtsPassport } from "@/components/CourtsPassport";
-import { fetchPendingRequestsTo } from "@/lib/buddies";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -19,7 +18,6 @@ function MePage() {
   const [uid, setUid] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ name: string; photo_url: string | null; level: number; vibe: string } | null>(null);
   const [gamesPlayed, setGamesPlayed] = useState(0);
-  const [pendingReqs, setPendingReqs] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -27,16 +25,12 @@ function MePage() {
       const uid = u.user?.id;
       if (!uid) return;
       setUid(uid);
-      const [profRes, reqs] = await Promise.all([
-        (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null),
-        fetchPendingRequestsTo(uid).then((r: any) => r, () => [] as any[]),
-      ]);
+      const profRes = await (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null);
       const data = (profRes as any)?.data;
       if (!data) { navigate({ to: "/onboarding" }); return; }
       const d = data as any;
       setProfile({ name: d.name ?? "", photo_url: d.photo_url ?? null, level: d.level ?? 3, vibe: d.vibe ?? "friendly" });
       setGamesPlayed(d.games_played ?? 0);
-      setPendingReqs((reqs as any[]).length);
     })();
   }, [navigate]);
 
@@ -72,22 +66,15 @@ function MePage() {
       {/* YOUR SEASON — right under the name, the point of the profile */}
       <SeasonPanel />
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link to="/matches" className="ccard p-4 flex flex-col items-center text-center gap-1">
-          <span className="text-2xl">🎾</span>
-          <span className="font-display text-lg leading-tight">{t("matches.title")}</span>
-          <span className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.matches_sub", { n: gamesPlayed })}</span>
-        </Link>
-        <Link to="/people" className="ccard p-4 flex flex-col items-center text-center gap-1 relative">
-          {pendingReqs > 0 && (
-            <span className="absolute top-2 right-2 text-xs font-extrabold px-2 py-0.5 rounded-full" style={{ background: "var(--coral)", color: "#fff" }}>{pendingReqs}</span>
-          )}
-          <span className="text-2xl">🤝</span>
-          <span className="font-display text-lg leading-tight">{t("people.title")}</span>
-          <span className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.people_sub")}</span>
-        </Link>
-      </div>
+      {/* Matches — friends now live in the Players tab, not here */}
+      <Link to="/matches" className="ccard p-4 flex items-center gap-3">
+        <span className="text-2xl">🎾</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-lg leading-tight">{t("matches.title")}</div>
+          <div className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.matches_sub", { n: gamesPlayed })}</div>
+        </div>
+        <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
+      </Link>
 
       {/* Courts Passport — collection lives at the bottom */}
       <CourtsPassport />

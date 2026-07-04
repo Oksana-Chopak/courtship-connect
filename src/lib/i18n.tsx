@@ -679,6 +679,8 @@ const en: Dict = {
 
   // Players
   "players.title": "Players",
+  "players.friends": "Your buddies",
+  "players.everyone": "Everyone",
   "players.sub": "Pick your hitting partner.",
   "players.filters": "Filters",
   "players.filters_clear": "Clear all",
@@ -730,6 +732,7 @@ const en: Dict = {
   "buddy.remove": "Remove buddy",
   "buddy.requests_title": "Buddy requests 🤝",
   "buddy.accept": "Accept",
+  "buddy.badge": "Buddy",
   "buddy.decline": "Decline",
   "buddy.my_buddies": "My buddies 🤝",
   "buddy.no_buddies": "No buddies yet. Play a match — buddies happen.",
@@ -1464,6 +1467,8 @@ const sv: Dict = {
   "rescue.listening": "Lyssnar...",
 
   "players.title": "Spelare",
+  "players.friends": "Dina polare",
+  "players.everyone": "Alla",
   "players.sub": "Välj din spelpartner.",
   "players.filters": "Filter",
   "players.filters_clear": "Rensa",
@@ -1513,6 +1518,7 @@ const sv: Dict = {
   "buddy.remove": "Ta bort kompis",
   "buddy.requests_title": "Kompisförfrågningar 🤝",
   "buddy.accept": "Acceptera",
+  "buddy.badge": "Polare",
   "buddy.decline": "Avböj",
   "buddy.my_buddies": "Mina kompisar 🤝",
   "buddy.no_buddies": "Inga kompisar än. Spela en match — kompisar händer.",
