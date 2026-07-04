@@ -138,6 +138,7 @@ function BoardPage() {
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
       {/* PRIMARY actions — New game + SOS */}
+      <p className="text-center font-display text-lg leading-tight px-2">{t("tonight.encourage")}</p>
       <div className="grid grid-cols-2 gap-3">
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
         <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
