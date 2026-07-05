@@ -384,6 +384,8 @@ export type Database = {
           last_name: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
+          member_since: string | null
+          member_tier: string | null
           name: string
           phone_e164: string
           photo_url: string | null
@@ -416,6 +418,8 @@ export type Database = {
           last_name?: string | null
           level: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
+          member_since?: string | null
+          member_tier?: string | null
           name: string
           phone_e164: string
           photo_url?: string | null
@@ -448,6 +452,8 @@ export type Database = {
           last_name?: string | null
           level?: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
+          member_since?: string | null
+          member_tier?: string | null
           name?: string
           phone_e164?: string
           photo_url?: string | null
@@ -753,6 +759,10 @@ export type Database = {
         Args: { _active: boolean; _code: string }
         Returns: undefined
       }
+      admin_set_member: {
+        Args: { _tier: string; _user: string }
+        Returns: undefined
+      }
       admin_stats: {
         Args: never
         Returns: {
@@ -875,6 +885,17 @@ export type Database = {
         }[]
       }
       expire_old_sos: { Args: never; Returns: undefined }
+      founders_wall: {
+        Args: never
+        Returns: {
+          id: string
+          last_name: string
+          member_since: string
+          member_tier: string
+          name: string
+          photo_url: string
+        }[]
+      }
       get_contact_phone: {
         Args: { _target: string }
         Returns: {
@@ -884,6 +905,13 @@ export type Database = {
       }
       get_event_contact: { Args: { _event_id: string }; Returns: string }
       get_event_swish: { Args: { _event_id: string }; Returns: string }
+      get_member_config: {
+        Args: never
+        Returns: {
+          key: string
+          value: string
+        }[]
+      }
       get_my_full_profile: {
         Args: never
         Returns: {
@@ -906,6 +934,8 @@ export type Database = {
           last_name: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
+          member_since: string | null
+          member_tier: string | null
           name: string
           phone_e164: string
           photo_url: string | null
@@ -989,6 +1019,7 @@ export type Database = {
           last_name: string
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
+          member_tier: string
           name: string
           photo_url: string
           play_times: string[]
@@ -1036,6 +1067,10 @@ export type Database = {
           _p256dh: string
           _ua?: string
         }
+        Returns: undefined
+      }
+      set_member_config: {
+        Args: { _key: string; _value: string }
         Returns: undefined
       }
       set_my_invite_code: { Args: { _new: string }; Returns: string }
