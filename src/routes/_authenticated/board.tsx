@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
+import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
@@ -73,7 +74,13 @@ function BoardPage() {
       profileQ, countQ, histQ, claimsQ, myAppsQ,
     ]);
 
-    setUrgent(u); setPlanned(p); setMine(m); setEvents(ev); setMyAttendance(att);
+    // Enrich caller name+photo in one batch so cards can show host identity
+    const hydrated = await hydrateCallers([...(u as EligibleSosRow[]), ...(p as EligibleSosRow[]), ...(m as EligibleSosRow[])]);
+    const byId = new Map(hydrated.map((r) => [r.id, r]));
+    const hU = (u as EligibleSosRow[]).map((r) => byId.get(r.id) ?? r);
+    const hP = (p as EligibleSosRow[]).map((r) => byId.get(r.id) ?? r);
+    const hM = (m as EligibleSosRow[]).map((r) => byId.get(r.id) ?? r);
+    setUrgent(hU); setPlanned(hP); setMine(hM); setEvents(ev); setMyAttendance(att);
     const prof = (profRes as any)?.data;
     if (prof) {
       setCityForStats(prof.home_city ?? "Uppsala");
@@ -395,8 +402,13 @@ function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRo
         <div className="font-extrabold mt-0.5" style={{ overflowWrap: "anywhere" }}>
           📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
         </div>
-        {!mine && !sos.is_buddy && sos.caller_name && (
-          <div className="text-base font-semibold text-[var(--ink)] mt-0.5">🎾 {sos.caller_name}</div>
+        {!mine && sos.caller_name && (
+          <div className="flex items-center gap-2 mt-1.5">
+            <Avatar src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={28} />
+            <span className="text-base font-extrabold truncate">
+              {sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}
+            </span>
+          </div>
         )}
         <div className="mt-1"><CourtStatusBadge status={sos.court_status} muted /></div>
         <div className="text-base text-[var(--ink)] mt-2">

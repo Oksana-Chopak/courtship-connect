@@ -25,6 +25,8 @@ export type SosRow = {
 export type CourtRow = { id: string; name: string; area: string | null; city: string };
 
 export type EligibleSosRow = SosRow & {
+  caller_last_name?: string | null;
+  caller_photo_url?: string | null;
   court_name: string | null;
   court_city: string | null;
   court_area: string | null;
@@ -39,6 +41,24 @@ export async function fetchCourts(): Promise<CourtRow[]> {
     .order("city")
     .order("name");
   return (data as CourtRow[]) ?? [];
+}
+
+
+/** Enrich caller_name-only rows with caller_last_name + caller_photo_url in one
+ * players_directory batch. Silent no-op if RPC unavailable. */
+export async function hydrateCallers(rows: EligibleSosRow[]): Promise<EligibleSosRow[]> {
+  const ids = Array.from(new Set(rows.map((r) => r.caller_id).filter(Boolean)));
+  if (!ids.length) return rows;
+  try {
+    const { data } = await (supabase as any).rpc("players_directory", { _ids: ids });
+    const byId = new Map<string, any>(((data as any[]) ?? []).map((p) => [p.id, p]));
+    return rows.map((r) => {
+      const p = byId.get(r.caller_id);
+      return p ? { ...r, caller_last_name: p.last_name ?? null, caller_photo_url: p.photo_url ?? null } : r;
+    });
+  } catch {
+    return rows;
+  }
 }
 
 export async function fetchEligibleSos(): Promise<EligibleSosRow[]> {
