@@ -936,6 +936,14 @@ export type Database = {
           reason: string
         }[]
       }
+      kudos_by: {
+        Args: { _to: string }
+        Returns: {
+          from_id: string
+          name: string
+          photo_url: string
+        }[]
+      }
       kudos_for: {
         Args: { _ids: string[] }
         Returns: {
