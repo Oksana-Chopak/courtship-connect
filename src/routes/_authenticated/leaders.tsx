@@ -30,6 +30,9 @@ function LeadersPage() {
   const [photo, setPhoto] = useState<Record<string, string | null>>({});
   const [kudos, setKudos] = useState<Record<string, { n: number; mine: boolean }>>({});
   const [meId, setMeId] = useState<string | null>(null);
+  const [openKudos, setOpenKudos] = useState<{ id: string; name: string } | null>(null);
+  const [kudosBy, setKudosBy] = useState<{ id: string; name: string; photo_url: string | null }[] | null>(null);
+  const [kudosBusy, setKudosBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -64,7 +67,6 @@ function LeadersPage() {
   }, []);
 
   async function giveKudos(id: string) {
-    if (id === meId) return;
     const already = kudos[id]?.mine;
     if (already) return;
     setKudos((p) => ({ ...p, [id]: { n: (p[id]?.n ?? 0) + 1, mine: true } })); // optimistic
@@ -79,9 +81,9 @@ function LeadersPage() {
   }
 
   const boards = [
-    { key: "active", title: t("lb.active"), emoji: "👑", unit: "🎾", rows: active, hot: true },
-    { key: "rescuer", title: t("lb.rescuer"), emoji: "🚑", unit: "🚑", rows: rescuers, hot: false },
-    { key: "host", title: t("lb.host"), emoji: "🎪", unit: "🎪", rows: hosts, hot: false },
+    { key: "active", title: t("lb.active"), emoji: "👑", unit: "🎾", hint: t("lb.hint_active"), rows: active, hot: true },
+    { key: "rescuer", title: t("lb.rescuer"), emoji: "🚑", unit: "🚑", hint: t("lb.hint_rescuer"), rows: rescuers, hot: false },
+    { key: "host", title: t("lb.host"), emoji: "🎪", unit: "🎪", hint: t("lb.hint_host"), rows: hosts, hot: false },
   ];
   const anyRows = active.length > 0 || rescuers.length > 0 || hosts.length > 0;
 
@@ -105,6 +107,7 @@ function LeadersPage() {
           b.rows.length === 0 ? null : (
             <div key={b.key} className="ccard p-4 space-y-2" style={b.hot ? { borderColor: "var(--coral)" } : undefined}>
               <div className="csection-label">{b.emoji} {b.title}</div>
+              <div className="text-xs font-semibold text-[var(--ink)]/60">{b.hint}</div>
               {b.rows.slice(0, 5).map((r, i) => {
                 const k = kudos[r.user_id];
                 const isMe = r.user_id === meId;
@@ -116,26 +119,56 @@ function LeadersPage() {
                       <span className="font-extrabold truncate">{r.name}{isMe ? ` · ${t("lb.you")}` : ""}</span>
                     </Link>
                     <span className="font-extrabold shrink-0 text-sm">{b.unit} {r.n}</span>
-                    {isMe ? (
-                      (k?.n ?? 0) > 0 ? <span className="shrink-0 text-xs font-extrabold px-1">👏 {k?.n}</span> : null
-                    ) : (
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => giveKudos(r.user_id)}
                         disabled={!!k?.mine}
-                        className="shrink-0 rounded-full font-extrabold text-xs px-2 py-1"
+                        className="rounded-full font-extrabold text-xs px-2 py-1"
                         style={{ border: "2px solid var(--ink)", background: k?.mine ? "var(--green-pop)" : "var(--cream2)" }}
                         title={t("lb.kudos")}
                       >
-                        👏 {k?.n ?? 0}
+                        👏
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if ((k?.n ?? 0) === 0) return;
+                          setOpenKudos({ id: r.user_id, name: r.name }); setKudosBy(null); setKudosBusy(true);
+                          try {
+                            const { data } = await (supabase as any).rpc("kudos_by", { _to: r.user_id });
+                            setKudosBy(((data as any[]) ?? []).map((x) => ({ id: x.from_id, name: x.name, photo_url: x.photo_url ?? null })));
+                          } catch { setKudosBy([]); }
+                          setKudosBusy(false);
+                        }}
+                        className="text-xs font-extrabold px-1 underline decoration-dotted"
+                      >
+                        {k?.n ?? 0}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           ),
         )
+      )}
+
+      {openKudos && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(22,18,13,0.45)" }} role="dialog" aria-modal="true" onClick={() => setOpenKudos(null)}>
+          <div className="w-full sm:max-w-md ccard p-4 space-y-2" style={{ background: "var(--cream2)", borderRadius: "22px 22px 0 0" }} onClick={(e) => e.stopPropagation()}>
+            <div className="font-display text-xl">👏 {t("lb.who_applauded", { name: openKudos.name })}</div>
+            {kudosBusy && <div className="text-sm text-[var(--ink)]/60">{t("common.loading")}</div>}
+            {kudosBy && kudosBy.length === 0 && !kudosBusy && <div className="text-sm text-[var(--ink)]/60">{t("lb.no_applause")}</div>}
+            {kudosBy && kudosBy.map((k) => (
+              <Link key={k.id} to="/players/$id" params={{ id: k.id }} onClick={() => setOpenKudos(null)} className="flex items-center gap-2 border-t border-[var(--ink)]/15 pt-2 first:border-t-0 first:pt-0">
+                <Avatar src={k.photo_url} name={k.name} seed={k.id} size={36} />
+                <span className="font-extrabold truncate">{k.name}</span>
+              </Link>
+            ))}
+            <button onClick={() => setOpenKudos(null)} className="cbtn cbtn-ghost w-full mt-2">{t("common.close")}</button>
+          </div>
+        </div>
       )}
     </div>
   );

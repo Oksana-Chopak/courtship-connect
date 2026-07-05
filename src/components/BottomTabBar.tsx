@@ -93,8 +93,8 @@ export function BottomTabBar() {
               <div className="csection-label">{t("plus.title")}</div>
               <Link to="/sos/new" search={{ planned: undefined }} onClick={() => setPlusOpen(false)}
                 className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
-                style={{ background: "var(--cream)" }}>
-                <span className="text-2xl" aria-hidden="true">🎾</span>
+                style={{ background: "var(--coral)", color: "#FFF6E8" }}>
+                <span className="text-2xl" aria-hidden="true">🚨</span>
                 <span className="min-w-0">
                   <span className="block font-display text-lg leading-tight">{t("plus.post")}</span>
                   <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.post_sub")}</span>

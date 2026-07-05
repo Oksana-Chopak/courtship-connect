@@ -387,24 +387,24 @@ function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRo
           🤝 {sos.caller_name ? t("buddy.your_buddy", { name: sos.caller_name }) : t("buddy.from_buddies")}
         </div>
       ) : null}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="font-display text-xl leading-tight whitespace-nowrap">{whenLabel(sos.play_at)}</div>
-          <div className="font-extrabold truncate">
-            📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
-          </div>
-          {!mine && !sos.is_buddy && sos.caller_name && (
-            <div className="text-base font-semibold text-[var(--ink)] mt-0.5">🎾 {sos.caller_name}</div>
-          )}
-          <div className="mt-1"><CourtStatusBadge status={sos.court_status} muted /></div>
-          <div className="text-base text-[var(--ink)] mt-2">
-            {formatLabel(sos.format)} · L
-            <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
-            –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
-          </div>
-          {sos.note && <div className="text-base italic mt-1 text-[var(--ink)]">"{sos.note}"</div>}
+      <div className="min-w-0">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="font-display text-xl leading-tight truncate">{whenLabel(sos.play_at)}</div>
+          <div className="text-xs font-semibold text-[var(--ink)]/60 shrink-0">{timeAgo(sos.created_at)}</div>
         </div>
-        <div className="text-base text-[var(--ink)] whitespace-nowrap">{timeAgo(sos.created_at)}</div>
+        <div className="font-extrabold mt-0.5" style={{ overflowWrap: "anywhere" }}>
+          📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
+        </div>
+        {!mine && !sos.is_buddy && sos.caller_name && (
+          <div className="text-base font-semibold text-[var(--ink)] mt-0.5">🎾 {sos.caller_name}</div>
+        )}
+        <div className="mt-1"><CourtStatusBadge status={sos.court_status} muted /></div>
+        <div className="text-base text-[var(--ink)] mt-2">
+          {formatLabel(sos.format)} · L
+          <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
+          –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
+        </div>
+        {sos.note && <div className="text-base italic mt-1 text-[var(--ink)]">"{sos.note}"</div>}
       </div>
     </>
   );

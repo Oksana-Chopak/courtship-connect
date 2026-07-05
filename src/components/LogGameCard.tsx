@@ -16,7 +16,9 @@ function prevHalfHour(): string {
   return `${String(n.getHours()).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-type P = { id: string; name: string };
+type P = { id: string; name: string; last_name: string | null };
+
+function fullName(p: { name: string; last_name: string | null }): string { return p.last_name ? p.name + " " + p.last_name : p.name; }
 
 export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
   const { t } = useI18n();
@@ -44,14 +46,14 @@ export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } =
         if (p?.home_city) setCity(p.home_city);
       }
       const { data } = await (supabase as any).rpc("players_directory");
-      setPlayers(((data as any[]) ?? []).map((p) => ({ id: p.id, name: p.name ?? "Player" })));
+      setPlayers(((data as any[]) ?? []).map((p) => ({ id: p.id, name: p.name ?? "Player", last_name: p.last_name ?? null })));
     })();
   }, [open, players.length]);
 
   const filtered = players
     .filter((p) => p.id !== meId)
-    .filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()))
-    .slice(0, 8);
+    .filter((p) => fullName(p).toLowerCase().includes(search.trim().toLowerCase()))
+    .slice(0, 50);
 
   async function submit() {
     if (!otherId) {
@@ -96,7 +98,7 @@ export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } =
 
       {otherId ? (
         <div className="flex items-center justify-between gap-2">
-          <div className="font-extrabold">🎾 {otherName}</div>
+          <div className="font-extrabold truncate">🎾 {otherName}</div>
           <button
             type="button"
             className="text-sm underline"
@@ -120,10 +122,10 @@ export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } =
                 style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
                 onClick={() => {
                   setOtherId(p.id);
-                  setOtherName(p.name);
+                  setOtherName(fullName(p));
                 }}
               >
-                {p.name}
+                {fullName(p)}
               </button>
             ))}
             {filtered.length === 0 && <div className="text-sm text-[var(--ink)]/60">{t("log.no_players")}</div>}
