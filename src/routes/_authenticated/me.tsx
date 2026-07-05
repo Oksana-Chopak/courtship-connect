@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
 import { SeasonPanel } from "@/components/SeasonPanel";
+import { MembershipCard } from "@/components/MembershipCard";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
 
@@ -16,7 +17,7 @@ function MePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
-  const [profile, setProfile] = useState<{ name: string; photo_url: string | null; level: number; vibe: string } | null>(null);
+  const [profile, setProfile] = useState<{ name: string; photo_url: string | null; level: number; vibe: string; member_tier: string | null } | null>(null);
   const [gamesPlayed, setGamesPlayed] = useState(0);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ function MePage() {
       const data = (profRes as any)?.data;
       if (!data) { navigate({ to: "/onboarding" }); return; }
       const d = data as any;
-      setProfile({ name: d.name ?? "", photo_url: d.photo_url ?? null, level: d.level ?? 3, vibe: d.vibe ?? "friendly" });
+      setProfile({ name: d.name ?? "", photo_url: d.photo_url ?? null, level: d.level ?? 3, vibe: d.vibe ?? "friendly", member_tier: d.member_tier ?? null });
       setGamesPlayed(d.games_played ?? 0);
     })();
   }, [navigate]);
@@ -46,7 +47,7 @@ function MePage() {
       <div className="ccard p-4 flex items-center gap-3">
         <Avatar src={profile.photo_url} name={profile.name} seed={uid} size={64} />
         <div className="flex-1 min-w-0">
-          <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}</div>
+          <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}{profile.member_tier ? " 🏆" : ""}</div>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} />
             <span className="font-extrabold text-sm">{lm.name}</span>
@@ -65,6 +66,8 @@ function MePage() {
 
       {/* YOUR SEASON — right under the name, the point of the profile */}
       <SeasonPanel />
+
+      <MembershipCard />
 
       {/* Matches — friends now live in the Players tab, not here */}
       <Link to="/matches" className="ccard p-4 flex items-center gap-3">

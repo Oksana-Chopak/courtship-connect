@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { adminSetMember, type MemberTier } from "@/lib/membership";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/courtship";
 import { RescuerBadge } from "@/components/RescuerBadge";
@@ -29,6 +30,7 @@ function PlayerDetail() {
   const [busy, setBusy] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
   const [buddyState, setBuddyState] = useState<"none" | "pending" | "buddy">("none");
+  const [iAmAdmin, setIAmAdmin] = useState(false);
   const getPhone = useServerFn(getProfilePhone);
 
   useEffect(() => {
@@ -36,6 +38,8 @@ function PlayerDetail() {
       const { data: u } = await supabase.auth.getUser();
       if (u.user) {
         setMeId(u.user.id);
+        (supabase as any).rpc("get_my_full_profile").maybeSingle()
+          .then((r: any) => setIAmAdmin(!!r?.data?.is_admin), () => {});
         if (u.user.id !== id) {
           if (await isBuddyWith(u.user.id, id)) setBuddyState("buddy");
           else if (await hasOutgoingRequest(u.user.id, id)) setBuddyState("pending");
@@ -80,7 +84,7 @@ function PlayerDetail() {
         </div>
 
         <div className="text-center">
-          <h1 className="font-display text-3xl">{p.name}{p.last_name ? " " + p.last_name : ""}</h1>
+          <h1 className="font-display text-3xl">{p.name}{p.last_name ? " " + p.last_name : ""}{p.member_tier ? " 🏆" : ""}</h1>
           <div className="mt-1 flex flex-wrap items-center justify-center gap-1"><RescuerBadge count={p.rescues_count ?? 0} /><ActivityBadge count={p.games_played ?? 0} /></div>
           <div className="flex items-center justify-center gap-2 mt-1">
             <span className="w-3 h-3 rounded-full" style={{ background: lm.color }} />
@@ -162,6 +166,31 @@ function PlayerDetail() {
         <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : t((`optin.${p.buddy_optin}`) as any)}</Row>
         <Row label={t("player.rescues")}>🚑 {p.rescues_count ?? 0}</Row>
       </div>
+
+      {iAmAdmin && meId !== p.id && (
+        <div className="ccard p-4 space-y-2" style={{ borderStyle: "dashed" }}>
+          <div className="csection-label">🛠 {t("mem.admin_title")}</div>
+          <div className="text-xs font-semibold text-[var(--ink)]/60">{t("mem.admin_hint")}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {([null, "founding", "member", "pro"] as MemberTier[]).map((tr) => (
+              <button
+                key={String(tr)}
+                type="button"
+                className={`cchip ${(p.member_tier ?? null) === tr ? "cchip-on" : ""}`}
+                onClick={async () => {
+                  try {
+                    await adminSetMember(p.id, tr);
+                    setP({ ...p, member_tier: tr });
+                    toast.success(t("mem.admin_saved"));
+                  } catch (e: any) { toast.error(e?.message ?? "fail"); }
+                }}
+              >
+                {tr === null ? t("mem.tier_none") : tr === "founding" ? "🏆 Founding" : tr === "member" ? "🏆 Member" : "PRO"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

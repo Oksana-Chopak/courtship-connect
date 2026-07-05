@@ -70,8 +70,10 @@ function AdminPage() {
   const [pendingEvents, setPendingEvents] = useState<EventRow[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [supportSwish, setSupportSwish] = useState("");
+  const [memLinks, setMemLinks] = useState<{ m: string; y: string; p: string }>({ m: "", y: "", p: "" });
 
   async function load() {
+    loadMemLinks();
     // Hard gate on the caller's OWN is_admin (own-row read). Non-admins see nothing.
     const { data: me } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
     if (!me || !(me as any).is_admin) { setAllowed(false); return; }
@@ -118,6 +120,25 @@ function AdminPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Code deleted");
     load();
+  }
+
+  async function loadMemLinks() {
+    try {
+      const { data } = await (supabase as any).rpc("get_member_config");
+      const next = { m: "", y: "", p: "" };
+      for (const r of ((data as any[]) ?? [])) {
+        if (r.key === "stripe_member_monthly") next.m = r.value;
+        if (r.key === "stripe_member_yearly") next.y = r.value;
+        if (r.key === "stripe_pro_monthly") next.p = r.value;
+      }
+      setMemLinks(next);
+    } catch { /* pre-SQL */ }
+  }
+
+  async function saveMemLink(key: string, value: string) {
+    const { error } = await (supabase as any).rpc("set_member_config", { _key: key, _value: value.trim() });
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("mem.admin_saved"));
   }
 
   async function saveSupportSwish() {
@@ -363,6 +384,21 @@ function AdminPage() {
           </div>
         )}
       </div>
+
+      <Collapsible title={`💳 ${t("mem.admin_links_title")}`}>
+        <div className="space-y-2">
+          <div className="text-sm text-[var(--ink)]/60">{t("mem.admin_links_hint")}</div>
+          <label className="csection-label">Member · monthly (69 SEK)</label>
+          <input className="cinput" value={memLinks.m} onChange={(e) => setMemLinks({ ...memLinks, m: e.target.value })} placeholder="https://buy.stripe.com/..." />
+          <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_member_monthly", memLinks.m)}>{t("admin.support_save")}</button>
+          <label className="csection-label">Member · yearly (690 SEK)</label>
+          <input className="cinput" value={memLinks.y} onChange={(e) => setMemLinks({ ...memLinks, y: e.target.value })} placeholder="https://buy.stripe.com/..." />
+          <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_member_yearly", memLinks.y)}>{t("admin.support_save")}</button>
+          <label className="csection-label">Pro · monthly (249 SEK)</label>
+          <input className="cinput" value={memLinks.p} onChange={(e) => setMemLinks({ ...memLinks, p: e.target.value })} placeholder="https://buy.stripe.com/..." />
+          <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_pro_monthly", memLinks.p)}>{t("admin.support_save")}</button>
+        </div>
+      </Collapsible>
 
       <Collapsible title={t("admin.support_title")}>
         <div className="space-y-2">

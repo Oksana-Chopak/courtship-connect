@@ -18,6 +18,7 @@ type P = {
   level: number; formats: string[]; play_times: string[]; vibe: string; buddy_optin: string;
   home_courts: string | null; home_city: string | null; home_cities: string[] | null;
   rescues_count: number | null; games_played: number | null; bio: string | null;
+  member_tier?: string | null;
 };
 
 function Players() {
@@ -344,7 +345,7 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
       </div>
       <div className="flex-1 min-w-0 py-2.5 pr-3 flex flex-col justify-center">
         <div className="flex items-start justify-between gap-2">
-          <span className="font-display text-lg leading-tight">{p.name}{p.last_name ? " " + p.last_name : ""}</span>
+          <span className="font-display text-lg leading-tight">{p.name}{p.last_name ? " " + p.last_name : ""}{p.member_tier ? <span title="Member" style={{ marginLeft: 4 }}>🏆</span> : null}</span>
           <span className="inline-flex gap-0.5 shrink-0 mt-1.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <span key={i} className="rounded-full" style={{ width: 7, height: 7, background: i <= p.level ? lm.color : "transparent", border: `1.5px solid ${i <= p.level ? lm.color : "var(--ink)"}`, opacity: i <= p.level ? 1 : 0.3, boxSizing: "border-box" }} />

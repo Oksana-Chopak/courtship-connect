@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
 import { oops } from "@/lib/oops";
+import { fetchFoundersWall, type FounderRow } from "@/lib/membership";
 
 export const Route = createFileRoute("/_authenticated/leaders")({
   head: () => ({ meta: [{ title: "Leaderboards — Courtship" }] }),
@@ -34,6 +35,7 @@ function LeadersPage() {
   const [kudosBy, setKudosBy] = useState<{ id: string; name: string; photo_url: string | null }[] | null>(null);
   const [kudosBusy, setKudosBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [founders, setFounders] = useState<FounderRow[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +64,7 @@ function LeadersPage() {
           setKudos(km);
         } catch { /* kudos RPC not deployed yet */ }
       }
+      setFounders(await fetchFoundersWall());
       setLoaded(true);
     })();
   }, []);
@@ -152,6 +155,21 @@ function LeadersPage() {
             </div>
           ),
         )
+      )}
+
+      {founders.length > 0 && (
+        <div className="ccard p-4 space-y-2" style={{ background: "var(--green-pop)" }}>
+          <div className="csection-label">🏆 {t("mem.wall_title")}</div>
+          <div className="text-xs font-semibold text-[var(--ink)]/70">{t("mem.wall_sub")}</div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {founders.map((fo) => (
+              <Link key={fo.id} to="/players/$id" params={{ id: fo.id }} className="flex items-center gap-1.5 rounded-full pr-3 pl-1 py-1" style={{ background: "var(--cream2)", border: "2px solid var(--ink)" }}>
+                <Avatar src={fo.photo_url} name={fo.name} seed={fo.id} size={26} />
+                <span className="font-extrabold text-sm">{fo.name}{fo.member_tier === "pro" ? " · PRO" : ""}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
       {openKudos && (
