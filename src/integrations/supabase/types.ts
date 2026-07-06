@@ -212,6 +212,7 @@ export type Database = {
           level_min: number | null
           location: string
           price_sek: number | null
+          sport: string
           spots_taken: number
           starts_at: string
           status: string
@@ -230,6 +231,7 @@ export type Database = {
           level_min?: number | null
           location: string
           price_sek?: number | null
+          sport?: string
           spots_taken?: number
           starts_at: string
           status?: string
@@ -248,6 +250,7 @@ export type Database = {
           level_min?: number | null
           location?: string
           price_sek?: number | null
+          sport?: string
           spots_taken?: number
           starts_at?: string
           status?: string
@@ -371,10 +374,12 @@ export type Database = {
           buddy_sos_optin: boolean
           created_at: string
           events_optin: boolean
+          experience: string | null
           fav_shot: string | null
           formats: string[]
           games_played: number
           ghost_badge: boolean
+          goals: string[] | null
           home_cities: string[] | null
           home_city: string
           home_courts: string | null
@@ -397,6 +402,7 @@ export type Database = {
           referrals_count: number
           rescues_count: number
           signup_code: string | null
+          sports: string[]
           vibe: Database["public"]["Enums"]["vibe_t"]
         }
         Insert: {
@@ -406,10 +412,12 @@ export type Database = {
           buddy_sos_optin?: boolean
           created_at?: string
           events_optin?: boolean
+          experience?: string | null
           fav_shot?: string | null
           formats?: string[]
           games_played?: number
           ghost_badge?: boolean
+          goals?: string[] | null
           home_cities?: string[] | null
           home_city?: string
           home_courts?: string | null
@@ -432,6 +440,7 @@ export type Database = {
           referrals_count?: number
           rescues_count?: number
           signup_code?: string | null
+          sports?: string[]
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Update: {
@@ -441,10 +450,12 @@ export type Database = {
           buddy_sos_optin?: boolean
           created_at?: string
           events_optin?: boolean
+          experience?: string | null
           fav_shot?: string | null
           formats?: string[]
           games_played?: number
           ghost_badge?: boolean
+          goals?: string[] | null
           home_cities?: string[] | null
           home_city?: string
           home_courts?: string | null
@@ -467,6 +478,7 @@ export type Database = {
           referrals_count?: number
           rescues_count?: number
           signup_code?: string | null
+          sports?: string[]
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Relationships: []
@@ -929,10 +941,12 @@ export type Database = {
           buddy_sos_optin: boolean
           created_at: string
           events_optin: boolean
+          experience: string | null
           fav_shot: string | null
           formats: string[]
           games_played: number
           ghost_badge: boolean
+          goals: string[] | null
           home_cities: string[] | null
           home_city: string
           home_courts: string | null
@@ -955,6 +969,7 @@ export type Database = {
           referrals_count: number
           rescues_count: number
           signup_code: string | null
+          sports: string[]
           vibe: Database["public"]["Enums"]["vibe_t"]
         }
         SetofOptions: {
@@ -1033,6 +1048,7 @@ export type Database = {
           photo_url: string
           play_times: string[]
           rescues_count: number
+          sports: string[]
           vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
       }
