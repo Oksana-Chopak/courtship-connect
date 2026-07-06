@@ -40,6 +40,29 @@ export async function fetchFoundersWall(): Promise<FounderRow[]> {
   } catch { return []; }
 }
 
+/** The community Swish number (same app_config row the SupportCard uses). */
+export async function fetchSwishNumber(): Promise<string | null> {
+  try {
+    const { data } = await (supabase as any).rpc("get_support_swish");
+    const v = (data as string | null)?.trim();
+    return v ? v : null;
+  } catch { return null; }
+}
+
+/** Normalize a Swedish Swish payee to digits (07x… → 467x…). */
+export function swishDigits(raw: string): string {
+  let d = raw.replace(/[^0-9]/g, "");
+  if (d.startsWith("0")) d = "46" + d.slice(1);
+  return d;
+}
+
+/** Prefilled Swish payment deep link (opens the Swish app with everything set). */
+export function swishPayLink(number: string, amountSek: number, msg: string): string {
+  const payee = swishDigits(number);
+  const p = new URLSearchParams({ sw: payee, amt: String(amountSek), cur: "SEK", msg: msg.slice(0, 50), edit: "msg" });
+  return `https://app.swish.nu/1/p/sw/?${p.toString()}`;
+}
+
 export function tierBadge(tier: string | null | undefined): string | null {
   if (!tier) return null;
   if (tier === "pro") return "PRO";
