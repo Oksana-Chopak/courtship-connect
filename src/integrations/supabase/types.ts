@@ -107,6 +107,59 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_requests: {
+        Row: {
+          admin_note: string | null
+          availability: string[]
+          city: string | null
+          created_at: string
+          goal: string
+          id: string
+          level: number
+          note: string | null
+          sport: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          availability?: string[]
+          city?: string | null
+          created_at?: string
+          goal: string
+          id?: string
+          level?: number
+          note?: string | null
+          sport?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          availability?: string[]
+          city?: string | null
+          created_at?: string
+          goal?: string
+          id?: string
+          level?: number
+          note?: string | null
+          sport?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courts: {
         Row: {
           area: string | null
@@ -741,6 +794,25 @@ export type Database = {
           uses_remaining: number
         }[]
       }
+      admin_list_coach_requests: {
+        Args: never
+        Returns: {
+          admin_note: string
+          availability: string[]
+          city: string
+          created_at: string
+          goal: string
+          id: string
+          last_name: string
+          level: number
+          name: string
+          note: string
+          phone_e164: string
+          sport: string
+          status: string
+          user_id: string
+        }[]
+      }
       admin_players_list: {
         Args: never
         Returns: {
@@ -768,6 +840,10 @@ export type Database = {
           signup_code: string
           vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
+      }
+      admin_set_coach_request: {
+        Args: { _admin_note?: string; _id: string; _status: string }
+        Returns: undefined
       }
       admin_set_court_hidden: {
         Args: { _court_id: string; _hidden: boolean }
@@ -801,6 +877,7 @@ export type Database = {
         }[]
       }
       archive_game: { Args: { _game_id: string }; Returns: undefined }
+      cancel_coach_request: { Args: { _id: string }; Returns: boolean }
       cancel_game: {
         Args: { _sos_id: string }
         Returns: {
@@ -1017,6 +1094,29 @@ export type Database = {
         }
         Returns: string
       }
+      my_open_coach_request: {
+        Args: never
+        Returns: {
+          admin_note: string | null
+          availability: string[]
+          city: string | null
+          created_at: string
+          goal: string
+          id: string
+          level: number
+          note: string | null
+          sport: string
+          status: string
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "coach_requests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       pick_applicant: {
         Args: { _applicant: string; _sos_id: string }
         Returns: {
@@ -1105,6 +1205,19 @@ export type Database = {
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       request_buddy: { Args: { _other: string }; Returns: undefined }
+      request_coach: {
+        Args: {
+          _availability: string[]
+          _goal: string
+          _note?: string
+          _sport: string
+        }
+        Returns: {
+          id: string
+          ok: boolean
+          reason: string
+        }[]
+      }
       respond_buddy_request: {
         Args: { _accept: boolean; _req_id: string }
         Returns: undefined
