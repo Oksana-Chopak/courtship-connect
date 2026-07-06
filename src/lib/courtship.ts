@@ -79,8 +79,17 @@ export function toE164(raw: string, defaultPrefix = "+46"): string {
   return defaultPrefix + local;
 }
 
-export const CITIES = ["Uppsala", "Stockholm"] as const;
+export const CITIES = ["Uppsala", "Stockholm", "Miami"] as const;
 export type City = (typeof CITIES)[number];
+
+// Sports (padel & badminton join tennis). Emoji + i18n label key.
+export const SPORTS = ["tennis", "padel", "badminton"] as const;
+export type Sport = (typeof SPORTS)[number];
+export function sportMeta(sport?: string | null): { emoji: string; key: string } {
+  if (sport === "padel") return { emoji: "🏓", key: "sport.padel" };
+  if (sport === "badminton") return { emoji: "🏸", key: "sport.badminton" };
+  return { emoji: "🎾", key: "sport.tennis" };
+}
 
 /** Court booking granularity in minutes per city (one editable place). */
 export const BOOKING_GRANULARITY_MINUTES: Record<string, number> = {

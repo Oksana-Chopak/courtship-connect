@@ -29,6 +29,7 @@ export async function fetchPublicBoard(): Promise<EligibleSosRow[]> {
       caller_id: r.caller_id,
       caller_name: r.caller_name,
       caller_photo_url: r.caller_photo ?? null,
+      sport: r.sport ?? "tennis",
       note: null,
       is_buddy: false,
       claimed_by: null,

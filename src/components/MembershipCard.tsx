@@ -10,6 +10,8 @@ export function MembershipCard() {
   const [links, setLinks] = useState<MemberLinks>({});
   const [tier, setTier] = useState<MemberTier>(null);
   const [since, setSince] = useState<string | null>(null);
+  const [until, setUntil] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -23,6 +25,13 @@ export function MembershipCard() {
       setLinks(l);
       setTier(mt.tier);
       setSince(mt.since);
+      if (uid) {
+        try {
+          const { data } = await (supabase as any).from("profiles").select("is_admin,member_until").eq("id", uid).maybeSingle();
+          setIsAdmin(!!data?.is_admin);
+          setUntil(data?.member_until ?? null);
+        } catch { /* pre-SQL */ }
+      }
       setLoaded(true);
     })();
   }, []);
@@ -42,11 +51,26 @@ export function MembershipCard() {
         <div className="text-sm font-semibold">
           {sinceLabel ? t("mem.thanks_since", { date: sinceLabel }) : t("mem.thanks_sub")}
         </div>
+        {until && (
+          <div className="text-xs font-extrabold" style={{ color: "var(--wood, #8a6d3b)" }}>
+            {t("mem.until", { date: new Date(until).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "short", year: "numeric" }) })}
+          </div>
+        )}
       </div>
     );
   }
 
-  if (!links.monthly && !links.yearly) return null;
+  if (!links.monthly && !links.yearly) {
+    if (isAdmin) {
+      return (
+        <div className="ccard p-4 space-y-1" style={{ borderStyle: "dashed" }}>
+          <div className="font-display text-lg leading-tight">🏆 {t("mem.title")}</div>
+          <div className="text-sm font-semibold text-[var(--ink)]/70">{t("mem.admin_setup")}</div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>

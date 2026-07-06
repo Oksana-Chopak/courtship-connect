@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City } from "@/lib/courtship";
+import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -426,6 +426,11 @@ function Card({ sos, onChange, mine, applied, candidates, guest }: { sos: Eligib
         )}
         <div className="mt-1"><CourtStatusBadge status={sos.court_status} muted /></div>
         <div className="text-base text-[var(--ink)] mt-2">
+          {sos.sport && sos.sport !== "tennis" && (
+            <span className="font-extrabold mr-1.5 px-2 py-0.5 rounded-full text-sm" style={{ background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>
+              {sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}
+            </span>
+          )}
           {formatLabel(sos.format)} · L
           <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
           –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>

@@ -25,6 +25,7 @@ export type SosRow = {
 export type CourtRow = { id: string; name: string; area: string | null; city: string };
 
 export type EligibleSosRow = SosRow & {
+  sport?: string | null;
   caller_last_name?: string | null;
   caller_photo_url?: string | null;
   court_name: string | null;

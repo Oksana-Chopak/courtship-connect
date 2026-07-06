@@ -5,7 +5,7 @@ import { activeSosCount } from "@/lib/sos";
 import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, SPORTS, sportMeta, type Sport } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -40,6 +40,7 @@ function NewSos() {
   const [time, setTime] = useState<string>("");
   const [courtId, setCourtId] = useState<string>("");
   const [courtType, setCourtType] = useState<CourtType>("outdoor");
+  const [sport, setSport] = useState<Sport>("tennis");
   const [format, setFormat] = useState<typeof SOS_FORMATS[number]["value"]>("singles");
   const [anyone, setAnyone] = useState(false);
   const [levelMin, setLevelMin] = useState(2);
@@ -100,6 +101,7 @@ function NewSos() {
       // Edit mode: load the existing game and prefill (RLS lets the owner update it directly).
       if (editing && editId) {
         const { data: g } = await (supabase as any).from("sos_requests").select("*").eq("id", editId).maybeSingle();
+        if (g?.sport) setSport(g.sport as Sport);
         if (g && g.caller_id === u.user.id) {
           const pa = new Date(g.play_at);
           const day = new Date(pa); day.setHours(0, 0, 0, 0);
@@ -193,8 +195,13 @@ function NewSos() {
       flared_at: urgent ? new Date().toISOString() : null,
       court_type: courtType,
       duration_min: duration,
+      sport,
     };
     let res = await (supabase as any).from("sos_requests").insert(insertRow).select("id").single();
+    if (res.error && /sport/i.test(res.error.message || "")) {
+      const { sport: _s, ...rest } = insertRow;
+      res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
+    }
     if (res.error && /duration_min/i.test(res.error.message || "")) {
       // duration_min column not migrated yet — post without it so creation never breaks
       const { duration_min: _omit, ...fallback } = insertRow;
@@ -243,6 +250,14 @@ function NewSos() {
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
         </div>
         <div className="mt-3">
+          <div className="csection-label mb-1">{t("sport.label")}</div>
+          <div className="flex gap-1.5 mb-3">
+            {SPORTS.map((sp) => (
+              <button key={sp} type="button" onClick={() => setSport(sp)} className={`cchip ${sport === sp ? "cchip-on" : ""}`}>
+                {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
+              </button>
+            ))}
+          </div>
           <div className="csection-label mb-1">{t("sos.duration")}</div>
           <div className="flex gap-2 flex-wrap">
             {DURATIONS.map((d) => (
