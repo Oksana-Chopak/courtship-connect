@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -11,7 +11,8 @@ type Tab = {
   badge?: number;
 };
 
-export function BottomTabBar() {
+export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const loc = useLocation();
   const path = loc.pathname;
@@ -134,7 +135,7 @@ export function BottomTabBar() {
               type="button"
               aria-label={t("plus.title")}
               aria-expanded={plusOpen}
-              onClick={() => setPlusOpen((v) => !v)}
+              onClick={() => { if (guest) { navigate({ to: "/auth", search: { mode: "signup", next: undefined } }); return; } setPlusOpen((v) => !v); }}
               className="flex items-center justify-center rounded-full font-extrabold"
               style={{
                 width: 58, height: 58, transform: "translateY(-14px)",

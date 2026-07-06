@@ -4,4 +4,5 @@
 export const FLAGS = {
   luckyServe: false, // 🎰 Lucky Serve roulette
   swipeDeck: false,  // 💘 Mystery Match swipe deck
+  guestPeek: true,   // 👀 logged-out visitors can see board/players/leaders (read-only)
 };
