@@ -7,6 +7,7 @@ import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds, fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
+import { fetchPublicPlayers } from "@/lib/guest";
 
 export const Route = createFileRoute("/_authenticated/players/")({
   head: () => ({ meta: [{ title: "Players — Courtship" }] }),
@@ -58,7 +59,7 @@ function Players() {
       const [buddies, meRes, dirRes] = await Promise.all([
         uid ? fetchBuddyIds(uid).catch(() => new Set<string>()) : Promise.resolve(new Set<string>()),
         uid ? (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null) : Promise.resolve(null),
-        (supabase as any).rpc("players_directory").then((r: any) => r, () => ({ data: [] })),
+        uid ? (supabase as any).rpc("players_directory").then((r: any) => r, () => ({ data: [] })) : fetchPublicPlayers().then((rows) => ({ data: rows })),
       ]);
       setBuddyIds(buddies as Set<string>);
       const meRow = (meRes as any)?.data;
@@ -108,7 +109,7 @@ function Players() {
         <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
       </div>
 
-      <InviteAccent />
+      {meId && <InviteAccent />}
 
       {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
       {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center block">{t("match.cta")}</Link>}

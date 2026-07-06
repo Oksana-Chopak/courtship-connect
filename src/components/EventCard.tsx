@@ -14,6 +14,7 @@ import {
   type AttendeeContact,
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 import { shareTo } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
 
@@ -32,6 +33,8 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   }, [isHost, e.id, e.spots_taken]);
 
   async function join() {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { window.location.href = "/auth?mode=signup&next=%2Fboard"; return; }
     setBusy(true);
     const r = await joinEvent(e.id);
     setBusy(false);

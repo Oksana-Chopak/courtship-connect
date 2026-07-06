@@ -7,6 +7,7 @@ import { SeasonPanel } from "@/components/SeasonPanel";
 import { MembershipCard } from "@/components/MembershipCard";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
+import { joinSearch } from "@/lib/guest";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Profile — Courtship" }] }),
@@ -17,6 +18,7 @@ function MePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [uid, setUid] = useState<string | null>(null);
+  const [guest, setGuest] = useState(false);
   const [profile, setProfile] = useState<{ name: string; photo_url: string | null; level: number; vibe: string; member_tier: string | null } | null>(null);
   const [gamesPlayed, setGamesPlayed] = useState(0);
 
@@ -24,7 +26,7 @@ function MePage() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
-      if (!uid) return;
+      if (!uid) { setGuest(true); return; }
       setUid(uid);
       const profRes = await (supabase as any).rpc("get_my_full_profile").maybeSingle().then((r: any) => r, () => null);
       const data = (profRes as any)?.data;
@@ -34,6 +36,40 @@ function MePage() {
       setGamesPlayed(d.games_played ?? 0);
     })();
   }, [navigate]);
+
+  if (guest) {
+    // Guest demo: show what a season looks like + one big join CTA.
+    return (
+      <div className="space-y-4">
+        <div className="ccard p-4 text-center space-y-1">
+          <div className="text-4xl">🎾</div>
+          <div className="font-display text-2xl leading-tight">{t("guest.me_title")}</div>
+          <div className="text-sm font-semibold text-[var(--ink)]/75">{t("guest.me_sub")}</div>
+        </div>
+        <div className="ccard p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🔥</span>
+              <span className="font-display text-3xl">3</span>
+              <span className="font-extrabold text-xs leading-tight" style={{ color: "var(--wood, #8a6d3b)" }}>{t("prog.week_streak")}</span>
+            </div>
+            <span className="font-extrabold text-xs px-2.5 py-1 rounded-full" style={{ background: "var(--green-pop)", border: "1px solid var(--ink)" }}>{t("streak.safe")}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2 mt-4">
+            {[["🎾", t("prog.track_activity")], ["🚑", t("prog.track_rescuer")], ["🤝", t("prog.track_recruiter")], ["🎪", t("prog.track_matchmaker")]].map(([e, l]) => (
+              <div key={l as string} className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-center rounded-full" style={{ width: 52, height: 52, background: "var(--cream2)", border: "2px solid var(--ink)" }}>
+                  <span style={{ fontSize: 24 }}>{e}</span>
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-wide text-center" style={{ color: "var(--wood, #8a6d3b)" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <Link to="/auth" search={joinSearch("/me")} className="cbtn cbtn-coral w-full text-center block">{t("guest.me_cta")}</Link>
+      </div>
+    );
+  }
 
   if (!profile || !uid) {
     return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;

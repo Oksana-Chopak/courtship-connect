@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar } from "@/components/Avatar";
@@ -31,6 +31,7 @@ function LeadersPage() {
   const [photo, setPhoto] = useState<Record<string, string | null>>({});
   const [kudos, setKudos] = useState<Record<string, { n: number; mine: boolean }>>({});
   const [meId, setMeId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [openKudos, setOpenKudos] = useState<{ id: string; name: string } | null>(null);
   const [kudosBy, setKudosBy] = useState<{ id: string; name: string; photo_url: string | null }[] | null>(null);
   const [kudosBusy, setKudosBusy] = useState(false);
@@ -70,6 +71,7 @@ function LeadersPage() {
   }, []);
 
   async function giveKudos(id: string) {
+    if (!meId) { navigate({ to: "/auth", search: { mode: "signup", next: "/leaders" } }); return; }
     const already = kudos[id]?.mine;
     if (already) return;
     setKudos((p) => ({ ...p, [id]: { n: (p[id]?.n ?? 0) + 1, mine: true } })); // optimistic

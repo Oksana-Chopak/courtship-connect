@@ -7,6 +7,7 @@ import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITI
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
+import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
@@ -55,6 +56,19 @@ function BoardPage() {
     const { data: au } = await supabase.auth.getUser();
     const uid = au.user?.id ?? null;
     setMeId(uid);
+
+    if (!uid) {
+      // Guest peek: minimized public rows + approved events, nothing personal.
+      const [rows, ev] = await Promise.all([
+        fetchPublicBoard(),
+        fetchApprovedEvents().catch(() => [] as EventRow[]),
+      ]);
+      setUrgent(rows.filter((r) => r.kind === "sos"));
+      setPlanned(rows.filter((r) => r.kind !== "sos"));
+      setMine([]); setEvents(ev); setMyAttendance({});
+      setLoading(false);
+      return;
+    }
 
     // After we know the user id, everything else only depends on it — fetch in
     // parallel instead of waterfalling. Each personal fetch degrades on its own
@@ -238,7 +252,7 @@ function BoardPage() {
                   ) : it.kind === "mine" ? (
                     <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} />
                   ) : (
-                    <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} />
+                    <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} guest={!meId} />
                   )}
                 </RailItem>
               );
@@ -371,7 +385,7 @@ function ShareRow({ sos }: { sos: EligibleSosRow }) {
   );
 }
 
-function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number }) {
+function Card({ sos, onChange, mine, applied, candidates, guest }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number; guest?: boolean }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const lmMin = levelMeta(sos.level_min);
@@ -442,7 +456,7 @@ function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRo
   if (isUrgent) {
     return (
       <div className="relative">
-        <ShareRow sos={sos} />
+        {!guest && <ShareRow sos={sos} />}
         <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
           style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}>
           {inner}
@@ -455,7 +469,7 @@ function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRo
   }
   return (
     <div className="ccard p-4 relative">
-      <ShareRow sos={sos} />
+      {!guest && <ShareRow sos={sos} />}
       {inner}
       {applied ? (
         <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-ghost w-full mt-3 text-center block">
@@ -464,6 +478,7 @@ function Card({ sos, onChange, mine, applied, candidates }: { sos: EligibleSosRo
       ) : (
         <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
           onClick={async () => {
+            if (guest) { navigate({ to: "/auth", search: joinSearch("/board") }); return; }
             setBusy(true);
             const r = await applyToGame(sos.id);
             setBusy(false);
