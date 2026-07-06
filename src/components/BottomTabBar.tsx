@@ -110,6 +110,15 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
                   <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.log_sub")}</span>
                 </span>
               </Link>
+              <Link to="/coach" onClick={() => setPlusOpen(false)}
+                className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
+                style={{ background: "var(--cream)" }}>
+                <span className="text-2xl" aria-hidden="true">🎓</span>
+                <span className="min-w-0">
+                  <span className="block font-display text-lg leading-tight">{t("plus.coach")}</span>
+                  <span className="block text-sm font-semibold" style={{ opacity: 0.7 }}>{t("plus.coach_sub")}</span>
+                </span>
+              </Link>
               <Link to="/events/new" onClick={() => setPlusOpen(false)}
                 className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
                 style={{ background: "var(--cream)" }}>

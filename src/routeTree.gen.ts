@@ -27,6 +27,7 @@ import { Route as AuthenticatedLeadersRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
+import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPlayersIndexRouteImport } from './routes/_authenticated/players.index'
@@ -124,6 +125,11 @@ const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
   path: '/games',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   id: '/board',
   path: '/board',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/games': typeof AuthenticatedGamesRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/games': typeof AuthenticatedGamesRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
+  '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/games': typeof AuthenticatedGamesRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/admin'
     | '/board'
+    | '/coach'
     | '/games'
     | '/help'
     | '/home'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/admin'
     | '/board'
+    | '/coach'
     | '/games'
     | '/help'
     | '/home'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/_authenticated/admin'
     | '/_authenticated/board'
+    | '/_authenticated/coach'
     | '/_authenticated/games'
     | '/_authenticated/help'
     | '/_authenticated/home'
@@ -457,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coach': {
+      id: '/_authenticated/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/board': {
       id: '/_authenticated/board'
       path: '/board'
@@ -525,6 +544,7 @@ const AuthenticatedPlayersRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
+  AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
@@ -546,6 +566,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
+  AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
@@ -577,3 +598,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

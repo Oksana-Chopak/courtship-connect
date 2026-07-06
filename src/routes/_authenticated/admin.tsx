@@ -71,9 +71,11 @@ function AdminPage() {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [supportSwish, setSupportSwish] = useState("");
   const [memLinks, setMemLinks] = useState<{ m: string; y: string; p: string }>({ m: "", y: "", p: "" });
+  const [coachReqs, setCoachReqs] = useState<any[]>([]);
 
   async function load() {
     loadMemLinks();
+    loadCoachReqs();
     // Hard gate on the caller's OWN is_admin (own-row read). Non-admins see nothing.
     const { data: me } = await (supabase as any).rpc("get_my_full_profile").maybeSingle();
     if (!me || !(me as any).is_admin) { setAllowed(false); return; }
@@ -120,6 +122,20 @@ function AdminPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Code deleted");
     load();
+  }
+
+  async function loadCoachReqs() {
+    try {
+      const { data } = await (supabase as any).rpc("admin_list_coach_requests");
+      setCoachReqs((data as any[]) ?? []);
+    } catch { /* pre-SQL */ }
+  }
+
+  async function setCoachStatus(id: string, status: string) {
+    const { error } = await (supabase as any).rpc("admin_set_coach_request", { _id: id, _status: status });
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("mem.admin_saved"));
+    void loadCoachReqs();
   }
 
   async function loadMemLinks() {
@@ -384,6 +400,36 @@ function AdminPage() {
           </div>
         )}
       </div>
+
+      <Collapsible title={`🎓 ${t("coach.admin_title")} (${coachReqs.filter((r) => r.status === "new").length})`}>
+        <div className="space-y-3">
+          {coachReqs.length === 0 && <div className="text-sm text-[var(--ink)]/60">{t("coach.admin_empty")}</div>}
+          {coachReqs.map((r) => (
+            <div key={r.id} className="rounded-2xl border-2 border-[var(--ink)] p-3 space-y-1.5" style={{ background: "var(--cream)" }}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold truncate">{r.name}{r.last_name ? " " + r.last_name : ""} · L{r.level}</span>
+                <span className="text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0"
+                  style={{ background: r.status === "new" ? "var(--coral)" : r.status === "matched" ? "var(--green-pop)" : "var(--cream2)", color: r.status === "new" ? "#FFF6E8" : "var(--ink)", border: "1.5px solid var(--ink)" }}>
+                  {r.status}
+                </span>
+              </div>
+              <div className="text-sm font-semibold">{r.sport} · "{r.goal}"</div>
+              {Array.isArray(r.availability) && r.availability.length > 0 && (
+                <div className="text-xs font-bold text-[var(--ink)]/60">🕐 {r.availability.join(" · ")}</div>
+              )}
+              {r.note && <div className="text-xs italic text-[var(--ink)]/70">"{r.note}"</div>}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {r.phone_e164 && (
+                  <a className="cchip" href={`https://wa.me/${String(r.phone_e164).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+                )}
+                {r.status === "new" && <button className="cchip" onClick={() => setCoachStatus(r.id, "in_progress")}>▶ {t("coach.st_progress")}</button>}
+                {(r.status === "new" || r.status === "in_progress") && <button className="cchip" onClick={() => setCoachStatus(r.id, "matched")}>✅ {t("coach.st_matched")}</button>}
+                {r.status !== "closed" && <button className="cchip" onClick={() => setCoachStatus(r.id, "closed")}>🗄 {t("coach.st_closed")}</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Collapsible>
 
       <Collapsible title={`💳 ${t("mem.admin_links_title")}`}>
         <div className="space-y-2">
