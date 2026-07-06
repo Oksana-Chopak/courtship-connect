@@ -843,6 +843,7 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -866,6 +867,7 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
+          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
