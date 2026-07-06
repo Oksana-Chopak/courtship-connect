@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { LEVELS, CITIES, DURATIONS, durationLabel, type City } from "@/lib/courtship";
+import { LEVELS, CITIES, DURATIONS, durationLabel, type City, sportMeta } from "@/lib/courtship";
 import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
@@ -30,6 +30,8 @@ function NewEvent() {
   const [courts, setCourts] = useState<CourtFull[]>([]);
   const [ready, setReady] = useState(false);
   const [title, setTitle] = useState("");
+  const [sport, setSport] = useState<string>("tennis");
+  const [mySports, setMySports] = useState<string[]>(["tennis"]);
   const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [time, setTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(90);
@@ -58,6 +60,10 @@ function NewEvent() {
         .eq("id", u.user.id)
         .maybeSingle();
       const hc = (((p as any)?.home_city) ?? "Uppsala") as City;
+      {
+        const sp = (((p as any)?.sports) as string[] | null) ?? ["tennis"];
+        if (sp.length) { setMySports(sp); if (!sp.includes("tennis")) setSport(sp[0]); }
+      }
 
       if (editing && editId) {
         const { data: ev } = await (supabase as any)
@@ -65,6 +71,7 @@ function NewEvent() {
         const e = ev as EventRow | null;
         if (e) {
           setTitle(e.title ?? "");
+          if ((e as any).sport) setSport((e as any).sport);
           if (e.starts_at) {
             const d = new Date(e.starts_at);
             const day = new Date(d); day.setHours(0, 0, 0, 0);
@@ -121,6 +128,7 @@ function NewEvent() {
     if (!canSubmit || !startsAt || !court) { toast.error(t("ev.fill_required")); return; }
     setBusy(true);
     const payload = {
+        sport,
       title: title.trim(),
       starts_at: startsAt.toISOString(),
       city: court.city ?? city,
@@ -168,6 +176,16 @@ function NewEvent() {
       <Section label={t("sos.when")}>
         <DateChipPicker value={date} onChange={setDate} maxDays={180} />
         <div className="mt-3">
+          {mySports.length > 1 && (<>
+          <div className="csection-label mb-1">{t("sport.label")}</div>
+          <div className="flex gap-1.5 mb-3">
+            {mySports.map((sp) => (
+              <button key={sp} type="button" className={`cchip ${sport === sp ? "cchip-on" : ""}`} onClick={() => setSport(sp)}>
+                {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
+              </button>
+            ))}
+          </div>
+          </>)}
           <div className="csection-label mb-1">{t("slot.label")}</div>
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
         </div>

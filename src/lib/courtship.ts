@@ -85,6 +85,10 @@ export type City = (typeof CITIES)[number];
 // Sports (padel & badminton join tennis). Emoji + i18n label key.
 export const SPORTS = ["tennis", "padel", "badminton"] as const;
 export type Sport = (typeof SPORTS)[number];
+// Onboarding: goals + experience (English canonical values; labels via i18n)
+export const GOALS = ["partners", "fitness", "improve", "compete", "social"] as const;
+export const EXPERIENCES = ["new", "1_3", "3_10", "10_plus"] as const;
+
 export function sportMeta(sport?: string | null): { emoji: string; key: string } {
   if (sport === "padel") return { emoji: "🏓", key: "sport.padel" };
   if (sport === "badminton") return { emoji: "🏸", key: "sport.badminton" };

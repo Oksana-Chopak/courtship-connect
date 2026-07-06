@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City } from "@/lib/courtship";
+import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City, sportMeta } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
 import { fetchBuddyIds, fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
@@ -20,6 +20,7 @@ type P = {
   home_courts: string | null; home_city: string | null; home_cities: string[] | null;
   rescues_count: number | null; games_played: number | null; bio: string | null;
   member_tier?: string | null;
+  sports?: string[] | null;
 };
 
 function Players() {
@@ -35,6 +36,8 @@ function Players() {
   const [meId, setMeId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRow, setSelfRow] = useState<P | null>(null);
+  const [mySports, setMySports] = useState<string[]>(["tennis"]);
+  const [sportLens, setSportLens] = useState<string>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   // buddy requests (moved here from the old People page)
   const [reqs, setReqs] = useState<BuddyRequest[]>([]);
@@ -64,6 +67,10 @@ function Players() {
       setBuddyIds(buddies as Set<string>);
       const meRow = (meRes as any)?.data;
       setIsAdmin(!!meRow?.is_admin);
+      {
+        const sp = ((meRow?.sports as string[] | null) ?? ["tennis"]);
+        setMySports(sp.length ? sp : ["tennis"]);
+      }
       if (meRow) setSelfRow(meRow as P);
       setRows(((dirRes as any)?.data as any) ?? []);
       setLoading(false);
@@ -89,8 +96,13 @@ function Players() {
       (!format || p.formats?.includes(format)) &&
       (!time || p.play_times?.includes(time)) &&
       (!city || (Array.isArray(p.home_cities) && p.home_cities.length ? p.home_cities.includes(city) : p.home_city === city)) &&
-      (!buddiesOnly || p.buddy_optin === "yes")),
-    [rows, level, format, time, city, buddiesOnly],
+      (!buddiesOnly || p.buddy_optin === "yes") &&
+      // sport lens: by default show people who share ANY of my sports;
+      // a specific lens narrows to that sport. Rows without sports = tennis.
+      ((sportLens === "all"
+        ? ((p.sports && p.sports.length ? p.sports : ["tennis"]).some((x) => mySports.includes(x)))
+        : (p.sports && p.sports.length ? p.sports : ["tennis"]).includes(sportLens)))),
+    [rows, level, format, time, city, buddiesOnly, sportLens, mySports],
   );
   const activeCount = (level != null ? 1 : 0) + (format ? 1 : 0) + (time ? 1 : 0) + (city ? 1 : 0) + (buddiesOnly ? 1 : 0);
   const hasFilters = activeCount > 0;
@@ -110,6 +122,17 @@ function Players() {
       </div>
 
       {meId && <InviteAccent />}
+
+      {mySports.length > 1 && (
+        <div className="flex gap-1.5 flex-wrap">
+          <button type="button" className={`cchip ${sportLens === "all" ? "cchip-on" : ""}`} onClick={() => setSportLens("all")}>{t("board.sport_all")}</button>
+          {mySports.map((sp) => (
+            <button key={sp} type="button" className={`cchip ${sportLens === sp ? "cchip-on" : ""}`} onClick={() => setSportLens(sp)}>
+              {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
       {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center block">{t("match.cta")}</Link>}

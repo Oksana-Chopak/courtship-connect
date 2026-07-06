@@ -61,6 +61,16 @@ function SettingsPage() {
           onSubmit={async (v: ProfileFormValues) => {
             setBusy(true);
             const { error } = await (supabase as any).rpc("save_my_profile", { _data: v });
+            if (!error) {
+              try {
+                const { data: u2 } = await supabase.auth.getUser();
+                if (u2.user) {
+                  await (supabase as any).from("profiles")
+                    .update({ sports: v.sports, experience: v.experience || null, goals: v.goals })
+                    .eq("id", u2.user.id);
+                }
+              } catch { /* pre-SQL */ }
+            }
             setBusy(false);
             if (error) {
               oops(error);

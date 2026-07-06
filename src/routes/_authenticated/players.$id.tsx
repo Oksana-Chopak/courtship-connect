@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { adminSetMember, type MemberTier } from "@/lib/membership";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink } from "@/lib/courtship";
+import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink, sportMeta } from "@/lib/courtship";
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { Avatar } from "@/components/Avatar";
@@ -165,6 +165,15 @@ function PlayerDetail() {
         <Row label={t("player.home_courts")}>{p.home_courts || "—"}</Row>
         <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : t((`optin.${p.buddy_optin}`) as any)}</Row>
         <Row label={t("player.rescues")}>🚑 {p.rescues_count ?? 0}</Row>
+        {Array.isArray((p as any).sports) && ((p as any).sports as string[]).some((x) => x !== "tennis") && (
+          <Row label={t("sport.label")}>{((p as any).sports as string[]).map((x) => `${sportMeta(x).emoji} ${t(sportMeta(x).key)}`).join(" · ")}</Row>
+        )}
+        {(p as any).experience && (
+          <Row label={t("wiz.experience")}>{t(`exp.${(p as any).experience}`)}</Row>
+        )}
+        {Array.isArray((p as any).goals) && ((p as any).goals as string[]).length > 0 && (
+          <Row label={t("wiz.goals")}>{((p as any).goals as string[]).map((g) => t(`goal.${g}`)).join(" · ")}</Row>
+        )}
       </div>
 
       {iAmAdmin && meId !== p.id && (

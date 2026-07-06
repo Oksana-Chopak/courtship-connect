@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "@/lib/toast";
-import { whenLabel, whatsappLink, durationLabel } from "@/lib/courtship";
+import { whenLabel, whatsappLink, durationLabel, sportMeta } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
@@ -83,6 +83,11 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   return (
     <div className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
       <div className="font-display text-2xl leading-tight">{e.title}</div>
+      {(e as any).sport && (e as any).sport !== "tennis" && (
+        <span className="inline-block font-extrabold text-xs px-2 py-0.5 rounded-full mt-1" style={{ background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>
+          {sportMeta((e as any).sport).emoji} {t(sportMeta((e as any).sport).key)}
+        </span>
+      )}
       <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
       <div className="text-base text-[var(--ink)] mt-1">
         🎟 {isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}

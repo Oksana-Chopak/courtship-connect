@@ -9,7 +9,7 @@ import {
   levelMeta,
   toE164,
   type City,
-} from "@/lib/courtship";
+  SPORTS, GOALS, EXPERIENCES, sportMeta } from "@/lib/courtship";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { CourtCombobox } from "@/components/CourtCombobox";
 import { uploadPhoto } from "@/lib/avatar";
@@ -35,6 +35,9 @@ export type ProfileFormValues = {
   buddy_optin: "yes" | "sometimes" | "no";
   buddy_radius_km: number;
   buddy_sos_optin: boolean;
+  sports: string[];
+  experience: string;
+  goals: string[];
 };
 
 export const emptyProfile: ProfileFormValues = {
@@ -56,6 +59,9 @@ export const emptyProfile: ProfileFormValues = {
   buddy_optin: "sometimes",
   buddy_radius_km: 10,
   buddy_sos_optin: true,
+  sports: ["tennis"],
+  experience: "",
+  goals: [],
 };
 
 function toggle<T>(arr: T[], v: T) {
@@ -84,6 +90,9 @@ export function rowToProfile(d: any): ProfileFormValues {
     home_cities: d.home_cities ?? [d.home_city ?? "Uppsala"],
     buddy_optin: d.buddy_optin ?? "sometimes",
     buddy_radius_km: d.buddy_radius_km ?? 10,
+    sports: ((d.sports as string[] | null) ?? ["tennis"]),
+    experience: ((d.experience as string | null) ?? ""),
+    goals: ((d.goals as string[] | null) ?? []),
     buddy_sos_optin: d.buddy_sos_optin ?? true,
   };
 }
@@ -160,6 +169,7 @@ export function ProfileWizard({
       return true;
     }
     if (step === 2 && v.formats.length === 0) return false;
+    if (step === 4 && v.sports.length === 0) return false;
     return true;
   }
 
@@ -366,6 +376,45 @@ export function ProfileWizard({
 
         {step === 4 && (
           <div className="flex flex-col gap-6">
+            <div>
+              <div className="csection-label mb-2">{t("wiz.sports")}</div>
+              <div className="flex flex-wrap gap-2">
+                {SPORTS.map((sp) => {
+                  const on = v.sports.includes(sp);
+                  return (
+                    <button key={sp} type="button" className={`cchip ${on ? "cchip-on" : ""}`}
+                      onClick={() => set("sports", on ? v.sports.filter((x) => x !== sp) : [...v.sports, sp])}>
+                      {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <div className="csection-label mb-2">{t("wiz.experience")}</div>
+              <div className="flex flex-wrap gap-2">
+                {EXPERIENCES.map((e) => (
+                  <button key={e} type="button" className={`cchip ${v.experience === e ? "cchip-on" : ""}`}
+                    onClick={() => set("experience", v.experience === e ? "" : e)}>
+                    {t(`exp.${e}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="csection-label mb-2">{t("wiz.goals")}</div>
+              <div className="flex flex-wrap gap-2">
+                {GOALS.map((g) => {
+                  const on = v.goals.includes(g);
+                  return (
+                    <button key={g} type="button" className={`cchip ${on ? "cchip-on" : ""}`}
+                      onClick={() => set("goals", on ? v.goals.filter((x) => x !== g) : [...v.goals, g])}>
+                      {t(`goal.${g}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div>
               <div className="csection-label mb-2">{t("wiz.looking")}</div>
               <div className="flex flex-wrap gap-2">

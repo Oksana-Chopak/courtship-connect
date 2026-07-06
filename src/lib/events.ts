@@ -44,9 +44,9 @@ export async function createEventRequest(input: {
     .insert({ ...ev, host_id: u.user.id, status: "pending" })
     .select("id")
     .single();
-  if (res.error && /(level_min|level_max|duration_min)/i.test(res.error.message || "")) {
+  if (res.error && /(level_min|level_max|duration_min|sport)/i.test(res.error.message || "")) {
     // new columns not migrated yet — create without them so hosting never breaks
-    const { level_min: _a, level_max: _b, duration_min: _c, ...base } = ev;
+    const { level_min: _a, level_max: _b, duration_min: _c, sport: _d, ...base } = ev as any;
     res = await (supabase as any)
       .from("event_requests")
       .insert({ ...base, host_id: u.user.id, status: "pending" })

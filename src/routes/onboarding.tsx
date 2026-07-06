@@ -58,7 +58,20 @@ function Onboarding() {
   // "ok" | "invite" (recoverable invite-gate failure) | "other"
   async function saveProfile(v: ProfileFormValues, code: string): Promise<"ok" | "invite" | "other"> {
     const { error } = await (supabase as any).rpc("save_my_profile", { _data: { ...v, signup_code: code } });
-    if (!error) return "ok";
+    if (!error) {
+    // New profile dimensions (sports/experience/goals) are written directly to
+    // the own row (RLS-guarded) instead of widening the security-critical
+    // save_my_profile RPC. Best-effort: an older DB without the columns just skips.
+    try {
+      const { data: u2 } = await supabase.auth.getUser();
+      if (u2.user) {
+        await (supabase as any).from("profiles")
+          .update({ sports: v.sports, experience: v.experience || null, goals: v.goals })
+          .eq("id", u2.user.id);
+      }
+    } catch { /* pre-SQL */ }
+      return "ok";
+    }
     const m = String(error.message || "");
     if (m.includes("invite_required")) { toast.error(t("inv.required")); return "invite"; }
     if (m.includes("invite_invalid")) { toast.error(t("inv.invalid")); return "invite"; }

@@ -45,6 +45,8 @@ function BoardPage() {
   const [myAttendance, setMyAttendance] = useState<Record<string, string>>({});
   const [myClaims, setMyClaims] = useState<EligibleSosRow[]>([]);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [mySports, setMySports] = useState<string[]>(["tennis"]);
+  const [activeSport, setActiveSport] = useState<string>("all");
   const [candCounts, setCandCounts] = useState<Map<string, number>>(new Map());
   const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
@@ -106,6 +108,10 @@ function BoardPage() {
     setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
     setMyClaims(claims as any);
     setAppliedIds(myApps as Set<string>);
+    {
+      const sp = ((profRes as any)?.data?.sports as string[] | null) ?? ["tennis"];
+      setMySports(sp.length ? sp : ["tennis"]);
+    }
     const myOpenIds = (m as EligibleSosRow[]).filter((g) => g.kind === "open" && g.status === "active").map((g) => g.id);
     setCandCounts(await fetchApplicantCounts(myOpenIds));
     // Confetti when one of MY games is freshly claimed (session-scoped; seed on
@@ -141,7 +147,9 @@ function BoardPage() {
   }
   // One match predicate per kind. Court / city / level apply to games; events
   // carry only a city. The Type filter decides which kinds appear at all.
+  const sportOk = (sp?: string | null) => activeSport === "all" || (sp ?? "tennis") === activeSport;
   const gameMatch = (r: EligibleSosRow) =>
+    sportOk(r.sport) &&
     (ctFilter === "any" || r.court_type === ctFilter) &&
     (fCity == null || r.court_city === fCity) &&
     (fLevel == null || (r.level_min <= fLevel && fLevel <= r.level_max));
@@ -158,7 +166,7 @@ function BoardPage() {
     ...(showKind("urgent") ? urgent.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
     ...(showKind("planned") ? planned.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "open", r })),
     ...(showKind("planned") ? mine.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "mine", r })),
-    ...(showKind("event") ? events.filter(eventMatch) : []).map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
+    ...(showKind("event") ? events.filter((e) => eventMatch(e) && sportOk((e as any).sport)) : []).map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
   ].sort((a, b) => a.t - b.t);
 
   return (
@@ -177,6 +185,18 @@ function BoardPage() {
         </p>
       )}
       <Link to="/matches" search={{ log: true }} className="cbtn cbtn-ghost w-full text-center block">✅ {t("board.log_cta")}</Link>
+      {mySports.length > 1 && (
+        <div className="flex gap-1.5 flex-wrap">
+          <button type="button" className={`cchip ${activeSport === "all" ? "cchip-on" : ""}`} onClick={() => setActiveSport("all")}>
+            {t("board.sport_all")}
+          </button>
+          {mySports.map((sp) => (
+            <button key={sp} type="button" className={`cchip ${activeSport === sp ? "cchip-on" : ""}`} onClick={() => setActiveSport(sp)}>
+              {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* count + filters, right under the create buttons */}
       <div className="flex items-center gap-2">

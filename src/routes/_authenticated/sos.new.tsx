@@ -41,6 +41,18 @@ function NewSos() {
   const [courtId, setCourtId] = useState<string>("");
   const [courtType, setCourtType] = useState<CourtType>("outdoor");
   const [sport, setSport] = useState<Sport>("tennis");
+  const [mySports, setMySports] = useState<Sport[]>(["tennis"]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        if (!u.user) return;
+        const { data } = await (supabase as any).from("profiles").select("sports").eq("id", u.user.id).maybeSingle();
+        const sp = ((data?.sports as Sport[] | null) ?? ["tennis"]).filter((x): x is Sport => x === "tennis" || x === "padel" || x === "badminton");
+        if (sp.length) { setMySports(sp); if (!sp.includes("tennis")) setSport(sp[0]); }
+      } catch { /* pre-SQL */ }
+    })();
+  }, []);
   const [format, setFormat] = useState<typeof SOS_FORMATS[number]["value"]>("singles");
   const [anyone, setAnyone] = useState(false);
   const [levelMin, setLevelMin] = useState(2);
@@ -76,6 +88,7 @@ function NewSos() {
         const bids = await fetchBuddyIds(u.user!.id);
         if (bids.size) {
           const { data: dir } = await (supabase as any).rpc("players_directory", { _ids: [...bids] });
+          void 0;
           setBuddies(((dir as any[]) ?? []).map((x) => ({ id: x.id, name: x.name })));
         }
       } catch { /* ignore */ }
@@ -250,14 +263,16 @@ function NewSos() {
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
         </div>
         <div className="mt-3">
+          {mySports.length > 1 && (<>
           <div className="csection-label mb-1">{t("sport.label")}</div>
           <div className="flex gap-1.5 mb-3">
-            {SPORTS.map((sp) => (
+            {mySports.map((sp) => (
               <button key={sp} type="button" onClick={() => setSport(sp)} className={`cchip ${sport === sp ? "cchip-on" : ""}`}>
                 {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
               </button>
             ))}
           </div>
+          </>)}
           <div className="csection-label mb-1">{t("sos.duration")}</div>
           <div className="flex gap-2 flex-wrap">
             {DURATIONS.map((d) => (
