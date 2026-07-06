@@ -1778,7 +1778,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     (key: string, vars?: Record<string, string | number>) => {
       const raw = DICTS[lang][key] ?? DICTS.en[key] ?? key;
       if (!vars) return raw;
-      return raw.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+      return raw.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
     },
     [lang],
   );

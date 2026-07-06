@@ -62,7 +62,11 @@ export async function shareInvite(messageTemplate: string, copiedNote: string): 
 // so whoever a friend forwards it to lands on it and can sign up in one flow.
 export async function shareTo(next: string, messageTemplate: string, copiedNote: string): Promise<void> {
   const link = await myInviteLink(next);
-  await shareMessage(messageTemplate.replace("{link}", link), copiedNote);
+  let msg = messageTemplate.replace("{link}", link);
+  // Belt & suspenders: a share without its link is pointless — if the template
+  // arrived without the placeholder (e.g. an interpolator ate it), append it.
+  if (!msg.includes(link)) msg = `${msg.trim()} ${link}`;
+  await shareMessage(msg, copiedNote);
 }
 
 export async function shareMessage(message: string, copiedNote: string): Promise<void> {
