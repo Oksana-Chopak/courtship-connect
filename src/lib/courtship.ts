@@ -155,11 +155,9 @@ export function durationLabel(min: number): string { return min === 60 ? "1h" : 
 export type CourtType = (typeof COURT_TYPES)[number];
 
 export function courtTypeMeta(t: CourtType | string | null | undefined, lang: "en" | "sv" = "en") {
-  if (t !== "indoor" && t !== "outdoor") {
-    // Defensive: rows from an RPC missing court_type (or a future value) must
-    // degrade to a sane default instead of crashing the whole board render.
-    t = "outdoor";
-  }
+  // Defensive: rows from an RPC missing court_type (or a future value) must
+  // degrade to a sane default instead of crashing the whole board render.
+  const ct: CourtType = t === "indoor" || t === "outdoor" ? t : "outdoor";
   const en: Record<CourtType, { label: string; emoji: string }> = {
     indoor:  { label: "Indoor",  emoji: "🏠" },
     outdoor: { label: "Outdoor", emoji: "☀️" },
@@ -168,7 +166,7 @@ export function courtTypeMeta(t: CourtType | string | null | undefined, lang: "e
     indoor:  { label: "Inne", emoji: "🏠" },
     outdoor: { label: "Ute",  emoji: "☀️" },
   };
-  return (lang === "sv" ? sv : en)[t];
+  return (lang === "sv" ? sv : en)[ct];
 }
 
 export const COURT_STATUSES = [
