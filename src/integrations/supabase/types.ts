@@ -386,6 +386,7 @@ export type Database = {
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           member_since: string | null
           member_tier: string | null
+          member_until: string | null
           name: string
           phone_e164: string
           photo_url: string | null
@@ -420,6 +421,7 @@ export type Database = {
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           member_since?: string | null
           member_tier?: string | null
+          member_until?: string | null
           name: string
           phone_e164: string
           photo_url?: string | null
@@ -454,6 +456,7 @@ export type Database = {
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           member_since?: string | null
           member_tier?: string | null
+          member_until?: string | null
           name?: string
           phone_e164?: string
           photo_url?: string | null
@@ -593,6 +596,7 @@ export type Database = {
           level_min: number
           note: string | null
           play_at: string
+          sport: string
           spots_filled: number
           spots_needed: number
           status: Database["public"]["Enums"]["sos_status_t"]
@@ -614,6 +618,7 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at: string
+          sport?: string
           spots_filled?: number
           spots_needed?: number
           status?: Database["public"]["Enums"]["sos_status_t"]
@@ -635,6 +640,7 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at?: string
+          sport?: string
           spots_filled?: number
           spots_needed?: number
           status?: Database["public"]["Enums"]["sos_status_t"]
@@ -837,7 +843,6 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
-          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -846,6 +851,7 @@ export type Database = {
           level_min: number
           note: string
           play_at: string
+          sport: string
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
       }
@@ -860,7 +866,6 @@ export type Database = {
           court_id: string
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
-          court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           id: string
@@ -869,6 +874,7 @@ export type Database = {
           level_min: number
           note: string
           play_at: string
+          sport: string
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
       }
@@ -936,6 +942,7 @@ export type Database = {
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           member_since: string | null
           member_tier: string | null
+          member_until: string | null
           name: string
           phone_e164: string
           photo_url: string | null
@@ -1048,6 +1055,7 @@ export type Database = {
           level_max: number
           level_min: number
           play_at: string
+          sport: string
           spots_filled: number
           spots_needed: number
         }[]
