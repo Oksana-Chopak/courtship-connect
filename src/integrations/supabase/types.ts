@@ -1031,6 +1031,40 @@ export type Database = {
         Args: { _body: string; _link?: string }
         Returns: string
       }
+      public_board: {
+        Args: never
+        Returns: {
+          caller_id: string
+          caller_name: string
+          caller_photo: string
+          court_city: string
+          court_name: string
+          court_status: string
+          court_type: string
+          created_at: string
+          format: string
+          id: string
+          kind: string
+          level_max: number
+          level_min: number
+          play_at: string
+          spots_filled: number
+          spots_needed: number
+        }[]
+      }
+      public_players: {
+        Args: { _limit?: number }
+        Returns: {
+          games_played: number
+          home_city: string
+          id: string
+          level: number
+          name: string
+          photo_url: string
+          rescues_count: number
+          vibe: string
+        }[]
+      }
       random_player_for_me: {
         Args: never
         Returns: {
