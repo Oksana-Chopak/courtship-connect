@@ -154,7 +154,12 @@ export const DURATIONS = [60, 90, 120] as const;
 export function durationLabel(min: number): string { return min === 60 ? "1h" : min === 90 ? "1.5h" : min === 120 ? "2h" : `${Math.round(min / 60)}h`; }
 export type CourtType = (typeof COURT_TYPES)[number];
 
-export function courtTypeMeta(t: CourtType, lang: "en" | "sv" = "en") {
+export function courtTypeMeta(t: CourtType | string | null | undefined, lang: "en" | "sv" = "en") {
+  if (t !== "indoor" && t !== "outdoor") {
+    // Defensive: rows from an RPC missing court_type (or a future value) must
+    // degrade to a sane default instead of crashing the whole board render.
+    t = "outdoor";
+  }
   const en: Record<CourtType, { label: string; emoji: string }> = {
     indoor:  { label: "Indoor",  emoji: "🏠" },
     outdoor: { label: "Outdoor", emoji: "☀️" },
