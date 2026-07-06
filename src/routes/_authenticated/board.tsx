@@ -84,7 +84,8 @@ function BoardPage() {
     const myAppsQ = uid ? fetchMyApplicationSosIds(uid) : Promise.resolve(new Set<string>());
 
     const [u, p, m, ev, att, profRes, hostedCount, hist, claims, myApps] = await Promise.all([
-      fetchEligibleSos(), fetchOpenGames(), fetchMyActiveGames(), fetchApprovedEvents(), fetchMyAttendance(),
+      fetchEligibleSos().catch(() => []), fetchOpenGames().catch(() => []), fetchMyActiveGames().catch(() => []),
+      fetchApprovedEvents().catch(() => []), fetchMyAttendance().catch(() => ({} as Record<string, string>)),
       profileQ, countQ, histQ, claimsQ, myAppsQ,
     ]);
 

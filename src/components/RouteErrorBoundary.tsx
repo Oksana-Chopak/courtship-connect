@@ -38,6 +38,9 @@ export class RouteErrorBoundary extends React.Component<Props, State> {
           <div className="text-sm font-semibold" style={{ opacity: 0.65 }}>
             Something went wrong loading this screen. Reload it, or jump back to the board — the rest of the app still works.
           </div>
+          <div className="font-mono break-all" style={{ fontSize: 11, opacity: 0.45 }}>
+            {String(this.state.error?.message ?? this.state.error).slice(0, 200)}
+          </div>
           <div className="flex gap-2 justify-center pt-1">
             <button type="button" onClick={() => window.location.reload()} className="cbtn cbtn-coral">
               Reload
