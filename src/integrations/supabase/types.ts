@@ -647,6 +647,7 @@ export type Database = {
         Row: {
           auto_flare: boolean
           caller_id: string
+          cancel_nudged_at: string | null
           claimed_by: string | null
           court_id: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
@@ -669,6 +670,7 @@ export type Database = {
         Insert: {
           auto_flare?: boolean
           caller_id: string
+          cancel_nudged_at?: string | null
           claimed_by?: string | null
           court_id?: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
@@ -691,6 +693,7 @@ export type Database = {
         Update: {
           auto_flare?: boolean
           caller_id?: string
+          cancel_nudged_at?: string | null
           claimed_by?: string | null
           court_id?: string | null
           court_status?: Database["public"]["Enums"]["court_status_t"]
