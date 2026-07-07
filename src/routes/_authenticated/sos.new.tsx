@@ -168,17 +168,38 @@ function NewSos() {
     if (playAt.getTime() < Date.now()) { toast.error(t("sos.err_time_gone")); return; }
     setBusy(true);
     if (editing && editId) {
-      const { error } = await (supabase as any).from("sos_requests").update({
-        play_at: playAt.toISOString(),
-        court_id: courtId,
-        format,
-        level_min: anyone ? 1 : levelMin,
-        level_max: anyone ? 5 : levelMax,
-        court_status: courtStatus,
-        note: note.trim() || null,
-        court_type: courtType,
-        duration_min: duration,
-      }).eq("id", editId).eq("caller_id", uid);
+      // Direct UPDATE on sos_requests was revoked in the June-19 hardening —
+      // edits go through the owner-only edit_sos RPC (spots/status untouchable).
+      let { data: er, error } = await (supabase as any).rpc("edit_sos", {
+        _sos_id: editId,
+        _play_at: playAt.toISOString(),
+        _court_id: courtId,
+        _format: format,
+        _level_min: anyone ? 1 : levelMin,
+        _level_max: anyone ? 5 : levelMax,
+        _court_status: courtStatus,
+        _note: note.trim() || null,
+        _court_type: courtType,
+        _duration_min: duration,
+        _sport: sport,
+      });
+      if (!error) {
+        const row = Array.isArray(er) ? er[0] : er;
+        if (!row?.ok) {
+          setBusy(false);
+          oops(new Error(row?.reason === "time_gone" ? t("sos.err_time_gone") : String(row?.reason ?? "edit failed")));
+          return;
+        }
+      } else if (/does not exist|schema cache/i.test(error.message ?? "")) {
+        // pre-SQL fallback: the old direct update (will work once RLS allows, harmless otherwise)
+        const r2 = await (supabase as any).from("sos_requests").update({
+          play_at: playAt.toISOString(), court_id: courtId, format,
+          level_min: anyone ? 1 : levelMin, level_max: anyone ? 5 : levelMax,
+          court_status: courtStatus, note: note.trim() || null,
+          court_type: courtType, duration_min: duration,
+        }).eq("id", editId).eq("caller_id", uid);
+        error = r2.error;
+      }
       setBusy(false);
       if (error) { oops(error); return; }
       toast.success(t("sos.edit_saved"));

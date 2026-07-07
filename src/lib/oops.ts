@@ -70,8 +70,9 @@ export function oops(raw?: unknown) {
   const waLink = SUPPORT_WA
     ? `https://wa.me/${SUPPORT_WA.replace(/[^\d]/g, "")}?text=${encodeURIComponent(c.prefill(d))}`
     : null;
+  const rawDetail = d && d.length > 4 ? d.slice(0, 160) : "";
   toast.error(title, {
-    description: c.body,
+    description: rawDetail ? `${c.body}\n\n⚙️ ${rawDetail}` : c.body,
     duration: 12000,
     action: {
       label: waLink ? c.msgUs : c.copy,
