@@ -5,6 +5,7 @@ import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { LEVELS, CITIES, DURATIONS, durationLabel, type City, sportMeta } from "@/lib/courtship";
 import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
 import { toast } from "@/lib/toast";
+import { fetchSwishNumber, swishPayLink } from "@/lib/membership";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
@@ -32,6 +33,10 @@ function NewEvent() {
   const [title, setTitle] = useState("");
   const [sport, setSport] = useState<string>("tennis");
   const [mySports, setMySports] = useState<string[]>(["tennis"]);
+  const [myTier, setMyTier] = useState<string | null>(null);
+  const [iAmAdmin, setIAmAdmin] = useState(false);
+  const [myName, setMyName] = useState("");
+  const [swish, setSwish] = useState<string | null>(null);
   const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [time, setTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(90);
@@ -56,10 +61,14 @@ function NewEvent() {
       if (!u.user) { setReady(true); return; }
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("home_city,phone_e164")
+        .select("home_city,phone_e164,sports,member_tier,is_admin,name")
         .eq("id", u.user.id)
         .maybeSingle();
       const hc = (((p as any)?.home_city) ?? "Uppsala") as City;
+      setMyTier(((p as any)?.member_tier as string | null) ?? null);
+      setIAmAdmin(!!(p as any)?.is_admin);
+      setMyName(((p as any)?.name as string | null) ?? "");
+      fetchSwishNumber().then(setSwish).catch(() => {});
       {
         const sp = (((p as any)?.sports) as string[] | null) ?? ["tennis"];
         if (sp.length) { setMySports(sp); if (!sp.includes("tennis")) setSport(sp[0]); }
@@ -253,6 +262,19 @@ function NewEvent() {
       </Section>
 
       {!editing && <div className="text-sm text-[var(--ink)] font-semibold">{t("ev.review_note")}</div>}
+
+      {Number(price) > 0 && myTier !== "pro" && !iAmAdmin && (
+        <div className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>
+          <div className="font-display text-lg leading-tight">🎟 {t("ev.fee_title")}</div>
+          <div className="text-sm font-semibold text-[var(--ink)]/80">{t("ev.fee_body")}</div>
+          {swish && (
+            <a href={swishPayLink(swish, 49, `Courtship EVENT ${myName}`.trim())} className="cbtn cbtn-coral w-full text-center block">
+              {t("ev.fee_swish")}
+            </a>
+          )}
+          <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("ev.fee_note")}</div>
+        </div>
+      )}
 
       <button disabled={busy || !canSubmit} onClick={submit} className="cbtn cbtn-coral w-full">
         {busy ? "..." : editing ? t("ev.save") : !title.trim() ? t("ev.need_title") : !startsAt ? t("ev.need_time") : !courtId ? t("ev.need_court") : t("ev.submit")}
