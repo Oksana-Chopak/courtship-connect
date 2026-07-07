@@ -5,7 +5,8 @@ import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { LEVELS, CITIES, DURATIONS, durationLabel, type City, sportMeta } from "@/lib/courtship";
 import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
 import { toast } from "@/lib/toast";
-import { fetchSwishNumber, swishPayLink } from "@/lib/membership";
+import { fetchSwishNumber } from "@/lib/membership";
+import { SwishPayBlock } from "@/components/SwishPayBlock";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
 import { DateChipPicker } from "@/components/DateChipPicker";
@@ -268,9 +269,7 @@ function NewEvent() {
           <div className="font-display text-lg leading-tight">🎟 {t("ev.fee_title")}</div>
           <div className="text-sm font-semibold text-[var(--ink)]/80">{t("ev.fee_body")}</div>
           {feeSwish && (
-            <a href={swishPayLink(feeSwish, 49, `Courtship EVENT ${myName}`.trim())} className="cbtn cbtn-coral w-full text-center block">
-              {t("ev.fee_swish")}
-            </a>
+            <SwishPayBlock number={feeSwish} amountSek={49} message={`Courtship EVENT ${myName}`.trim()} />
           )}
           <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("ev.fee_note")}</div>
         </div>

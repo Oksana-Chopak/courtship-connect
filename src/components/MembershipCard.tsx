@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { fetchMemberLinks, fetchMyTier, fetchSwishNumber, swishPayLink, type MemberLinks, type MemberTier } from "@/lib/membership";
+import { fetchMemberLinks, fetchMyTier, fetchSwishNumber, type MemberLinks, type MemberTier } from "@/lib/membership";
+import { SwishPayBlock } from "@/components/SwishPayBlock";
 
 /** "Become a Founding Member" — patronage, not a paywall. Hidden until the
  *  admin has configured the Stripe links; shows a thank-you state for members. */
@@ -14,6 +15,7 @@ export function MembershipCard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [swish, setSwish] = useState<string | null>(null);
   const [myName, setMyName] = useState("");
+  const [plan, setPlan] = useState<"yearly" | "monthly">("yearly");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -67,20 +69,18 @@ export function MembershipCard() {
 
   if (!links.monthly && !links.yearly) {
     if (swish) {
-      const tag = (plan: string) => `Courtship ${plan} ${myName || ""}`.trim();
+      const amount = plan === "yearly" ? 690 : 69;
+      const tag = `Courtship FOUNDING${plan === "yearly" ? " YEAR" : ""} ${myName || ""}`.trim();
       return (
         <div className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>
           <div className="font-display text-xl leading-tight">🏆 {t("mem.title")}</div>
           <div className="text-sm font-semibold text-[var(--ink)]/80">{t("mem.pitch")}</div>
           <div className="text-xs font-extrabold" style={{ color: "var(--coral)" }}>{t("mem.founding_note")}</div>
           <div className="flex gap-2 pt-1">
-            <a href={swishPayLink(swish, 690, tag("FOUNDING YEAR"))} className="cbtn cbtn-coral flex-1 text-center">
-              {t("mem.swish_yearly")}
-            </a>
-            <a href={swishPayLink(swish, 69, tag("FOUNDING"))} className="cbtn cbtn-ghost flex-1 text-center">
-              {t("mem.swish_monthly")}
-            </a>
+            <button type="button" onClick={() => setPlan("yearly")} className={`cchip flex-1 justify-center ${plan === "yearly" ? "cchip-on" : ""}`}>{t("mem.swish_yearly")}</button>
+            <button type="button" onClick={() => setPlan("monthly")} className={`cchip flex-1 justify-center ${plan === "monthly" ? "cchip-on" : ""}`}>{t("mem.swish_monthly")}</button>
           </div>
+          <SwishPayBlock number={swish} amountSek={amount} message={tag} />
           <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("mem.swish_note")}</div>
         </div>
       );

@@ -56,12 +56,6 @@ export function swishDigits(raw: string): string {
   return d;
 }
 
-/** Prefilled Swish payment deep link (opens the Swish app with everything set). */
-export function swishPayLink(number: string, amountSek: number, msg: string): string {
-  const payee = swishDigits(number);
-  const p = new URLSearchParams({ sw: payee, amt: String(amountSek), cur: "SEK", msg: msg.slice(0, 50), edit: "msg" });
-  return `https://app.swish.nu/1/p/sw/?${p.toString()}`;
-}
 
 export function tierBadge(tier: string | null | undefined): string | null {
   if (!tier) return null;
