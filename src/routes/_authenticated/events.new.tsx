@@ -36,7 +36,7 @@ function NewEvent() {
   const [myTier, setMyTier] = useState<string | null>(null);
   const [iAmAdmin, setIAmAdmin] = useState(false);
   const [myName, setMyName] = useState("");
-  const [swish, setSwish] = useState<string | null>(null);
+  const [feeSwish, setFeeSwish] = useState<string | null>(null);
   const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [time, setTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(90);
@@ -68,7 +68,7 @@ function NewEvent() {
       setMyTier(((p as any)?.member_tier as string | null) ?? null);
       setIAmAdmin(!!(p as any)?.is_admin);
       setMyName(((p as any)?.name as string | null) ?? "");
-      fetchSwishNumber().then(setSwish).catch(() => {});
+      fetchSwishNumber().then(setFeeSwish).catch(() => {});
       {
         const sp = (((p as any)?.sports) as string[] | null) ?? ["tennis"];
         if (sp.length) { setMySports(sp); if (!sp.includes("tennis")) setSport(sp[0]); }
@@ -267,8 +267,8 @@ function NewEvent() {
         <div className="ccard p-4 space-y-2" style={{ borderColor: "var(--coral)" }}>
           <div className="font-display text-lg leading-tight">🎟 {t("ev.fee_title")}</div>
           <div className="text-sm font-semibold text-[var(--ink)]/80">{t("ev.fee_body")}</div>
-          {swish && (
-            <a href={swishPayLink(swish, 49, `Courtship EVENT ${myName}`.trim())} className="cbtn cbtn-coral w-full text-center block">
+          {feeSwish && (
+            <a href={swishPayLink(feeSwish, 49, `Courtship EVENT ${myName}`.trim())} className="cbtn cbtn-coral w-full text-center block">
               {t("ev.fee_swish")}
             </a>
           )}
