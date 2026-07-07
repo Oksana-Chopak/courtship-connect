@@ -921,6 +921,25 @@ export type Database = {
           is_match: boolean
         }[]
       }
+      edit_sos: {
+        Args: {
+          _court_id: string
+          _court_status: string
+          _court_type: string
+          _duration_min: number
+          _format: string
+          _level_max: number
+          _level_min: number
+          _note: string
+          _play_at: string
+          _sos_id: string
+          _sport?: string
+        }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       eligible_open_games_for_me: {
         Args: never
         Returns: {
