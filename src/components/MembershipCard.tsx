@@ -76,9 +76,12 @@ export function MembershipCard() {
           <div className="font-display text-xl leading-tight">🏆 {t("mem.title")}</div>
           <div className="text-sm font-semibold text-[var(--ink)]/80">{t("mem.pitch")}</div>
           <div className="text-xs font-extrabold" style={{ color: "var(--coral)" }}>{t("mem.founding_note")}</div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={() => setPlan("yearly")} className={`cchip flex-1 justify-center ${plan === "yearly" ? "cchip-on" : ""}`}>{t("mem.swish_yearly")}</button>
-            <button type="button" onClick={() => setPlan("monthly")} className={`cchip flex-1 justify-center ${plan === "monthly" ? "cchip-on" : ""}`}>{t("mem.swish_monthly")}</button>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onClick={() => setPlan("yearly")} className={`cchip w-full justify-center ${plan === "yearly" ? "cchip-on" : ""}`}>{t("mem.plan_yearly")}</button>
+            <button type="button" onClick={() => setPlan("monthly")} className={`cchip w-full justify-center ${plan === "monthly" ? "cchip-on" : ""}`}>{t("mem.plan_monthly")}</button>
+          </div>
+          <div className="text-center font-extrabold" style={{ color: "var(--ink)" }}>
+            {plan === "yearly" ? t("mem.price_yearly") : t("mem.price_monthly")}
           </div>
           <SwishPayBlock number={swish} amountSek={amount} message={tag} />
           <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("mem.swish_note")}</div>
