@@ -62,7 +62,7 @@ function AuthedShell() {
           </div>
         </div>
       )}
-      <main ref={mainRef} className="flex-1 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="max-w-md mx-auto px-5 py-6">
           <RouteErrorBoundary resetKey={loc.pathname}>
             <Outlet />

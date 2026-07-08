@@ -286,7 +286,7 @@ function NewSos() {
         <div className="mt-3">
           {mySports.length > 1 && (<>
           <div className="csection-label mb-1">{t("sport.label")}</div>
-          <div className="flex gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {mySports.map((sp) => (
               <button key={sp} type="button" onClick={() => setSport(sp)} className={`cchip ${sport === sp ? "cchip-on" : ""}`}>
                 {sportMeta(sp).emoji} {t(sportMeta(sp).key)}

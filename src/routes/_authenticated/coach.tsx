@@ -109,7 +109,7 @@ function CoachPage() {
       {mySports.length > 1 && (
         <div>
           <div className="csection-label mb-1">{t("sport.label")}</div>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {mySports.map((sp) => (
               <button key={sp} type="button" className={`cchip ${sport === sp ? "cchip-on" : ""}`} onClick={() => setSport(sp)}>
                 {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
