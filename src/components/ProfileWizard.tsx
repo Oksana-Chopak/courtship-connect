@@ -454,7 +454,7 @@ export function ProfileWizard({
             <div>
               <div className="csection-label mb-2">{t("wiz.home_courts")}</div>
               <div className="text-xs text-[var(--ink)] mb-2 -mt-1">{t("wiz.cities_hint")}</div>
-              <div className="flex gap-2 mb-3">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {CITIES.map((cy) => {
                   const on = (v.home_cities ?? []).includes(cy);
                   return (

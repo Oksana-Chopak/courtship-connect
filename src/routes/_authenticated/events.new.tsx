@@ -210,7 +210,7 @@ function NewEvent() {
       </Section>
 
       <Section label={t("sos.court")}>
-        <div className="flex gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-2">
           {CITIES.map((cy) => (
             <Chip key={cy} on={city === cy} onClick={() => setCity(cy)}>📍 {cy}</Chip>
           ))}
