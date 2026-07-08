@@ -115,6 +115,15 @@ function MePage() {
         <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
       </Link>
 
+      <Link to="/plans" className="ccard p-4 flex items-center gap-3">
+        <span className="text-2xl">🏆</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-lg leading-tight">{t("menu.plans")}</div>
+          <div className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.plans_sub")}</div>
+        </div>
+        <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
+      </Link>
+
       {/* Courts Passport — collection lives at the bottom */}
       <CourtsPassport />
 
