@@ -24,6 +24,7 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   const isPaid = (e.price_sek ?? 0) > 0;
   const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
   const full = left === 0;
+  const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [attendees, setAttendees] = useState<AttendeeContact[] | null>(null);
@@ -100,7 +101,21 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
         return parts.length ? <div className="text-base text-[var(--ink)] mt-1">{parts.join(" · ")}</div> : null;
       })()}
       {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
-      {e.description && <div className="text-base italic text-[var(--ink)] mt-1">"{e.description}"</div>}
+      {e.description && (
+        <div className="mt-1">
+          <div
+            className="text-base italic text-[var(--ink)]"
+            style={expanded ? undefined : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            "{e.description}"
+          </div>
+          {e.description.length > 90 && (
+            <button type="button" onClick={() => setExpanded((v) => !v)} className="text-sm font-extrabold underline mt-0.5" style={{ color: "var(--wood, #8a6d3b)" }}>
+              {expanded ? t("common.less") : t("common.more")}
+            </button>
+          )}
+        </div>
+      )}
       <a
         href={googleCalendarUrl({ title: `\u{1F3BE} ${e.title}`, startISO: e.starts_at, durationMin: 120, location: [e.city, shortCourtName(e.location)].filter(Boolean).join(", "), details: e.description || undefined })}
         target="_blank" rel="noopener noreferrer"

@@ -135,7 +135,17 @@ function BoardPage() {
       .channel("board")
       .on("postgres_changes", { event: "*", schema: "public", table: "sos_requests" }, load)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    // Realtime can drop while the app is backgrounded, so also refetch whenever
+    // the tab regains focus — a game claimed elsewhere (host picked you) then
+    // clears instead of lingering as a stale open card.
+    const refresh = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      supabase.removeChannel(ch);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [load]);
 
   async function onWithdraw(sos: EligibleSosRow) {
