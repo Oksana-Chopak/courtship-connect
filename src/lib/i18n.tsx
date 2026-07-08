@@ -113,6 +113,7 @@ const en: Dict = {
   "index.match_a": "It's a match.",
   "index.match_b": "Literally.",
   "index.cta_invite": "Get an invite 🎾",
+  "index.cta_peek": "👀 Take a look around",
   "index.cta_have_account": "I already have an account",
 
   // Auth
@@ -1048,6 +1049,7 @@ const sv: Dict = {
   "index.match_a": "Det är en match.",
   "index.match_b": "Bokstavligen.",
   "index.cta_invite": "Skaffa en inbjudan 🎾",
+  "index.cta_peek": "👀 Ta en titt runt",
   "index.cta_have_account": "Jag har redan ett konto",
 
   "auth.signup_title": "Gå med i klubben",

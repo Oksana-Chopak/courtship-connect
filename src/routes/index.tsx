@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LangToggle, useI18n } from "@/lib/i18n";
+import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -80,10 +81,15 @@ function Index() {
           {t("brand.subtitle")}
         </p>
         <div className="flex flex-col gap-3 pt-2">
-          <Link to="/auth" search={{ mode: "signup" }} className="cbtn cbtn-coral">
+          {FLAGS.guestPeek && (
+            <Link to="/board" className="cbtn cbtn-coral">
+              {t("index.cta_peek")}
+            </Link>
+          )}
+          <Link to="/auth" search={{ mode: "signup" }} className={FLAGS.guestPeek ? "cbtn cbtn-ghost" : "cbtn cbtn-coral"}>
             {t("index.cta_invite")}
           </Link>
-          <Link to="/auth" search={{ mode: "login" }} className="cbtn cbtn-ghost">
+          <Link to="/auth" search={{ mode: "login" }} className="text-sm font-extrabold underline pt-1" style={{ color: "var(--wood, #8a6d3b)" }}>
             {t("index.cta_have_account")}
           </Link>
         </div>
