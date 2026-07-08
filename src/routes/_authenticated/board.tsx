@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
+import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, railTone, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { checkCelebration, type Celebration } from "@/lib/celebrate";
@@ -268,26 +269,18 @@ function BoardPage() {
       {!loading && timeline.length > 0 && (
         <div className="space-y-3">
           <div className="csection-label">{t("tonight.evening")}</div>
-          <div>
-            {timeline.map((it, idx) => {
-              const dot = it.kind === "sos" ? "var(--coral)" : it.kind === "event" ? "var(--wood)" : "var(--green-pop)";
-              return (
-                <RailItem
-                  key={it.id}
-                  time={new Date(it.t).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                  dot={dot}
-                  last={idx === timeline.length - 1}
-                >
-                  {it.kind === "event" ? (
-                    <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} />
-                  ) : it.kind === "mine" ? (
-                    <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} />
-                  ) : (
-                    <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} guest={!meId} />
-                  )}
-                </RailItem>
-              );
-            })}
+          <div className="space-y-3">
+            {timeline.map((it) => (
+              <div key={it.id}>
+                {it.kind === "event" ? (
+                  <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} guest={!meId} />
+                ) : it.kind === "mine" ? (
+                  <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} />
+                ) : (
+                  <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} guest={!meId} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -419,124 +412,112 @@ function ShareRow({ sos }: { sos: EligibleSosRow }) {
 function Card({ sos, onChange, mine, applied, candidates, guest }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number; guest?: boolean }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const lmMin = levelMeta(sos.level_min);
-  const lmMax = levelMeta(sos.level_max);
   const [busy, setBusy] = useState(false);
-  const ctMeta = courtTypeMeta(sos.court_type, lang);
   const isUrgent = sos.kind === "sos";
   const claimed = sos.status === "claimed";
+  const tone: RailTone = mine ? "mine" : isUrgent ? "sos" : "plan";
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+  const d = new Date(sos.play_at);
+  const now = new Date();
+  const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
+  const day = d.toDateString() === now.toDateString() ? t("rail.today")
+    : d.toDateString() === tmr.toDateString() ? t("rail.tmrw")
+    : d.toLocaleDateString(locale, { weekday: "short" });
+  const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const ctMeta = courtTypeMeta(sos.court_type, lang);
+  const lmMin = levelMeta(sos.level_min);
+  const lmMax = levelMeta(sos.level_max);
+  const nRackets = String(sos.format).startsWith("doubles") ? 4 : 2;
+  const softCoral = "#F0705B";
+  const shareGame = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); void shareTo("/sos/" + sos.id, t("share.game_fwd"), t("invite.copied")); };
 
-  const inner = (
-    <>
-      {mine ? (
-        <div className="inline-block text-xs font-extrabold uppercase tracking-wide px-2 py-1 rounded-full mb-2"
-          style={{ background: "var(--green-pop)", border: "1px solid var(--ink)" }}>
-          {claimed ? `✅ ${t("board.game_claimed")}` : t("board.your_game")}
-        </div>
-      ) : sos.is_buddy ? (
-        <div className="inline-block text-base font-extrabold uppercase px-2 py-1 rounded-full mb-2"
-          style={{ background: "var(--coral)", color: "#FFF6E8" }}>
-          🤝 {sos.caller_name ? t("buddy.your_buddy", { name: sos.caller_name }) : t("buddy.from_buddies")}
-        </div>
-      ) : null}
-      <div className="min-w-0">
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="font-display text-xl leading-tight truncate">{whenLabel(sos.play_at)}</div>
-          <div className="text-xs font-semibold text-[var(--ink)]/60 shrink-0">{timeAgo(sos.created_at)}</div>
-        </div>
-        <div className="font-extrabold mt-0.5" style={{ overflowWrap: "anywhere" }}>
-          📍 {sos.court_city ?? "—"} · {sos.court_name ?? "Court"} · {ctMeta.emoji} {ctMeta.label}
-        </div>
-        {!mine && sos.caller_name && (
-          <div className="flex items-center gap-2 mt-1.5">
-            <Avatar src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={28} />
-            <span className="text-base font-extrabold truncate">
-              {sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}
-            </span>
-          </div>
-        )}
-        <div className="mt-1"><CourtStatusBadge status={sos.court_status} muted /></div>
-        <div className="text-base text-[var(--ink)] mt-2">
-          {sos.sport && sos.sport !== "tennis" && (
-            <span className="font-extrabold mr-1.5 px-2 py-0.5 rounded-full text-sm" style={{ background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>
-              {sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}
-            </span>
-          )}
-          {formatLabel(sos.format)} · L
-          <span className="font-extrabold" style={{ color: lmMin.color }}>{sos.level_min}</span>
-          –<span className="font-extrabold" style={{ color: lmMax.color }}>{sos.level_max}</span>
-        </div>
-        {sos.note && <div className="text-base italic mt-1 text-[var(--ink)]">"{sos.note}"</div>}
-      </div>
-    </>
-  );
-
-  if (mine) {
-    return (
-      <div className="ccard p-4" style={claimed ? { borderColor: "var(--green-pop)", boxShadow: "4px 4px 0 var(--ink)" } : undefined}>
-        {inner}
-        {!claimed && !isUrgent && (candidates ?? 0) > 0 && (
-          <Link to="/sos/$id" params={{ id: sos.id }} className="block font-extrabold text-sm mt-2" style={{ color: "var(--coral)" }}>
-            🙋 {t("app.candidates_line", { n: candidates ?? 0 })}
-          </Link>
-        )}
-        <div className="flex gap-2 mt-3">
-          {!claimed && (
-          <Link to="/sos/new" search={{ edit: sos.id }} className="cbtn cbtn-ghost flex-1 text-center">✏️ {t("board.edit")}</Link>
-          )}
-          <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-green flex-1 text-center">{t("board.manage")}</Link>
-        </div>
-      </div>
-    );
-  }
-  if (isUrgent) {
-    return (
-      <div className="relative">
-        {!guest && <ShareRow sos={sos} />}
-        <Link to="/sos/$id" params={{ id: sos.id }} className="ccard p-4 block"
-          style={sos.is_buddy ? { borderColor: "var(--coral)", boxShadow: "4px 4px 0 var(--coral)" } : undefined}>
-          {inner}
-          <div className="mt-3">
-            <span className="cbtn cbtn-coral w-full" style={{ pointerEvents: "none" }}>{t("sos.im_in")}</span>
-          </div>
-        </Link>
-      </div>
-    );
-  }
   return (
-    <div className="ccard p-4 relative">
-      {!guest && <ShareRow sos={sos} />}
-      {inner}
-      {applied ? (
-        <Link to="/sos/$id" params={{ id: sos.id }} className="cbtn cbtn-ghost w-full mt-3 text-center block">
-          🙋 {t("app.applied_chip")}
-        </Link>
-      ) : (
-        <button className="cbtn cbtn-green w-full mt-3" disabled={busy}
-          onClick={async () => {
-            if (guest) { navigate({ to: "/auth", search: joinSearch("/board") }); return; }
-            setBusy(true);
-            const r = await applyToGame(sos.id);
-            setBusy(false);
-            if (!r.ok) {
-              toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason);
-              return;
-            }
-            if (r.fallbackClaimed) {
-              // pre-SQL fallback: instant claim — land on the contact screen as before
-              navigate({ to: "/sos/$id", params: { id: sos.id } });
-              return;
-            }
-            toast.success(t("app.sent"));
-            onChange();
-          }}>
-          🙋 {t("app.im_interested")}
-        </button>
-      )}
-    </div>
+    <RailShell>
+      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} />
+      <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
+        {/* tags row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, minHeight: 18 }}>
+          {sos.is_buddy && !mine && (
+            <span style={{ fontWeight: 800, fontSize: 11, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
+          )}
+          {isUrgent && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
+          )}
+          {mine && (
+            <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
+          )}
+          <span style={{ marginLeft: "auto", fontWeight: 700, fontSize: 12, color: "rgba(43,33,24,0.6)" }}>{timeAgo(sos.created_at)}</span>
+        </div>
+
+        {/* photo + name + club (games) OR court headline (mine) */}
+        {!mine && sos.caller_name ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <RailPhoto src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={52} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, ...clampLines(1) }}>{sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.1, ...clampLines(2) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+          </div>
+        )}
+
+        {/* status + levels + sport */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+          <CourtStatusBadge status={sos.court_status} muted />
+          <span style={{ fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{t("rail.levels")} <span style={{ color: lmMin.color, fontWeight: 800 }}>{sos.level_min}</span>–<span style={{ color: lmMax.color, fontWeight: 800 }}>{sos.level_max}</span></span>
+          {sos.sport && sos.sport !== "tennis" && (
+            <span style={{ fontWeight: 800, fontSize: 12, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
+          )}
+        </div>
+
+        {sos.note && <div style={{ fontStyle: "italic", fontWeight: 600, fontSize: 13, color: "rgba(43,33,24,0.6)", marginTop: 6, ...clampLines(2) }}>"{sos.note}"</div>}
+
+        {mine && !claimed && (candidates ?? 0) > 0 && (
+          <Link to="/sos/$id" params={{ id: sos.id }} className="block font-extrabold text-sm mt-2" style={{ color: "var(--coral)" }}>🙋 {t("app.candidates_line", { n: candidates ?? 0 })}</Link>
+        )}
+
+        {/* action row */}
+        {mine ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 11 }}>
+            <Rackets n={nRackets} size={22} />
+            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14 }}>{t("board.manage")}</Link>
+            {!claimed && <Link to="/sos/new" search={{ edit: sos.id }} aria-label={t("board.edit")} style={{ padding: 3 }}><EditIcon /></Link>}
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+          </div>
+        ) : isUrgent ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
+            <Rackets n={nRackets} size={22} />
+            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: softCoral, color: "#FFF6E8", border: "none", borderRadius: 10, padding: "12px", fontWeight: 800, fontSize: 14 }}>🚨 {t("sos.save_this")}</Link>
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
+            <Rackets n={nRackets} size={22} />
+            {applied ? (
+              <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--cream2)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14 }}>🙋 {t("app.applied_chip")}</Link>
+            ) : (
+              <button type="button" disabled={busy} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}
+                onClick={async () => {
+                  if (guest) { navigate({ to: "/auth", search: joinSearch("/board") }); return; }
+                  setBusy(true);
+                  const r = await applyToGame(sos.id);
+                  setBusy(false);
+                  if (!r.ok) { toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason); return; }
+                  if (r.fallbackClaimed) { navigate({ to: "/sos/$id", params: { id: sos.id } }); return; }
+                  toast.success(t("app.sent"));
+                  onChange();
+                }}>🙋 {t("app.im_interested")}</button>
+            )}
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+          </div>
+        )}
+      </div>
+    </RailShell>
   );
 }
-
 
 function SoonCard({ emoji, title }: { emoji: string; title: string }) {
   const { t } = useI18n();
@@ -554,18 +535,3 @@ function SoonCard({ emoji, title }: { emoji: string; title: string }) {
   );
 }
 
-// A vertical time-rail row: the time + a type-coloured dot + a connector line
-// down to the next item, with the card to its right. Threads tonight's games,
-// SOS flares and events into one connected timeline (not loose tiles).
-function RailItem({ time, dot, last, children }: { time: string; dot: string; last?: boolean; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center shrink-0" style={{ width: 44 }}>
-        <span className="font-display text-sm" style={{ color: "rgba(43,33,24,0.7)", lineHeight: 1.1 }}>{time}</span>
-        <span className="rounded-full mt-1" style={{ width: 11, height: 11, background: dot, border: "2px solid var(--ink)", boxSizing: "border-box" }} />
-        {!last && <span className="flex-1 mt-1 rounded-full" style={{ width: 2, background: "rgba(43,33,24,0.22)", minHeight: 16 }} />}
-      </div>
-      <div className="flex-1 min-w-0 pb-3">{children}</div>
-    </div>
-  );
-}

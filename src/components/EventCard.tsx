@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "@/lib/toast";
-import { whenLabel, whatsappLink, durationLabel, sportMeta } from "@/lib/courtship";
+import { whatsappLink, durationLabel, sportMeta } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
@@ -17,9 +17,16 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { shareTo } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { TimeRail, RailShell, ShareIcon, clampLines } from "@/components/RailKit";
 
-export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void }) {
-  const { t } = useI18n();
+export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void; guest?: boolean }) {
+  const { t, lang } = useI18n();
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+  const _d = new Date(e.starts_at);
+  const _now = new Date();
+  const _tmr = new Date(_now); _tmr.setDate(_now.getDate() + 1);
+  const railDay = _d.toDateString() === _now.toDateString() ? t("rail.today") : _d.toDateString() === _tmr.toDateString() ? t("rail.tmrw") : _d.toLocaleDateString(locale, { weekday: "short" });
+  const railTime = _d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const isHost = !!meId && e.host_id === meId;
   const isPaid = (e.price_sek ?? 0) > 0;
   const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
@@ -82,14 +89,17 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
   }
 
   return (
-    <div className="ccard p-4" style={{ borderColor: "var(--coral)" }}>
-      <div className="font-display text-2xl leading-tight">{e.title}</div>
+    <RailShell>
+      <TimeRail day={railDay} time={railTime} ct="🎉" tone="event" />
+      <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
+      <div style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C5A33", marginBottom: 6 }}>{isHost ? t("board.you_host") : "🎉 " + t("ev.tag")}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1.1, ...clampLines(2) }}>{e.title}</div>
       {(e as any).sport && (e as any).sport !== "tennis" && (
         <span className="inline-block font-extrabold text-xs px-2 py-0.5 rounded-full mt-1" style={{ background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>
           {sportMeta((e as any).sport).emoji} {t(sportMeta((e as any).sport).key)}
         </span>
       )}
-      <div className="font-extrabold mt-1">{whenLabel(e.starts_at)} · 📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
+      <div style={{ fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 3, ...clampLines(1) }}>📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
       <div className="text-base text-[var(--ink)] mt-1">
         🎟 {isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}
         {e.capacity != null ? ` · ${full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number })}` : ""}
@@ -178,13 +188,16 @@ export function EventCard({ e, meId, myStatus, onChange }: { e: EventRow; meId: 
           </button>
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}
-        className="mt-3 text-sm font-extrabold underline"
-        style={{ color: "var(--wood, #8a6d3b)" }}
-      >↗ {t("share.spread")}</button>
-    </div>
+      {!guest && (
+        <button
+          type="button"
+          onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}
+          className="mt-3 text-sm font-extrabold underline"
+          style={{ color: "var(--wood, #8a6d3b)" }}
+        >↗ {t("share.spread")}</button>
+      )}
+      </div>
+    </RailShell>
   );
 }
 
