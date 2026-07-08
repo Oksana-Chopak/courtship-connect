@@ -103,4 +103,22 @@ export function RailShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function BallHeart({ size = 26 }: { size?: number }) {
+  const H = "M50 75 C 28 58, 20 43, 29 32.5 C 36 24.5, 47 27, 50 37 C 53 27, 64 24.5, 71 32.5 C 80 43, 72 58, 50 75";
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: "block" }}>
+      <circle cx="50" cy="50" r="44" fill={GREEN} stroke={INK} strokeWidth="5" />
+      <path d={H} fill="none" stroke="#F0705B" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function DeleteIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,112,91,0.75)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+      <path d="M5 7 h14 M9 7 V5 h6 v2 M7 7 l1 13 h8 l1 -13" />
+    </svg>
+  );
+}
+
 export const clampLines = (n: number): React.CSSProperties => ({ display: "-webkit-box", WebkitLineClamp: n, WebkitBoxOrient: "vertical", overflow: "hidden" });

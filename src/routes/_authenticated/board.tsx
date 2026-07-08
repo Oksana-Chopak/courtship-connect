@@ -3,13 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta } from "@/lib/courtship";
+import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
-import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, railTone, clampLines, type RailTone } from "@/components/RailKit";
+import { googleCalendarUrl } from "@/lib/calendar";
+import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { checkCelebration, type Celebration } from "@/lib/celebrate";
@@ -54,6 +55,9 @@ function BoardPage() {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const seenClaimedRef = useRef<Set<string> | null>(null);
   const [streakWeeks, setStreakWeeks] = useState(0);
+  const [rescuesCount, setRescuesCount] = useState(0);
+  const [myPhoto, setMyPhoto] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string>("");
 
   const load = useCallback(async () => {
     const { data: au } = await supabase.auth.getUser();
@@ -77,7 +81,7 @@ function BoardPage() {
     // parallel instead of waterfalling. Each personal fetch degrades on its own
     // so one hiccup never blanks the board.
     const profileQ = uid
-      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
+      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count,photo_url,name").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
       : Promise.resolve(null);
     const countQ = uid
       ? (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0)
@@ -103,6 +107,9 @@ function BoardPage() {
     if (prof) {
       setCityForStats(prof.home_city ?? "Uppsala");
       setGamesPlayed(prof.games_played ?? 0);
+      setRescuesCount(prof.rescues_count ?? 0);
+      setMyPhoto(prof.photo_url ?? null);
+      setMyName(prof.name ?? "");
       const cel = checkCelebration(prof.games_played ?? 0, prof.rescues_count ?? 0, prof.referrals_count ?? 0, (hostedCount as number) ?? 0);
       if (cel) setCelebration(cel);
     }
@@ -184,18 +191,37 @@ function BoardPage() {
     <div className="space-y-5">
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
-      {/* PRIMARY actions — New game + SOS */}
-      <p className="text-center font-display text-lg leading-tight px-2">{t("tonight.encourage")}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-green w-full text-center">🎾 {t("tonight.new_game")}</Link>
-        <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center">🚨 {t("tonight.sos")}</Link>
+      {/* Hero — Save my set (SOS), with Plan-a-game / Host / Log under-links */}
+      <div>
+        <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
+          <BallHeart size={26} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, lineHeight: 1 }}>{t("tonight.sos")}</div>
+            <div style={{ fontWeight: 800, fontSize: 12, opacity: 0.95, marginTop: 2 }}>{t("tonight.sos_sub")}</div>
+          </div>
+          <span style={{ fontSize: 20 }}>→</span>
+        </Link>
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px 20px", marginTop: 11 }}>
+          <Link to="/sos/new" search={{ planned: undefined }} className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>📅 {t("tonight.plan_game")}</Link>
+          <Link to="/events/new" className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>🎪 {t("board.host_event")}</Link>
+          <Link to="/matches" search={{ log: true }} className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>✅ {t("board.log_cta")}</Link>
+        </div>
       </div>
-      {gamesPlayed === 0 && (
-        <p className="text-sm font-semibold text-center -mt-2" style={{ color: "rgba(43,33,24,0.6)" }}>
-          {t("tonight.hero_hint")}
-        </p>
-      )}
-      <Link to="/matches" search={{ log: true }} className="cbtn cbtn-ghost w-full text-center block">✅ {t("board.log_cta")}</Link>
+
+      {/* Mini progress + streak (tap → season) */}
+      {(() => {
+        const rt = rescuerTier(rescuesCount);
+        const rescueLine = rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
+        return (
+          <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 13 }}><span style={{ fontSize: 16 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
+            <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, ...clampLines(1) }}>{rescueLine}</span>
+            <span style={{ fontSize: 16, color: "rgba(43,33,24,0.3)" }}>›</span>
+          </Link>
+        );
+      })()}
+
       {mySports.length > 1 && (
         <div className="flex gap-1.5 flex-wrap">
           <button type="button" className={`cchip ${activeSport === "all" ? "cchip-on" : ""}`} onClick={() => setActiveSport("all")}>
@@ -208,25 +234,6 @@ function BoardPage() {
           ))}
         </div>
       )}
-
-      {/* count + filters, right under the create buttons */}
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-sm" style={{ color: "rgba(43,33,24,0.65)" }}>
-          {timeline.length > 0 ? t("tonight.pulse", { n: timeline.length }) : t("tonight.pulse_quiet")}
-        </span>
-        {streakWeeks >= 1 && (
-          <Link to="/progress" className="inline-flex items-center gap-1 font-extrabold text-xs px-2 py-0.5 rounded-full shrink-0"
-            style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>🔥 {streakWeeks}</Link>
-        )}
-        <button type="button" onClick={() => setFiltersOpen(true)}
-          className="ml-auto inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm shrink-0"
-          style={{ background: "var(--ink)", color: "#FFF6E8" }}>
-          ⚙ {t("players.filters")}
-          {filterCount > 0 && (
-            <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "#FFF6E8" }}>{filterCount}</span>
-          )}
-        </button>
-      </div>
 
       <AttentionStrip onChange={load} />
 
@@ -259,7 +266,10 @@ function BoardPage() {
                 <div className="font-display text-lg truncate">{whenLabel(s.play_at)} · {s.court_name ?? "—"}</div>
                 <div className="text-base text-[var(--ink)] font-semibold truncate">📍 {s.court_city ?? "—"}{s.caller_name ? ` · ${s.caller_name}` : ""}</div>
               </div>
-              <button onClick={() => onWithdraw(s)} className="cbtn cbtn-ghost shrink-0">{t("home.cant_make_it")}</button>
+              <div className="flex items-center gap-3 shrink-0">
+                <a href={googleCalendarUrl({ title: `\u{1F3BE} ${s.court_name ?? "Tennis"}`, startISO: s.play_at, durationMin: 120, location: [s.court_city, s.court_name].filter(Boolean).join(", ") })} target="_blank" rel="noopener noreferrer" title={t("cal.add")} aria-label={t("cal.add")}><CalIcon /></a>
+                <button type="button" onClick={() => onWithdraw(s)} title={t("home.cant_make_it")} aria-label={t("home.cant_make_it")}><DeleteIcon /></button>
+              </div>
             </div>
           ))}
         </div>
@@ -268,14 +278,21 @@ function BoardPage() {
       {/* The evening — games, SOS and events woven together by time */}
       {!loading && timeline.length > 0 && (
         <div className="space-y-3">
-          <div className="csection-label">{t("tonight.evening")}</div>
+          <div className="flex items-center justify-between">
+            <div className="csection-label">{t("tonight.evening")}</div>
+            <button type="button" onClick={() => setFiltersOpen(true)}
+              className="inline-flex items-center gap-1.5 font-extrabold rounded-lg px-3 py-1.5 text-xs"
+              style={{ background: "var(--cream2)", border: "1.5px solid rgba(43,33,24,0.3)" }}>
+              ⚙ {t("players.filters")}{filterCount > 0 ? ` · ${filterCount}` : ""}
+            </button>
+          </div>
           <div className="space-y-3">
             {timeline.map((it) => (
               <div key={it.id}>
                 {it.kind === "event" ? (
                   <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} guest={!meId} />
                 ) : it.kind === "mine" ? (
-                  <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} />
+                  <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} mePhoto={myPhoto} meName={myName} />
                 ) : (
                   <Card sos={it.r} onChange={load} applied={appliedIds.has(it.r.id)} guest={!meId} />
                 )}
@@ -297,9 +314,7 @@ function BoardPage() {
         />
       )}
 
-      <div className="flex justify-end">
-        <Link to="/events/new" className="cbtn cbtn-ghost">🎉 {t("board.host_event")}</Link>
-      </div>
+
 
       {/* Coming soon — flag-gated features shown as teasers */}
       <div className="space-y-3">
@@ -409,7 +424,7 @@ function ShareRow({ sos }: { sos: EligibleSosRow }) {
   );
 }
 
-function Card({ sos, onChange, mine, applied, candidates, guest }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number; guest?: boolean }) {
+function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName }: { sos: EligibleSosRow; onChange: () => void; mine?: boolean; applied?: boolean; candidates?: number; guest?: boolean; mePhoto?: string | null; meName?: string }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -450,7 +465,15 @@ function Card({ sos, onChange, mine, applied, candidates, guest }: { sos: Eligib
         </div>
 
         {/* photo + name + club (games) OR court headline (mine) */}
-        {!mine && sos.caller_name ? (
+        {mine ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <RailPhoto src={mePhoto ?? null} name={meName || "You"} seed={sos.caller_id} size={52} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, ...clampLines(1) }}>{t("board.youre_hosting")}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+            </div>
+          </div>
+        ) : sos.caller_name ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <RailPhoto src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={52} />
             <div style={{ minWidth: 0 }}>
