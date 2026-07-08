@@ -18,6 +18,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRescueRouteImport } from './routes/_authenticated/rescue'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedMatchesRouteImport } from './routes/_authenticated/matches'
@@ -78,6 +79,11 @@ const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
 const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   id: '/players',
   path: '/players',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlansRoute = AuthenticatedPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/matches': typeof AuthenticatedMatchesRoute
   '/me': typeof AuthenticatedMeRoute
   '/people': typeof AuthenticatedPeopleRoute
+  '/plans': typeof AuthenticatedPlansRoute
   '/players': typeof AuthenticatedPlayersRouteWithChildren
   '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/matches': typeof AuthenticatedMatchesRoute
   '/me': typeof AuthenticatedMeRoute
   '/people': typeof AuthenticatedPeopleRoute
+  '/plans': typeof AuthenticatedPlansRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/rescue': typeof AuthenticatedRescueRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/matches': typeof AuthenticatedMatchesRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRouteWithChildren
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/rescue': typeof AuthenticatedRescueRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/matches'
     | '/me'
     | '/people'
+    | '/plans'
     | '/players'
     | '/progress'
     | '/rescue'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/matches'
     | '/me'
     | '/people'
+    | '/plans'
     | '/progress'
     | '/rescue'
     | '/settings'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/_authenticated/matches'
     | '/_authenticated/me'
     | '/_authenticated/people'
+    | '/_authenticated/plans'
     | '/_authenticated/players'
     | '/_authenticated/progress'
     | '/_authenticated/rescue'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/players'
       fullPath: '/players'
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/plans': {
+      id: '/_authenticated/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthenticatedPlansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/people': {
@@ -554,6 +573,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMatchesRoute: typeof AuthenticatedMatchesRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRouteWithChildren
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedRescueRoute: typeof AuthenticatedRescueRoute
@@ -576,6 +596,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMatchesRoute: AuthenticatedMatchesRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRouteWithChildren,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedRescueRoute: AuthenticatedRescueRoute,
@@ -598,3 +619,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
