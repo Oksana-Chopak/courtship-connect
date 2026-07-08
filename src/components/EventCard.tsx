@@ -105,7 +105,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
         parts.push(`🎟 ${isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}`);
         if (e.capacity != null) parts.push(full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number }));
         if (e.duration_min) parts.push(durationLabel(e.duration_min));
-        return <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap", fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{parts.map((p, i) => <span key={i} style={{ flexShrink: 0 }}>{i > 0 ? "· " : ""}{p}</span>)}</div>;
+        return <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap", fontWeight: 800, fontSize: 16, color: "var(--ink)" }}>{parts.map((p, i) => <span key={i} style={{ flexShrink: 0 }}>{i > 0 ? "· " : ""}{p}</span>)}</div>;
       })()}
       {(e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5)) || e.format ? (
         <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", marginTop: 4, ...clampLines(1) }}>{[e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5) ? `L${e.level_min}–${e.level_max}` : null, e.format].filter(Boolean).join(" · ")}</div>
@@ -133,47 +133,40 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
 
       {isHost ? (
         <div className="mt-3 space-y-2">
-          <div className="font-extrabold" style={{ color: "var(--coral)" }}>{t("ev.youre_hosting")}</div>
-          <div className="csection-label">{t("ev.attendees")} · {e.spots_taken}</div>
-          {attendees && attendees.length > 0 ? (
-            attendees.map((a) => (
-              <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
-                <div className="min-w-0">
-                  <div className="font-extrabold truncate">{a.name}</div>
-                  {a.phone && (
-                    <a href={whatsappLink(a.phone, a.name)} target="_blank" rel="noopener noreferrer" className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>
-                      💬 {t("ev.message")}
-                    </a>
-                  )}
-                </div>
-                {a.status === "paid" ? (
-                  <span className="text-sm font-extrabold shrink-0">✓ {t("ev.paid")}</span>
-                ) : a.status === "booked" ? (
-                  <button className="cbtn cbtn-green text-sm shrink-0" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
-                ) : (
-                  <span className="text-sm text-[var(--ink)] shrink-0">{t("ev.interested")}</span>
+          {attendees && attendees.length > 0 && attendees.map((a) => (
+            <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
+              <div className="min-w-0">
+                <div className="font-extrabold truncate">{a.name}</div>
+                {a.phone && (
+                  <a href={whatsappLink(a.phone, a.name)} target="_blank" rel="noopener noreferrer" className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>
+                    💬 {t("ev.message")}
+                  </a>
                 )}
               </div>
-            ))
+              {a.status === "paid" ? (
+                <span className="text-sm font-extrabold shrink-0">✓ {t("ev.paid")}</span>
+              ) : a.status === "booked" ? (
+                <button className="cbtn cbtn-green text-sm shrink-0" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
+              ) : (
+                <span className="text-sm text-[var(--ink)] shrink-0">{t("ev.interested")}</span>
+              )}
+            </div>
+          ))}
+          {confirming ? (
+            <div className="space-y-2 border-t border-[var(--ink)]/15 pt-3">
+              <div className="text-sm font-extrabold text-[var(--ink)]">{t("ev.delete_confirm")}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="cbtn cbtn-ghost text-sm" disabled={busy} onClick={() => setConfirming(false)}>{t("ev.delete_keep")}</button>
+                <button className="cbtn text-sm" style={{ background: "var(--coral)", color: "#FFF6E8", border: "2px solid var(--ink)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
+              </div>
+            </div>
           ) : (
-            <div className="text-sm text-[var(--ink)]">{t("ev.no_attendees")}</div>
+            <div className="flex items-center gap-5 border-t border-[var(--ink)]/15 pt-3">
+              <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 3 }}><EditIcon /></Link>
+              <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 3 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
+              <button type="button" aria-label={t("share.spread")} title={t("share.spread")} style={{ padding: 3 }} onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}><ShareIcon /></button>
+            </div>
           )}
-          <div className="border-t border-[var(--ink)]/15 pt-3">
-            {confirming ? (
-              <div className="space-y-2">
-                <div className="text-sm font-extrabold text-[var(--ink)]">{t("ev.delete_confirm")}</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="cbtn cbtn-ghost text-sm" disabled={busy} onClick={() => setConfirming(false)}>{t("ev.delete_keep")}</button>
-                  <button className="cbtn text-sm" style={{ background: "var(--coral)", color: "#FFF6E8", border: "2px solid var(--ink)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 3 }}><EditIcon /></Link>
-                <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 3 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
-              </div>
-            )}
-          </div>
         </div>
       ) : myStatus ? (
         <div className="mt-3 space-y-2">

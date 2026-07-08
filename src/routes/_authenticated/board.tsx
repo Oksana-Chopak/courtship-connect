@@ -281,8 +281,7 @@ function BoardPage() {
           <div className="flex items-center justify-between">
             <div className="csection-label">{t("tonight.evening")}</div>
             <button type="button" onClick={() => setFiltersOpen(true)}
-              className="font-extrabold text-xs"
-              style={{ border: "1.5px solid rgba(43,33,24,0.3)", borderRadius: 8, padding: "5px 11px", background: "var(--cream2)" }}>
+              style={{ border: "1.5px solid rgba(43,33,24,0.18)", borderRadius: 8, padding: "4px 9px", background: "var(--cream2)", fontWeight: 700, fontSize: 11, color: "rgba(43,33,24,0.5)" }}>
               {t("players.filters")}{filterCount > 0 ? ` · ${filterCount}` : ` · ${t("board.f_any")}`} ▾
             </button>
           </div>
