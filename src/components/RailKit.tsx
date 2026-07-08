@@ -74,13 +74,14 @@ export function CalIcon({ added }: { added?: boolean }) {
 }
 
 /** The colored left time-rail: DAY / TIME / court-type emoji, tinted by tone. */
-export function TimeRail({ day, time, ct, tone }: { day: string; time: string; ct: string; tone: RailTone }) {
+export function TimeRail({ day, time, ct, tone, ago }: { day: string; time: string; ct: string; tone: RailTone; ago?: string }) {
   const { bar, bg } = railTone(tone);
   return (
     <div style={{ width: 70, flexShrink: 0, background: bg, borderRight: "1px solid rgba(43,33,24,0.15)", borderLeft: `4px solid ${bar}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 4px", textAlign: "center" }}>
       <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(43,33,24,0.6)" }}>{day}</div>
       <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1.05, marginTop: 2 }}>{time}</div>
       <div style={{ fontSize: 16, marginTop: 4 }}>{ct}</div>
+      {ago && <div style={{ fontWeight: 600, fontSize: 10, color: "rgba(43,33,24,0.5)", marginTop: 4, lineHeight: 1 }}>{ago}</div>}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { BallHeart } from "@/components/RailKit";
 import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +48,8 @@ function AuthedShell() {
     <div className="terry-bg app-shell font-body text-[var(--ink)] flex flex-col">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)] shrink-0">
         <div className="max-w-md mx-auto px-5 py-3 flex items-center justify-between">
-          <Link to="/board" className="font-display text-2xl">
+          <Link to="/board" className="font-display text-2xl flex items-center gap-2">
+            <BallHeart size={26} />
             Courtship
           </Link>
         </div>

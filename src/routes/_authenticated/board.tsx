@@ -281,9 +281,9 @@ function BoardPage() {
           <div className="flex items-center justify-between">
             <div className="csection-label">{t("tonight.evening")}</div>
             <button type="button" onClick={() => setFiltersOpen(true)}
-              className="inline-flex items-center gap-1.5 font-extrabold rounded-lg px-3 py-1.5 text-xs"
-              style={{ background: "var(--cream2)", border: "1.5px solid rgba(43,33,24,0.3)" }}>
-              ⚙ {t("players.filters")}{filterCount > 0 ? ` · ${filterCount}` : ""}
+              className="font-extrabold text-xs"
+              style={{ border: "1.5px solid rgba(43,33,24,0.3)", borderRadius: 8, padding: "5px 11px", background: "var(--cream2)" }}>
+              {t("players.filters")}{filterCount > 0 ? ` · ${filterCount}` : ` · ${t("board.f_any")}`} ▾
             </button>
           </div>
           <div className="space-y-3">
@@ -448,21 +448,25 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
 
   return (
     <RailShell>
-      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} />
+      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} ago={timeAgo(sos.created_at)} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
-        {/* tags row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, minHeight: 18 }}>
-          {sos.is_buddy && !mine && (
-            <span style={{ fontWeight: 800, fontSize: 11, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
-          )}
-          {isUrgent && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
-          )}
-          {mine && (
-            <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
-          )}
-          <span style={{ marginLeft: "auto", fontWeight: 700, fontSize: 12, color: "rgba(43,33,24,0.6)" }}>{timeAgo(sos.created_at)}</span>
-        </div>
+        {/* tags row — only when there's a tag, so the name never floats below empty space */}
+        {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, flexWrap: "wrap" }}>
+            {sos.is_buddy && !mine && (
+              <span style={{ fontWeight: 800, fontSize: 11, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
+            )}
+            {isUrgent && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
+            )}
+            {mine && (
+              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
+            )}
+            {!!sos.sport && sos.sport !== "tennis" && (
+              <span style={{ fontWeight: 800, fontSize: 11, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
+            )}
+          </div>
+        )}
 
         {/* photo + name + club (games) OR court headline (mine) */}
         {mine ? (
@@ -487,13 +491,10 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
           </div>
         )}
 
-        {/* status + levels + sport */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-          <CourtStatusBadge status={sos.court_status} muted />
-          <span style={{ fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{t("rail.levels")} <span style={{ color: lmMin.color, fontWeight: 800 }}>{sos.level_min}</span>–<span style={{ color: lmMax.color, fontWeight: 800 }}>{sos.level_max}</span></span>
-          {sos.sport && sos.sport !== "tennis" && (
-            <span style={{ fontWeight: 800, fontSize: 12, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
-          )}
+        {/* status + levels — kept on ONE line so every card is the same height */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap" }}>
+          <span style={{ flexShrink: 0 }}><CourtStatusBadge status={sos.court_status} muted /></span>
+          <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{t("rail.levels")} <span style={{ color: lmMin.color, fontWeight: 800 }}>{sos.level_min}</span>–<span style={{ color: lmMax.color, fontWeight: 800 }}>{sos.level_max}</span></span>
         </div>
 
         {sos.note && <div style={{ fontStyle: "italic", fontWeight: 600, fontSize: 13, color: "rgba(43,33,24,0.6)", marginTop: 6, ...clampLines(2) }}>"{sos.note}"</div>}

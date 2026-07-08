@@ -17,7 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { shareTo } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { TimeRail, RailShell, ShareIcon, clampLines } from "@/components/RailKit";
+import { TimeRail, RailShell, ShareIcon, Rackets, clampLines } from "@/components/RailKit";
 
 export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void; guest?: boolean }) {
   const { t, lang } = useI18n();
@@ -100,17 +100,16 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
         </span>
       )}
       <div style={{ fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 3, ...clampLines(1) }}>📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
-      <div className="text-base text-[var(--ink)] mt-1">
-        🎟 {isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}
-        {e.capacity != null ? ` · ${full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number })}` : ""}
-      </div>
       {(() => {
         const parts: string[] = [];
-        if (e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5)) parts.push(`L${e.level_min}–${e.level_max}`);
+        parts.push(`🎟 ${isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}`);
+        if (e.capacity != null) parts.push(full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number }));
         if (e.duration_min) parts.push(durationLabel(e.duration_min));
-        return parts.length ? <div className="text-base text-[var(--ink)] mt-1">{parts.join(" · ")}</div> : null;
+        return <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap", fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{parts.map((p, i) => <span key={i} style={{ flexShrink: 0 }}>{i > 0 ? "· " : ""}{p}</span>)}</div>;
       })()}
-      {e.format && <div className="text-base text-[var(--ink)] mt-1">{e.format}</div>}
+      {(e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5)) || e.format ? (
+        <div style={{ fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)", marginTop: 4, ...clampLines(1) }}>{[e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5) ? `L${e.level_min}–${e.level_max}` : null, e.format].filter(Boolean).join(" · ")}</div>
+      ) : null}
       {e.description && (
         <div className="mt-1">
           <div
@@ -182,19 +181,14 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
           <button className="cbtn cbtn-ghost w-full" disabled={busy} onClick={leave}>{t("ev.leave")}</button>
         </div>
       ) : (
-        <div className="mt-3">
-          <button className="cbtn cbtn-coral w-full" disabled={busy || full} onClick={join}>
-            {full ? t("ev.full_label") : isPaid ? t("ev.book_spot", { n: e.price_sek as number }) : t("ev.express_interest")}
+        <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
+          <Rackets n={4} size={22} />
+          <button type="button" disabled={busy || full} onClick={join}
+            style={{ flex: 1, textAlign: "center", background: full ? "var(--cream2)" : isPaid ? "#8C5A33" : "var(--green-pop)", color: full ? "var(--ink)" : isPaid ? "#FFF6E8" : "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}>
+            {full ? t("ev.full_label") : isPaid ? t("ev.book_a_spot") : t("ev.express_interest")}
           </button>
+          {!guest && <button type="button" onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
         </div>
-      )}
-      {!guest && (
-        <button
-          type="button"
-          onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}
-          className="mt-3 text-sm font-extrabold underline"
-          style={{ color: "var(--wood, #8a6d3b)" }}
-        >↗ {t("share.spread")}</button>
       )}
       </div>
     </RailShell>
