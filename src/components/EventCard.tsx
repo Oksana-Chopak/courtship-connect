@@ -17,7 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { shareTo } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { TimeRail, RailShell, ShareIcon, Rackets, clampLines } from "@/components/RailKit";
+import { TimeRail, RailShell, ShareIcon, Rackets, EditIcon, DeleteIcon, RF, clampLines } from "@/components/RailKit";
 
 export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void; guest?: boolean }) {
   const { t, lang } = useI18n();
@@ -92,29 +92,29 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
     <RailShell>
       <TimeRail day={railDay} time={railTime} ct="🎉" tone="event" />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
-      <div style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C5A33", marginBottom: 6 }}>{isHost ? t("board.you_host") : "🎉 " + t("ev.tag")}</div>
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1.1, ...clampLines(2) }}>{e.title}</div>
+      <div style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C5A33", marginBottom: 6 }}>{isHost ? t("board.you_host") : "🎉 " + t("ev.tag")}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.1, ...clampLines(2) }}>{e.title}</div>
       {(e as any).sport && (e as any).sport !== "tennis" && (
         <span className="inline-block font-extrabold text-xs px-2 py-0.5 rounded-full mt-1" style={{ background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>
           {sportMeta((e as any).sport).emoji} {t(sportMeta((e as any).sport).key)}
         </span>
       )}
-      <div style={{ fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 3, ...clampLines(1) }}>📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
+      <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 3, ...clampLines(1) }}>📍 {e.city ? e.city + " · " : ""}{shortCourtName(e.location)}</div>
       {(() => {
         const parts: string[] = [];
         parts.push(`🎟 ${isPaid ? t("ev.price_kr", { n: e.price_sek as number }) : t("ev.free")}`);
         if (e.capacity != null) parts.push(full ? t("ev.full_label") : t("ev.spots_left_n", { n: left as number }));
         if (e.duration_min) parts.push(durationLabel(e.duration_min));
-        return <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap", fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{parts.map((p, i) => <span key={i} style={{ flexShrink: 0 }}>{i > 0 ? "· " : ""}{p}</span>)}</div>;
+        return <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap", fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{parts.map((p, i) => <span key={i} style={{ flexShrink: 0 }}>{i > 0 ? "· " : ""}{p}</span>)}</div>;
       })()}
       {(e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5)) || e.format ? (
-        <div style={{ fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)", marginTop: 4, ...clampLines(1) }}>{[e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5) ? `L${e.level_min}–${e.level_max}` : null, e.format].filter(Boolean).join(" · ")}</div>
+        <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", marginTop: 4, ...clampLines(1) }}>{[e.level_min != null && e.level_max != null && !(e.level_min === 1 && e.level_max === 5) ? `L${e.level_min}–${e.level_max}` : null, e.format].filter(Boolean).join(" · ")}</div>
       ) : null}
       {e.description && (
         <div className="mt-1">
           <div
-            className="text-base italic text-[var(--ink)]"
-            style={expanded ? undefined : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            className="text-[var(--ink)]"
+            style={{ fontStyle: "italic", fontWeight: 600, fontSize: RF.note, color: "rgba(43,33,24,0.6)", ...(expanded ? {} : clampLines(2)) }}
           >
             "{e.description}"
           </div>
@@ -169,8 +169,8 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <Link to="/events/new" search={{ id: e.id }} className="text-sm font-extrabold underline">✏️ {t("ev.edit")}</Link>
-                <button className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }} onClick={() => setConfirming(true)}>{t("ev.delete")}</button>
+                <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 3 }}><EditIcon /></Link>
+                <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 3 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
               </div>
             )}
           </div>

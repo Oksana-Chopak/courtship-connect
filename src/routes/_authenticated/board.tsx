@@ -10,7 +10,7 @@ import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/eve
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, clampLines, type RailTone } from "@/components/RailKit";
+import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { checkCelebration, type Celebration } from "@/lib/celebrate";
@@ -191,8 +191,9 @@ function BoardPage() {
     <div className="space-y-5">
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
-      {/* Hero — Save my set (SOS), with Plan-a-game / Host / Log under-links */}
+      {/* Hero — Save my set (SOS), with Plan-a-game / Host under-links */}
       <div>
+        <p className="text-center font-display leading-tight px-2" style={{ fontSize: 18, marginBottom: 12 }}>{t("tonight.encourage")}</p>
         <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
           <BallHeart size={26} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -204,7 +205,6 @@ function BoardPage() {
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px 20px", marginTop: 11 }}>
           <Link to="/sos/new" search={{ planned: undefined }} className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>📅 {t("tonight.plan_game")}</Link>
           <Link to="/events/new" className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>🎪 {t("board.host_event")}</Link>
-          <Link to="/matches" search={{ log: true }} className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>✅ {t("board.log_cta")}</Link>
         </div>
       </div>
 
@@ -454,16 +454,16 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, flexWrap: "wrap" }}>
             {sos.is_buddy && !mine && (
-              <span style={{ fontWeight: 800, fontSize: 11, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
+              <span style={{ fontWeight: 800, fontSize: RF.tag, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
             )}
             {isUrgent && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
             )}
             {mine && (
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
+              <span style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
             )}
             {!!sos.sport && sos.sport !== "tennis" && (
-              <span style={{ fontWeight: 800, fontSize: 11, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
+              <span style={{ fontWeight: 800, fontSize: RF.tag, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
             )}
           </div>
         )}
@@ -473,31 +473,31 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <RailPhoto src={mePhoto ?? null} name={meName || "You"} seed={sos.caller_id} size={52} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, ...clampLines(1) }}>{t("board.youre_hosting")}</div>
-              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>{t("board.youre_hosting")}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
             </div>
           </div>
         ) : sos.caller_name ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <RailPhoto src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={52} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, ...clampLines(1) }}>{sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}</div>
-              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>{sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
             </div>
           </div>
         ) : (
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.1, ...clampLines(2) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.1, ...clampLines(2) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
           </div>
         )}
 
         {/* status + levels — kept on ONE line so every card is the same height */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap" }}>
           <span style={{ flexShrink: 0 }}><CourtStatusBadge status={sos.court_status} muted /></span>
-          <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 12.5, color: "rgba(43,33,24,0.6)" }}>{t("rail.levels")} <span style={{ color: lmMin.color, fontWeight: 800 }}>{sos.level_min}</span>–<span style={{ color: lmMax.color, fontWeight: 800 }}>{sos.level_max}</span></span>
+          <span style={{ flexShrink: 0, fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{t("rail.levels")} <span style={{ color: lmMin.color, fontWeight: 800 }}>{sos.level_min}</span>–<span style={{ color: lmMax.color, fontWeight: 800 }}>{sos.level_max}</span></span>
         </div>
 
-        {sos.note && <div style={{ fontStyle: "italic", fontWeight: 600, fontSize: 13, color: "rgba(43,33,24,0.6)", marginTop: 6, ...clampLines(2) }}>"{sos.note}"</div>}
+        {sos.note && <div style={{ fontStyle: "italic", fontWeight: 600, fontSize: RF.note, color: "rgba(43,33,24,0.6)", marginTop: 6, ...clampLines(2) }}>"{sos.note}"</div>}
 
         {mine && !claimed && (candidates ?? 0) > 0 && (
           <Link to="/sos/$id" params={{ id: sos.id }} className="block font-extrabold text-sm mt-2" style={{ color: "var(--coral)" }}>🙋 {t("app.candidates_line", { n: candidates ?? 0 })}</Link>
