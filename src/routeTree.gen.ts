@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PostRouteImport } from './routes/post'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as CheckEmailRouteImport } from './routes/check-email'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -37,6 +38,11 @@ import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 
+const PostRoute = PostRouteImport.update({
+  id: '/post',
+  path: '/post',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
+  '/post': typeof PostRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
+  '/post': typeof PostRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/board': typeof AuthenticatedBoardRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/check-email': typeof CheckEmailRoute
   '/onboarding': typeof OnboardingRoute
+  '/post': typeof PostRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/check-email'
     | '/onboarding'
+    | '/post'
     | '/admin'
     | '/board'
     | '/coach'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/check-email'
     | '/onboarding'
+    | '/post'
     | '/admin'
     | '/board'
     | '/coach'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/check-email'
     | '/onboarding'
+    | '/post'
     | '/_authenticated/admin'
     | '/_authenticated/board'
     | '/_authenticated/coach'
@@ -351,10 +363,18 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CheckEmailRoute: typeof CheckEmailRoute
   OnboardingRoute: typeof OnboardingRoute
+  PostRoute: typeof PostRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/post': {
+      id: '/post'
+      path: '/post'
+      fullPath: '/post'
+      preLoaderRoute: typeof PostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CheckEmailRoute: CheckEmailRoute,
   OnboardingRoute: OnboardingRoute,
+  PostRoute: PostRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

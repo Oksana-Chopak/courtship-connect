@@ -86,6 +86,9 @@ function Index() {
               {t("index.cta_peek")}
             </Link>
           )}
+          <Link to="/post" className="cbtn cbtn-green">
+            🎾 {t("index.cta_post")}
+          </Link>
           <Link to="/auth" search={{ mode: "signup" }} className={FLAGS.guestPeek ? "cbtn cbtn-ghost" : "cbtn cbtn-coral"}>
             {t("index.cta_invite")}
           </Link>

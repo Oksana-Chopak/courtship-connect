@@ -8,6 +8,9 @@ import { ensurePushSubscribed } from "@/lib/push";
 import { FLAGS } from "@/lib/flags";
 import { useI18n } from "@/lib/i18n";
 import { joinSearch } from "@/lib/guest";
+import { peekDraftGame, publishDraftGame } from "@/lib/draftGame";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -44,6 +47,19 @@ function AuthedShell() {
   // permission — without this, a granted user can have no live subscription
   // and never receive SOS pushes.
   useEffect(() => { if (!guest) void ensurePushSubscribed(); }, [guest]);
+  // Reverse registration: a game drafted on /post (before the account existed)
+  // publishes the moment its author lands in the authed shell — then we take
+  // them straight to their live game so they can share it.
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (guest || !user || !peekDraftGame()) return;
+    void publishDraftGame(user.id).then((id) => {
+      if (!id) return;
+      toast.success(t("post_pub.live_toast"));
+      navigate({ to: "/sos/$id", params: { id } });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guest, user?.id]);
   return (
     <div className="terry-bg app-shell font-body text-[var(--ink)] flex flex-col">
       <header className="border-b-2 border-[var(--ink)] bg-[var(--cream2)] shrink-0">

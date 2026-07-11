@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { consumeNext } from "@/lib/share";
+import { peekDraftGame } from "@/lib/draftGame";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
@@ -131,8 +132,11 @@ function Onboarding() {
             <div className="text-5xl">🎾</div>
             <h1 className="font-display text-3xl leading-tight">{t("ob.first_title")}</h1>
             <p className="font-semibold" style={{ opacity: 0.75 }}>{t("ob.first_sub")}</p>
-            <button onClick={() => navigate({ to: "/board" })} className="cbtn cbtn-coral w-full">{t("ob.first_go")}</button>
-            <button onClick={() => navigate({ to: "/matches", search: { log: true } })} className="cbtn cbtn-green w-full">✅ {t("ob.first_log")}</button>
+            {!peekDraftGame() && (
+              <button onClick={() => navigate({ to: "/sos/new", search: { edit: undefined } })} className="cbtn cbtn-coral w-full">🎾 {t("ob.first_post")}</button>
+            )}
+            <button onClick={() => navigate({ to: "/board" })} className={`cbtn w-full ${peekDraftGame() ? "cbtn-coral" : "cbtn-green"}`}>{t("ob.first_go")}</button>
+            <button onClick={() => navigate({ to: "/matches", search: { log: true } })} className="cbtn cbtn-ghost w-full">✅ {t("ob.first_log")}</button>
             <button onClick={() => navigate({ to: "/players" })} className="cbtn cbtn-ghost w-full">{t("ob.first_browse")}</button>
           </div>
         </div>
