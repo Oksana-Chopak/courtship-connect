@@ -121,7 +121,8 @@ function SosDetail() {
 
   if (!sos || !me) return <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>;
 
-  const when = whenLabel(sos.play_at);
+  const winEnd = (sos as any).play_until ? new Date((sos as any).play_until as string) : null;
+  const when = whenLabel(sos.play_at) + (winEnd ? "–" + winEnd.toLocaleTimeString(lang === "sv" ? "sv-SE" : "en-GB", { hour: "2-digit", minute: "2-digit" }) : "");
   const ctMeta = courtTypeMeta(sos.court_type, lang);
   const spotsNeeded = sos.spots_needed ?? 1;
   const spotsFilled = sos.spots_filled ?? 0;
@@ -278,6 +279,11 @@ function SosDetail() {
                   <div className="text-xs font-bold" style={{ color: "rgba(43,33,24,0.6)" }}>
                     L{a.level} · {vibeEmoji(a.vibe)}{(a.rescues_count ?? 0) >= 1 ? ` · 🚑 ${a.rescues_count}` : ""}
                   </div>
+                  {a.proposed_at && (
+                    <div className="text-sm font-extrabold mt-0.5" style={{ color: "var(--coral)" }}>
+                      🕐 {t("app.suggests", { time: new Date(a.proposed_at).toLocaleTimeString(lang === "sv" ? "sv-SE" : "en-GB", { hour: "2-digit", minute: "2-digit" }) })}
+                    </div>
+                  )}
                 </div>
                 <button className="cbtn cbtn-coral shrink-0" disabled={busy}
                   onClick={async () => {

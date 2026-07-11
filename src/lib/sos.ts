@@ -28,6 +28,7 @@ export type EligibleSosRow = SosRow & {
   sport?: string | null;
   caller_last_name?: string | null;
   caller_photo_url?: string | null;
+  play_until?: string | null;
   court_name: string | null;
   court_city: string | null;
   court_area: string | null;
@@ -113,8 +114,13 @@ const MISSING_RPC = /(does not exist|PGRST202|schema cache|not_applicable)/i;
 
 /** Apply to a planned game. Falls back to the old instant claim if the
  *  applications RPC isn't deployed yet (fallbackClaimed=true then). */
-export async function applyToGame(sosId: string): Promise<{ ok: boolean; reason: string; fallbackClaimed?: boolean }> {
-  const { data, error } = await (supabase as any).rpc("apply_to_game", { _sos_id: sosId });
+export async function applyToGame(sosId: string, proposedAt?: string | null): Promise<{ ok: boolean; reason: string; fallbackClaimed?: boolean }> {
+  const args: any = proposedAt ? { _sos_id: sosId, _proposed_at: proposedAt } : { _sos_id: sosId };
+  let { data, error } = await (supabase as any).rpc("apply_to_game", args);
+  if (error && proposedAt && MISSING_RPC.test(error.message ?? "")) {
+    // pre-SQL DB still has the 1-arg function — apply without the proposal
+    ({ data, error } = await (supabase as any).rpc("apply_to_game", { _sos_id: sosId }));
+  }
   if (error) {
     if (MISSING_RPC.test(error.message ?? "")) {
       const r = await claimSos(sosId);
@@ -141,20 +147,27 @@ export async function fetchMyApplicationSosIds(uid: string): Promise<Set<string>
   } catch { return new Set(); }
 }
 
-export type ApplicantRow = { id: string; name: string; photo_url: string | null; level: number; vibe: string; rescues_count: number | null };
+export type ApplicantRow = { id: string; name: string; photo_url: string | null; level: number; vibe: string; rescues_count: number | null; proposed_at?: string | null };
 
 /** Pending candidates for MY game (host view). Empty pre-SQL. */
 export async function fetchApplicants(sosId: string): Promise<ApplicantRow[]> {
   try {
-    const { data: apps } = await (supabase as any)
-      .from("sos_applications").select("applicant_id,created_at").eq("sos_id", sosId).eq("status", "pending").order("created_at");
-    const ids = ((apps as any[]) ?? []).map((a) => a.applicant_id);
+    let { data: apps, error } = await (supabase as any)
+      .from("sos_applications").select("applicant_id,created_at,proposed_at").eq("sos_id", sosId).eq("status", "pending").order("created_at");
+    if (error) {
+      // pre-SQL: proposed_at column not there yet
+      ({ data: apps } = await (supabase as any)
+        .from("sos_applications").select("applicant_id,created_at").eq("sos_id", sosId).eq("status", "pending").order("created_at"));
+    }
+    const rows = (apps as any[]) ?? [];
+    const ids = rows.map((a) => a.applicant_id);
     if (!ids.length) return [];
+    const propById = new Map<string, string | null>(rows.map((a) => [a.applicant_id, a.proposed_at ?? null]));
     const { data: ps } = await (supabase as any).rpc("players_directory", { _ids: ids });
     const byId = new Map<string, any>(((ps as any[]) ?? []).map((p) => [p.id, p]));
     return ids.map((id) => {
       const p = byId.get(id) ?? {};
-      return { id, name: p.name ?? "Player", photo_url: p.photo_url ?? null, level: p.level ?? 3, vibe: p.vibe ?? "friendly", rescues_count: p.rescues_count ?? 0 };
+      return { id, name: p.name ?? "Player", photo_url: p.photo_url ?? null, level: p.level ?? 3, vibe: p.vibe ?? "friendly", rescues_count: p.rescues_count ?? 0, proposed_at: propById.get(id) ?? null };
     });
   } catch { return []; }
 }

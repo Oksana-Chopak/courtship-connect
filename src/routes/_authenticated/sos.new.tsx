@@ -61,6 +61,8 @@ function NewSos() {
   const [duration, setDuration] = useState<number>(60);
   const [note, setNote] = useState("");
   const [autoFlare, setAutoFlare] = useState(true);
+  const [flexible, setFlexible] = useState(false);
+  const [untilTime, setUntilTime] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [myName, setMyName] = useState("");
@@ -159,8 +161,17 @@ function NewSos() {
     return base;
   }, [date, time]);
 
-  const urgent = playAt ? isUrgent(playAt) : false;
-  const canSubmit = !!(playAt && courtId && courtType && format);
+  const playUntil = useMemo(() => {
+    if (!flexible || !untilTime) return null;
+    const base = new Date(date);
+    const [h, m] = untilTime.split(":").map(Number);
+    base.setHours(h ?? 0, m ?? 0, 0, 0);
+    return base;
+  }, [flexible, untilTime, date]);
+
+  // A flexible-window game is by definition planned, never an urgent SOS.
+  const urgent = flexible ? false : playAt ? isUrgent(playAt) : false;
+  const canSubmit = !!(playAt && courtId && courtType && format) && (!flexible || (playUntil != null && playUntil.getTime() > (playAt?.getTime() ?? 0)));
 
   async function doSubmit() {
     if (!uid || !playAt) return;
@@ -217,6 +228,7 @@ function NewSos() {
     const insertRow: any = {
       caller_id: uid,
       play_at: playAt.toISOString(),
+      play_until: flexible && playUntil ? playUntil.toISOString() : null,
       court_id: courtId,
       format,
       level_min: anyone ? 1 : levelMin,
@@ -235,6 +247,11 @@ function NewSos() {
     if (res.error && /sport/i.test(res.error.message || "")) {
       const { sport: _s, ...rest } = insertRow;
       res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
+    }
+    if (res.error && /play_until/i.test(res.error.message || "")) {
+      // window column not migrated yet — post as exact-time so creation never breaks
+      const { play_until: _pu, ...noWin } = insertRow;
+      res = await (supabase as any).from("sos_requests").insert(noWin).select("id").single();
     }
     if (res.error && /duration_min/i.test(res.error.message || "")) {
       // duration_min column not migrated yet — post without it so creation never breaks
@@ -280,9 +297,23 @@ function NewSos() {
       <Section label={t("sos.when")}>
         <DateChipPicker value={date} onChange={setDate} />
         <div className="mt-3">
-          <div className="csection-label mb-1">{t("slot.label")}</div>
+          <div className="csection-label mb-1">{flexible ? t("sos.flex_from") : t("slot.label")}</div>
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
         </div>
+        {!editing && (
+          <div className="mt-3">
+            <button type="button" onClick={() => setFlexible(!flexible)} className={`cchip ${flexible ? "cchip-on" : ""}`}>
+              🤸 {t("sos.flex_label")}
+            </button>
+            {flexible && (
+              <div className="mt-2">
+                <div className="csection-label mb-1">{t("sos.flex_until")}</div>
+                <SlotPicker city={city} date={date} value={untilTime} onChange={setUntilTime} ariaLabel={t("sos.flex_until")} />
+                <p className="text-sm font-semibold mt-1" style={{ opacity: 0.7 }}>{t("sos.flex_help")}</p>
+              </div>
+            )}
+          </div>
+        )}
         <div className="mt-3">
           {mySports.length > 1 && (<>
           <div className="csection-label mb-1">{t("sport.label")}</div>
