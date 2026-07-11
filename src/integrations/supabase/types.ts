@@ -609,6 +609,7 @@ export type Database = {
           applicant_id: string
           created_at: string
           id: string
+          proposed_at: string | null
           sos_id: string
           status: string
         }
@@ -616,6 +617,7 @@ export type Database = {
           applicant_id: string
           created_at?: string
           id?: string
+          proposed_at?: string | null
           sos_id: string
           status?: string
         }
@@ -623,6 +625,7 @@ export type Database = {
           applicant_id?: string
           created_at?: string
           id?: string
+          proposed_at?: string | null
           sos_id?: string
           status?: string
         }
@@ -662,6 +665,7 @@ export type Database = {
           level_min: number
           note: string | null
           play_at: string
+          play_until: string | null
           sport: string
           spots_filled: number
           spots_needed: number
@@ -685,6 +689,7 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at: string
+          play_until?: string | null
           sport?: string
           spots_filled?: number
           spots_needed?: number
@@ -708,6 +713,7 @@ export type Database = {
           level_min?: number
           note?: string | null
           play_at?: string
+          play_until?: string | null
           sport?: string
           spots_filled?: number
           spots_needed?: number
@@ -873,7 +879,7 @@ export type Database = {
         Returns: undefined
       }
       apply_to_game: {
-        Args: { _sos_id: string }
+        Args: { _proposed_at?: string; _sos_id: string }
         Returns: {
           ok: boolean
           reason: string
