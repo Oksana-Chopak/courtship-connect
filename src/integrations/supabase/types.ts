@@ -878,6 +878,16 @@ export type Database = {
         Args: { _area: string; _court_id: string; _name: string }
         Returns: undefined
       }
+      admin_user_emails: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          last_sign_in_at: string
+          name: string
+        }[]
+      }
       apply_to_game: {
         Args: { _proposed_at?: string; _sos_id: string }
         Returns: {
