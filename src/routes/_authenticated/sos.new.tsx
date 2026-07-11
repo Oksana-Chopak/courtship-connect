@@ -130,6 +130,11 @@ function NewSos() {
           else { setAnyone(false); setLevelMin(g.level_min); setLevelMax(g.level_max); }
           if (g.court_status) setCourtStatus(g.court_status);
           if (g.duration_min) setDuration(g.duration_min);
+          if (g.play_until) {
+            const pu = new Date(g.play_until);
+            setFlexible(true);
+            setUntilTime(`${pad(pu.getHours())}:${pad(pu.getMinutes())}`);
+          }
           setNote(g.note ?? "");
         }
       }
@@ -181,7 +186,7 @@ function NewSos() {
     if (editing && editId) {
       // Direct UPDATE on sos_requests was revoked in the June-19 hardening —
       // edits go through the owner-only edit_sos RPC (spots/status untouchable).
-      let { data: er, error } = await (supabase as any).rpc("edit_sos", {
+      const editArgs: any = {
         _sos_id: editId,
         _play_at: playAt.toISOString(),
         _court_id: courtId,
@@ -193,7 +198,12 @@ function NewSos() {
         _court_type: courtType,
         _duration_min: duration,
         _sport: sport,
-      });
+      };
+      let { data: er, error } = await (supabase as any).rpc("edit_sos", { ...editArgs, _play_until: flexible && playUntil ? playUntil.toISOString() : null });
+      if (error && /_play_until|does not exist|schema cache/i.test(error.message ?? "")) {
+        // pre-window edit_sos (11-arg) still deployed — save without the window
+        ({ data: er, error } = await (supabase as any).rpc("edit_sos", editArgs));
+      }
       if (!error) {
         const row = Array.isArray(er) ? er[0] : er;
         if (!row?.ok) {
@@ -300,9 +310,8 @@ function NewSos() {
           <div className="csection-label mb-1">{flexible ? t("sos.flex_from") : t("slot.label")}</div>
           <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
         </div>
-        {!editing && (
-          <div className="mt-3">
-            <button type="button" onClick={() => setFlexible(!flexible)} className={`cchip ${flexible ? "cchip-on" : ""}`}>
+        <div className="mt-3">
+            <button type="button" onClick={() => { setFlexible(!flexible); if (flexible) setUntilTime(""); }} className={`cchip ${flexible ? "cchip-on" : ""}`}>
               🤸 {t("sos.flex_label")}
             </button>
             {flexible && (
@@ -313,7 +322,6 @@ function NewSos() {
               </div>
             )}
           </div>
-        )}
         <div className="mt-3">
           {mySports.length > 1 && (<>
           <div className="csection-label mb-1">{t("sport.label")}</div>
