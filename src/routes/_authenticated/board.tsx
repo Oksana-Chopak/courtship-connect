@@ -536,7 +536,10 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
                   setBusy(true);
                   const r = await applyToGame(sos.id);
                   setBusy(false);
-                  if (!r.ok) { toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason); return; }
+                  if (!r.ok) {
+                    if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); onChange(); return; }
+                    toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason); return;
+                  }
                   if (r.fallbackClaimed) { navigate({ to: "/sos/$id", params: { id: sos.id } }); return; }
                   toast.success(t("app.sent"));
                   onChange();

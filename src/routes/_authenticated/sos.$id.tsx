@@ -396,9 +396,8 @@ function SosDetail() {
               const r = await applyToGame(sos.id);
               setBusy(false);
               if (!r.ok) {
-                if (r.reason === "taken") toast.error(t("sos.taken_toast"));
-                else if (r.reason === "expired") toast.error(t("sos.err_expired"));
-                else if (r.reason === "already_applied") { setMyApplied(true); toast.message(t("app.already")); }
+                if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); }
+                else if (r.reason === "already_applied") toast.error(t("app.already"));
                 else if (r.reason === "already_in") toast.error(t("sos.already_in"));
                 else toast.error(r.reason);
                 await load();
