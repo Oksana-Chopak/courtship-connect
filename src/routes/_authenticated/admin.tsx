@@ -66,7 +66,24 @@ function UsersEmails() {
       setRows((data as any[]) ?? []);
     })();
   }, []);
+  const [subj, setSubj] = useState("");
+  const [bodyTxt, setBodyTxt] = useState("");
+  const [sending, setSending] = useState(false);
   const emails = (rows ?? []).map((r) => r.email).filter(Boolean);
+  async function sendBroadcast(test: boolean) {
+    setSending(true);
+    try {
+      const { data, error } = await (supabase as any).functions.invoke("email-broadcast", {
+        body: { subject: subj.trim(), body: bodyTxt.trim(), test },
+      });
+      if (error) { toast.error(String(error.message ?? error)); return; }
+      if (!data?.ok && data?.error) { toast.error(String(data.error)); return; }
+      toast.success(test ? "Test sent to your inbox 📬" : `Sent to ${data?.sent ?? 0}/${data?.total ?? 0} 📬`);
+      if (!test) { setSubj(""); setBodyTxt(""); }
+    } catch (e: any) {
+      toast.error(String(e?.message ?? e));
+    } finally { setSending(false); }
+  }
   async function copyAll() {
     try { await navigator.clipboard.writeText(emails.join(", ")); toast.success(`Copied ${emails.length} emails`); } catch { toast.error("Copy failed"); }
   }
@@ -98,8 +115,23 @@ function UsersEmails() {
           ))}
         </div>
       )}
-      <div className="text-xs font-semibold mt-3" style={{ opacity: 0.6 }}>
-        Broadcast: copy all → paste into BCC in your mail app. (In-app email broadcast needs an email provider — pending decision.)
+      <div className="border-t border-[var(--ink)]/15 mt-3 pt-3 space-y-2">
+        <div className="csection-label">📨 Email broadcast</div>
+        <input className="cinput" placeholder="Subject" value={subj} onChange={(e) => setSubj(e.target.value)} />
+        <textarea className="cinput" rows={5} placeholder={"Message… (plain text; blank line = new paragraph)"} value={bodyTxt} onChange={(e) => setBodyTxt(e.target.value)} />
+        <div className="grid grid-cols-2 gap-2">
+          <button className="cbtn cbtn-ghost text-sm" disabled={sending || !subj.trim() || !bodyTxt.trim()} onClick={() => void sendBroadcast(true)}>
+            {sending ? "…" : "Send test to me"}
+          </button>
+          <button className="cbtn cbtn-coral text-sm" disabled={sending || !subj.trim() || !bodyTxt.trim()} onClick={() => {
+            if (confirm(`Send this email to ALL ${rows?.length ?? 0} users?`)) void sendBroadcast(false);
+          }}>
+            {sending ? "…" : `Send to all${rows ? ` (${rows.length})` : ""}`}
+          </button>
+        </div>
+        <div className="text-xs font-semibold" style={{ opacity: 0.6 }}>
+          Needs RESEND_API_KEY secret on the email-broadcast edge function. Until the court-ship.com domain is verified in Resend, sends from onboarding@resend.dev. Or: Copy all → BCC in your mail app.
+        </div>
       </div>
     </div>
   );
