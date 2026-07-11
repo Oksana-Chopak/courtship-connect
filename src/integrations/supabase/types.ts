@@ -979,6 +979,7 @@ export type Database = {
           level_min: number
           note: string
           play_at: string
+          play_until: string
           sport: string
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
@@ -1003,6 +1004,7 @@ export type Database = {
           level_min: number
           note: string
           play_at: string
+          play_until: string
           sport: string
           status: Database["public"]["Enums"]["sos_status_t"]
         }[]
@@ -1211,7 +1213,7 @@ export type Database = {
           level_max: number
           level_min: number
           play_at: string
-          sport: string
+          play_until: string
           spots_filled: number
           spots_needed: number
         }[]
