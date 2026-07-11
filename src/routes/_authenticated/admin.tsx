@@ -55,6 +55,56 @@ type Dashboard = {
   by_city: Record<string, CityStats>;
 };
 
+function UsersEmails() {
+  const [rows, setRows] = useState<{ id: string; email: string; name: string | null; created_at: string; last_sign_in_at: string | null }[] | null>(null);
+  const [missing, setMissing] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    void (async () => {
+      const { data, error } = await (supabase as any).rpc("admin_user_emails");
+      if (error) { setMissing(/does not exist|schema cache/i.test(error.message || "")); setRows([]); return; }
+      setRows((data as any[]) ?? []);
+    })();
+  }, []);
+  const emails = (rows ?? []).map((r) => r.email).filter(Boolean);
+  async function copyAll() {
+    try { await navigator.clipboard.writeText(emails.join(", ")); toast.success(`Copied ${emails.length} emails`); } catch { toast.error("Copy failed"); }
+  }
+  return (
+    <div className="ccard p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="csection-label">📧 Users &amp; emails{rows ? ` · ${rows.length}` : ""}</div>
+        <div className="flex items-center gap-2">
+          {emails.length > 0 && <button className="cbtn cbtn-green text-sm" onClick={copyAll}>Copy all</button>}
+          {rows && rows.length > 0 && <button className="cbtn cbtn-ghost text-sm" onClick={() => setOpen(!open)}>{open ? "Hide" : "Show"}</button>}
+        </div>
+      </div>
+      {missing && (
+        <div className="text-sm font-semibold mt-2" style={{ opacity: 0.7 }}>
+          Paste <code>admin_user_emails.sql</code> in Lovable to enable this list.
+        </div>
+      )}
+      {!missing && rows && rows.length === 0 && <div className="text-sm font-semibold mt-2" style={{ opacity: 0.7 }}>No users yet.</div>}
+      {open && rows && rows.length > 0 && (
+        <div className="mt-3 space-y-1 max-h-80 overflow-y-auto">
+          {rows.map((r) => (
+            <div key={r.id} className="flex items-baseline justify-between gap-2 border-t border-[var(--ink)]/10 pt-1">
+              <div className="min-w-0">
+                <span className="font-extrabold text-sm">{r.name ?? "—"}</span>{" "}
+                <span className="text-sm break-all">{r.email}</span>
+              </div>
+              <span className="text-xs shrink-0" style={{ opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString("en-GB")}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="text-xs font-semibold mt-3" style={{ opacity: 0.6 }}>
+        Broadcast: copy all → paste into BCC in your mail app. (In-app email broadcast needs an email provider — pending decision.)
+      </div>
+    </div>
+  );
+}
+
 function AdminPage() {
   const { t, lang } = useI18n();
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -212,6 +262,8 @@ function AdminPage() {
       </div>
 
       <AnnouncementAdmin />
+
+      <UsersEmails />
 
       {pendingEvents.length > 0 && (
         <div>
