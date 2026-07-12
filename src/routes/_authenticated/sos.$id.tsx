@@ -14,6 +14,7 @@ import { Avatar } from "@/components/Avatar";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
+import { TimeRail, RailShell, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
@@ -237,22 +238,39 @@ function SosDetail() {
     const full = sos.status === "claimed";
     return (
       <div className="space-y-5">
-        <Link to="/board" className="text-sm font-extrabold underline">← Home</Link>
-        <div
-          className="ccard p-6 text-center space-y-3"
-          style={full || isOpen ? { background: "var(--green-pop)" } : { background: "var(--coral)", color: "#FFF6E8" }}
-        >
-          <div className={full || isOpen ? "text-5xl" : "sos-dot text-5xl"}>{full ? "🎾" : isOpen ? "🎾" : "🚨"}</div>
-          <div className="font-display text-3xl">
-            {full ? (isOpen ? t("sos.group_set") : t("sos.rescued_title")) : isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
-          </div>
-          <div className="text-sm opacity-90">{when} · 📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
-          {full && !isOpen && <div className="font-extrabold">{t("sos.rescued_sub")}</div>}
-          {multi && (
-            <div className="font-extrabold">{t("sos.joined_count", { filled: spotsFilled, needed: spotsNeeded })}</div>
-          )}
-        </div>
-        <div><CourtStatusBadge status={sos.court_status} /></div>
+        <Link to="/board" className="text-sm font-extrabold underline">← {t("nav.board")}</Link>
+        {(() => {
+          const tone: RailTone = full ? "mine" : isOpen ? "plan" : "sos";
+          const d = new Date(sos.play_at);
+          const now = new Date();
+          const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
+          const locale = lang === "sv" ? "sv-SE" : "en-GB";
+          const day = d.toDateString() === now.toDateString() ? t("rail.today") : d.toDateString() === tmr.toDateString() ? t("rail.tmrw") : d.toLocaleDateString(locale, { weekday: "short" });
+          const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
+          const railTime = winEnd ? `${d.getHours()}–${winEnd.getHours()}` : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+          return (
+            <RailShell>
+              <TimeRail day={day} time={railTime} ct={full ? "🎾" : isOpen ? "🎾" : "🚨"} tone={tone} dateStr={dateStr} />
+              <div style={{ flex: 1, minWidth: 0, padding: "13px 14px" }}>
+                {!full && !isOpen && (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: "#F0705B", marginBottom: 6 }}>
+                    <span className="sos-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#F0705B", display: "inline-block" }} />SOS
+                  </div>
+                )}
+                <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.12 }}>
+                  {full ? (isOpen ? t("sos.group_set") : t("sos.rescued_title")) : isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
+                </div>
+                <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 4, ...clampLines(1) }}>📍 {courtCity} · {courtName}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap" }}>
+                  <span style={{ flexShrink: 0 }}><CourtStatusBadge status={sos.court_status} muted /></span>
+                  <span style={{ flexShrink: 0, fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</span>
+                </div>
+                {full && !isOpen && <div className="font-extrabold" style={{ fontSize: RF.meta, marginTop: 8 }}>{t("sos.rescued_sub")}</div>}
+                {multi && <div className="font-extrabold" style={{ fontSize: RF.meta, marginTop: 6 }}>{t("sos.joined_count", { filled: spotsFilled, needed: spotsNeeded })}</div>}
+              </div>
+            </RailShell>
+          );
+        })()}
 
         {claimers.length > 0 && (
           <div className="ccard p-4 space-y-3">

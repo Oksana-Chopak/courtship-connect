@@ -56,6 +56,7 @@ function BoardPage() {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const seenClaimedRef = useRef<Set<string> | null>(null);
   const [streakWeeks, setStreakWeeks] = useState(0);
+  const [playedThisWeek, setPlayedThisWeek] = useState(true);
   const [rescuesCount, setRescuesCount] = useState(0);
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [myName, setMyName] = useState<string>("");
@@ -114,7 +115,11 @@ function BoardPage() {
       const cel = checkCelebration(prof.games_played ?? 0, prof.rescues_count ?? 0, prof.referrals_count ?? 0, (hostedCount as number) ?? 0);
       if (cel) setCelebration(cel);
     }
-    setStreakWeeks(weeklyStreak((hist as any[]).map((g) => g.played_at)).weeks);
+    {
+      const st = weeklyStreak((hist as any[]).map((g) => g.played_at));
+      setStreakWeeks(st.weeks);
+      setPlayedThisWeek(st.playedThisWeek);
+    }
     setMyClaims(claims as any);
     setAppliedIds(myApps as Set<string>);
     {
@@ -212,12 +217,16 @@ function BoardPage() {
       {/* Mini progress + streak (tap → season) */}
       {(() => {
         const rt = rescuerTier(rescuesCount);
-        const rescueLine = rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
+        const dow = new Date().getDay(); // 5=Fri 6=Sat 0=Sun
+        const atRisk = streakWeeks > 0 && !playedThisWeek && (dow === 5 || dow === 6 || dow === 0);
+        const rescueLine = atRisk
+          ? t("mini.streak_risk")
+          : rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
         return (
-          <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
+          <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: atRisk ? "1.5px solid #F0705B" : "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: atRisk ? "#FCE9E4" : "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><span style={{ fontSize: 17 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
             <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
-            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, ...clampLines(1) }}>{rescueLine}</span>
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, color: atRisk ? "#F0705B" : undefined, ...clampLines(1) }}>{rescueLine}</span>
             <span style={{ fontSize: 16, color: "rgba(43,33,24,0.3)" }}>›</span>
           </Link>
         );

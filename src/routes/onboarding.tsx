@@ -132,6 +132,13 @@ function Onboarding() {
             <div className="text-5xl">🎾</div>
             <h1 className="font-display text-3xl leading-tight">{t("ob.first_title")}</h1>
             <p className="font-semibold" style={{ opacity: 0.75 }}>{t("ob.first_sub")}</p>
+            <div className="ccard p-4 text-left" style={{ borderColor: "var(--green-pop)" }}>
+              <div className="csection-label">📈 {t("ob.season_title")}</div>
+              <div className="flex items-center gap-3 mt-2 justify-center" style={{ fontSize: 26 }}>
+                <span>🎾</span><span>🚑</span><span>🤝</span><span>🎪</span>
+              </div>
+              <div className="font-extrabold text-center mt-2" style={{ fontSize: 15 }}>{t("ob.season_line")}</div>
+            </div>
             {!peekDraftGame() && (
               <button onClick={() => navigate({ to: "/sos/new", search: { edit: undefined } })} className="cbtn cbtn-coral w-full">🎾 {t("ob.first_post")}</button>
             )}

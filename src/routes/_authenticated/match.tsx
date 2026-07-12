@@ -154,6 +154,7 @@ function MatchDeck() {
           <div className="text-4xl">🎾</div>
           <div className="font-display text-xl">{t("match.empty")}</div>
           <Link to="/me" className="cbtn cbtn-coral inline-flex">{t("empty.dir_new_cta")}</Link>
+          <div><Link to="/lucky" className="font-extrabold underline text-sm">🎰 {t("feat.lucky_spin")}</Link></div>
         </div>
       )}
     </div>
