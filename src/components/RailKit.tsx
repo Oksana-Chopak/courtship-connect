@@ -7,7 +7,7 @@ import { Avatar } from "@/components/Avatar";
 export const LV_COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
 
 /** One shared font scale so game & event cards never differ in size. */
-export const RF = { name: 20, club: 15, meta: 14, note: 15, tag: 12, day: 12, time: 22 } as const;
+export const RF = { name: 22, club: 16, meta: 15, note: 16, tag: 13, day: 13, time: 24 } as const;
 const INK = "#2B2118";
 const INK30 = "rgba(43,33,24,0.30)";
 const GREEN = "#C9EE3F";

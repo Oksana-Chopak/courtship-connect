@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
+import { FLAGS } from "@/lib/flags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
@@ -197,8 +198,8 @@ function BoardPage() {
         <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
           <BallHeart size={26} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, lineHeight: 1 }}>{t("tonight.sos")}</div>
-            <div style={{ fontWeight: 800, fontSize: 12, opacity: 0.95, marginTop: 2 }}>{t("tonight.sos_sub")}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("tonight.sos")}</div>
+            <div style={{ fontWeight: 800, fontSize: 13.5, opacity: 0.95, marginTop: 2 }}>{t("tonight.sos_sub")}</div>
           </div>
           <span style={{ fontSize: 20 }}>→</span>
         </Link>
@@ -214,9 +215,9 @@ function BoardPage() {
         const rescueLine = rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
         return (
           <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 13 }}><span style={{ fontSize: 16 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><span style={{ fontSize: 17 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
             <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
-            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, ...clampLines(1) }}>{rescueLine}</span>
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, ...clampLines(1) }}>{rescueLine}</span>
             <span style={{ fontSize: 16, color: "rgba(43,33,24,0.3)" }}>›</span>
           </Link>
         );
@@ -315,13 +316,30 @@ function BoardPage() {
 
 
 
-      {/* Coming soon — flag-gated features shown as teasers */}
+      {/* Feature drops — live ones link in, the rest tease */}
       <div className="space-y-3">
-        <div className="csection-label">{t("soon.title")}</div>
+        <div className="csection-label">{t("feat.title")}</div>
         <div className="grid grid-cols-2 gap-3">
-          <SoonCard emoji="🎰" title={t("soon.lucky")} />
-          <SoonCard emoji="🎾❔" title={t("soon.swipe")} />
+          {FLAGS.swipeDeck ? (
+            <Link to="/match" className="ccard p-4 text-center block" style={{ borderColor: "var(--coral)" }}>
+              <div style={{ fontSize: 30 }}>💘</div>
+              <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>{t("feat.crush")}</div>
+              <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.65)", marginTop: 2 }}>{t("feat.crush_sub")}</div>
+            </Link>
+          ) : (
+            <SoonCard emoji="💘" title={t("feat.crush")} />
+          )}
+          {FLAGS.luckyServe ? (
+            <Link to="/lucky" className="ccard p-4 text-center block" style={{ borderColor: "var(--green-pop)" }}>
+              <div style={{ fontSize: 30 }}>🎰</div>
+              <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>{t("soon.lucky")}</div>
+              <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.65)", marginTop: 2 }}>{t("feat.lucky_sub")}</div>
+            </Link>
+          ) : (
+            <SoonCard emoji="🎰" title={t("soon.lucky")} />
+          )}
         </div>
+        <SoonCard emoji="🎾❔" title={t("soon.mystery")} />
       </div>
 
       {nothing && (
@@ -331,6 +349,7 @@ function BoardPage() {
           <div className="text-base text-[var(--ink)] font-semibold">{t("rescue.empty_sub")}</div>
           <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
             <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral">📅 {t("board.plan_game")}</Link>
+            {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-green">🎰 {t("feat.lucky_spin")}</Link>}
             <button type="button" className="cbtn cbtn-green" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
             <Link to="/me" className="cbtn cbtn-ghost">🎾 {t("empty.dir_new_cta")}</Link>
           </div>

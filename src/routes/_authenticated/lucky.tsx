@@ -56,7 +56,7 @@ function Lucky() {
       <Link to="/players" className="text-sm font-extrabold underline">{t("players.back")}</Link>
       <div className="text-center">
         <h1 className="font-display text-4xl">{t("lucky.title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("lucky.sub")}</p>
+        <p className="text-[var(--ink)] font-semibold" style={{ fontSize: 16.5 }}>{t("lucky.sub")}</p>
       </div>
 
       {spinning ? (
@@ -70,8 +70,8 @@ function Lucky() {
             <Avatar src={player.photo_url} name={player.name} seed={player.id} size={140} />
           </Link>
           <div className="font-display text-3xl">{player.name}</div>
-          <div className="font-extrabold">📍 {player.home_city ?? "—"} · L<span style={{ color: lm?.color }}>{player.level}</span></div>
-          {player.bio && <div className="text-[var(--ink)] italic">"{player.bio}"</div>}
+          <div className="font-extrabold" style={{ fontSize: 17 }}>📍 {player.home_city ?? "—"} · L<span style={{ color: lm?.color }}>{player.level}</span></div>
+          {player.bio && <div className="text-[var(--ink)] italic" style={{ fontSize: 16.5 }}>"{player.bio}"</div>}
           <button onClick={messageWa} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
           <Link to="/players/$id" params={{ id: player.id }} className="cbtn cbtn-ghost w-full text-center block">{t("lucky.view_profile")}</Link>
           <button onClick={() => void spin()} className="cbtn cbtn-coral w-full">{t("lucky.spin_again")}</button>

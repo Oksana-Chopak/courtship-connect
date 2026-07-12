@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { FLAGS } from "@/lib/flags";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
@@ -23,6 +23,9 @@ function MatchDeck() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [matched, setMatched] = useState<Card | null>(null);
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(0);
 
   useEffect(() => {
     (async () => {
@@ -82,18 +85,40 @@ function MatchDeck() {
       <Link to="/players" className="text-sm font-extrabold underline">{t("players.back")}</Link>
       <div className="text-center">
         <h1 className="font-display text-4xl">{t("match.title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("match.sub")}</p>
+        <p className="text-[var(--ink)] font-semibold" style={{ fontSize: 16.5 }}>{t("match.sub")}</p>
       </div>
 
       {loading ? (
         <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>
       ) : card ? (
         <>
-          <div className="relative flex justify-center" style={{ minHeight: 480 }}>
+          <div className="relative flex justify-center" style={{ minHeight: 480, touchAction: "pan-y" }}>
             {deck[i + 1] && (
               <div className="absolute" style={{ top: 10, width: 286, height: 460, borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(3deg)" }} />
             )}
-            <SwipeCard card={card} />
+            <div
+              style={{ transform: `translateX(${drag}px) rotate(${drag / 14}deg)`, transition: dragging ? "none" : "transform 0.25s ease", position: "relative" }}
+              onPointerDown={(e) => { if (busy) return; setDragging(true); dragStart.current = e.clientX; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); }}
+              onPointerMove={(e) => { if (!dragging) return; setDrag(e.clientX - dragStart.current); }}
+              onPointerUp={() => {
+                setDragging(false);
+                if (Math.abs(drag) > 90) {
+                  const like = drag > 0;
+                  setDrag(like ? 500 : -500);
+                  setTimeout(() => { setDrag(0); void swipe(like); }, 180);
+                } else setDrag(0);
+              }}
+              onPointerCancel={() => { setDragging(false); setDrag(0); }}
+            >
+              <SwipeCard card={card} />
+              {/* drag verdict badges */}
+              <div style={{ position: "absolute", top: 22, left: 18, transform: "rotate(-12deg)", opacity: Math.min(1, Math.max(0, drag / 70)), pointerEvents: "none" }}>
+                <span className="font-display" style={{ fontSize: 30, color: "var(--green-pop)", border: "3px solid var(--green-pop)", borderRadius: 10, padding: "2px 12px", background: "rgba(22,18,13,0.45)" }}>{t("match.like")} 🎾</span>
+              </div>
+              <div style={{ position: "absolute", top: 22, right: 18, transform: "rotate(12deg)", opacity: Math.min(1, Math.max(0, -drag / 70)), pointerEvents: "none" }}>
+                <span className="font-display" style={{ fontSize: 30, color: "#FFF6E8", border: "3px solid #FFF6E8", borderRadius: 10, padding: "2px 12px", background: "rgba(240,112,91,0.75)" }}>{t("match.pass")}</span>
+              </div>
+            </div>
           </div>
           <div className="flex justify-center gap-6">
             <button onClick={() => swipe(false)} disabled={busy} aria-label={t("match.pass")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--cream2)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>✕</button>
@@ -131,16 +156,16 @@ function SwipeCard({ card }: { card: Card }) {
       </div>
       <div className="absolute left-0 right-0 bottom-0" style={{ padding: "46px 16px 16px", background: "linear-gradient(to top, rgba(22,18,13,0.92), rgba(22,18,13,0.55) 60%, transparent)" }}>
         <div className="flex items-baseline gap-2">
-          <span className="font-display" style={{ fontSize: 26, color: "#FFF6E8" }}>{card.name}</span>
+          <span className="font-display" style={{ fontSize: 30, color: "#FFF6E8" }}>{card.name}</span>
           <span className="ml-auto inline-flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <span key={n} className="rounded-full" style={{ width: 8, height: 8, background: n <= card.level ? lm.color : "transparent", border: `1.5px solid ${n <= card.level ? lm.color : "rgba(236,230,216,0.5)"}`, boxSizing: "border-box" }} />
             ))}
           </span>
         </div>
-        {card.home_city && <div className="font-bold mt-1" style={{ fontSize: 12.5, color: "rgba(236,230,216,0.85)" }}>📍 {card.home_city}</div>}
-        {card.bio && <div className="font-display italic mt-2" style={{ fontSize: 14.5, color: "#FFF6E8", lineHeight: 1.3 }}>"{card.bio}"</div>}
-        {card.fav_shot && <div className="mt-2" style={{ fontSize: 12.5, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
+        {card.home_city && <div className="font-bold mt-1" style={{ fontSize: 14.5, color: "rgba(236,230,216,0.85)" }}>📍 {card.home_city}</div>}
+        {card.bio && <div className="font-display italic mt-2" style={{ fontSize: 16.5, color: "#FFF6E8", lineHeight: 1.3 }}>"{card.bio}"</div>}
+        {card.fav_shot && <div className="mt-2" style={{ fontSize: 14.5, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
       </div>
     </div>
   );
