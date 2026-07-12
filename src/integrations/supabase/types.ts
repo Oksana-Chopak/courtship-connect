@@ -1236,11 +1236,25 @@ export type Database = {
         Args: never
         Returns: {
           bio: string
+          experience: string
+          fav_shot: string
+          formats: string[]
+          games_played: number
+          goals: string[]
+          home_cities: string[]
           home_city: string
+          home_courts: string
           id: string
           level: number
+          looking_for: string
+          member_since: string
           name: string
           photo_url: string
+          photos: string[]
+          play_times: string[]
+          rescues_count: number
+          sports: string[]
+          vibe: string
         }[]
       }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
@@ -1302,12 +1316,25 @@ export type Database = {
         Args: never
         Returns: {
           bio: string
+          experience: string
           fav_shot: string
+          formats: string[]
+          games_played: number
+          goals: string[]
+          home_cities: string[]
           home_city: string
+          home_courts: string
           id: string
           level: number
+          looking_for: string
+          member_since: string
           name: string
           photo_url: string
+          photos: string[]
+          play_times: string[]
+          rescues_count: number
+          sports: string[]
+          vibe: string
         }[]
       }
       top_active_month: {
