@@ -27,6 +27,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
   const _tmr = new Date(_now); _tmr.setDate(_now.getDate() + 1);
   const railDay = _d.toDateString() === _now.toDateString() ? t("rail.today") : _d.toDateString() === _tmr.toDateString() ? t("rail.tmrw") : _d.toLocaleDateString(locale, { weekday: "short" });
   const railTime = _d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const railDate = _d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
   const isHost = !!meId && e.host_id === meId;
   const isPaid = (e.price_sek ?? 0) > 0;
   const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
@@ -90,7 +91,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
 
   return (
     <RailShell>
-      <TimeRail day={railDay} time={railTime} ct="🎉" tone="event" />
+      <TimeRail day={railDay} time={railTime} ct="🎉" tone="event" dateStr={railDate} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
       <div style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C5A33", marginBottom: 6 }}>{isHost ? t("board.you_host") : "🎉 " + t("ev.tag")}</div>
       <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.1, ...clampLines(2) }}>{e.title}</div>

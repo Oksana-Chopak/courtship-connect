@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, timeAgo, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
+import { whenLabel, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -464,6 +464,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
   const time = winEnd
     ? `${d.getHours()}–${winEnd.getHours()}`
     : timeStart;
+  const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
   const ctMeta = courtTypeMeta(sos.court_type, lang);
   const lmMin = levelMeta(sos.level_min);
   const lmMax = levelMeta(sos.level_max);
@@ -473,7 +474,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
 
   return (
     <RailShell>
-      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} ago={timeAgo(sos.created_at)} />
+      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} dateStr={dateStr} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
         {/* tags row — only when there's a tag, so the name never floats below empty space */}
         {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (
