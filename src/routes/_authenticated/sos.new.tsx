@@ -199,16 +199,19 @@ function NewSos() {
         _duration_min: duration,
         _sport: sport,
       };
-      let { data: er, error } = await (supabase as any).rpc("edit_sos", { ...editArgs, _play_until: flexible && playUntil ? playUntil.toISOString() : null });
+      const wantsWindow = flexible && !!playUntil;
+      let windowDropped = false;
+      let { data: er, error } = await (supabase as any).rpc("edit_sos", { ...editArgs, _play_until: wantsWindow ? playUntil!.toISOString() : null });
       if (error && /_play_until|does not exist|schema cache/i.test(error.message ?? "")) {
-        // pre-window edit_sos (11-arg) still deployed — save without the window
+        // pre-window edit_sos (11-arg) still deployed — save without the window, but SAY so
+        windowDropped = wantsWindow;
         ({ data: er, error } = await (supabase as any).rpc("edit_sos", editArgs));
       }
       if (!error) {
         const row = Array.isArray(er) ? er[0] : er;
         if (!row?.ok) {
           setBusy(false);
-          oops(new Error(row?.reason === "time_gone" ? t("sos.err_time_gone") : String(row?.reason ?? "edit failed")));
+          oops(new Error(row?.reason === "time_gone" ? t("sos.err_time_gone") : row?.reason === "bad_window" ? t("sos.err_bad_window") : String(row?.reason ?? "edit failed")));
           return;
         }
       } else if (/does not exist|schema cache/i.test(error.message ?? "")) {
@@ -223,7 +226,8 @@ function NewSos() {
       }
       setBusy(false);
       if (error) { oops(error); return; }
-      toast.success(t("sos.edit_saved"));
+      if (windowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
+      else toast.success(t("sos.edit_saved"));
       navigate({ to: "/sos/$id", params: { id: editId } });
       return;
     }
@@ -258,8 +262,10 @@ function NewSos() {
       const { sport: _s, ...rest } = insertRow;
       res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
     }
+    let createWindowDropped = false;
     if (res.error && /play_until/i.test(res.error.message || "")) {
-      // window column not migrated yet — post as exact-time so creation never breaks
+      // window column not migrated yet — post as exact-time so creation never breaks, but SAY so
+      createWindowDropped = flexible && !!playUntil;
       const { play_until: _pu, ...noWin } = insertRow;
       res = await (supabase as any).from("sos_requests").insert(noWin).select("id").single();
     }
@@ -282,10 +288,12 @@ function NewSos() {
     }
     if (urgent) {
       void notifySos(data.id);
-      toast.success(t("post.sos_toast"));
+      if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
+      else toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });
     } else {
-      toast.success(t("post.posted_toast"));
+      if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
+      else toast.success(t("post.posted_toast"));
       navigate({ to: "/games" });
     }
   }
