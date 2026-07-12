@@ -951,6 +951,7 @@ export type Database = {
           _level_min: number
           _note: string
           _play_at: string
+          _play_until?: string
           _sos_id: string
           _sport?: string
         }
