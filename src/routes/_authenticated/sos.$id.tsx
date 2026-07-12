@@ -14,6 +14,7 @@ import { Avatar } from "@/components/Avatar";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
+import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
@@ -270,7 +271,12 @@ function SosDetail() {
           <div className="ccard p-4 space-y-3">
             <div className="csection-label">🙋 {t("app.candidates")}</div>
             {applicants.length === 0 ? (
-              <div className="text-sm font-semibold text-[var(--ink)]/70">{t("app.none_hint")}</div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-[var(--ink)]/70">{t("app.none_hint")}</div>
+                {FLAGS.luckyServe && (
+                  <Link to="/lucky" className="cbtn cbtn-green w-full text-center block">🎰 {t("app.try_lucky")}</Link>
+                )}
+              </div>
             ) : applicants.map((a) => (
               <div key={a.id} className="flex items-center gap-3 border-t border-[var(--ink)]/15 pt-3 first:border-t-0 first:pt-0">
                 <Avatar src={a.photo_url} name={a.name} seed={a.id} size={52} />

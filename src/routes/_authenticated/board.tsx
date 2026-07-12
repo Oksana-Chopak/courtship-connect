@@ -322,7 +322,7 @@ function BoardPage() {
         <div className="grid grid-cols-2 gap-3">
           {FLAGS.swipeDeck ? (
             <Link to="/match" className="ccard p-4 text-center block" style={{ borderColor: "var(--coral)" }}>
-              <div style={{ fontSize: 30 }}>💘</div>
+              <div className="flex justify-center"><BallHeart size={32} /></div>
               <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>{t("feat.crush")}</div>
               <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.65)", marginTop: 2 }}>{t("feat.crush_sub")}</div>
             </Link>

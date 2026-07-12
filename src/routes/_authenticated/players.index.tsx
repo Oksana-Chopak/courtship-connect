@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { BallHeart } from "@/components/RailKit";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City, sportMeta } from "@/lib/courtship";
@@ -135,7 +136,7 @@ function Players() {
       )}
 
       {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
-      {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center block">{t("match.cta")}</Link>}
+      {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center flex items-center justify-center gap-2"><BallHeart size={20} /> {t("match.cta")}</Link>}
 
       {/* buddy requests — act on them right here */}
       {reqs.length > 0 && (

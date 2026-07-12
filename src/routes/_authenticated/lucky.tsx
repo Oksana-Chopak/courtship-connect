@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { whatsappLink, levelMeta } from "@/lib/courtship";
+import { whatsappLink, levelMeta, sportMeta, vibeEmoji } from "@/lib/courtship";
+import { RF } from "@/components/RailKit";
 import { useI18n } from "@/lib/i18n";
 import { oops } from "@/lib/oops";
 
-type LuckyPlayer = { id: string; name: string; photo_url: string | null; level: number; home_city: string | null; bio: string | null };
+type LuckyPlayer = {
+  id: string; name: string; photo_url: string | null; level: number; home_city: string | null; bio: string | null;
+  sports?: string[] | null; vibe?: string | null; fav_shot?: string | null;
+  games_played?: number | null; rescues_count?: number | null; experience?: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/lucky")({
   beforeLoad: () => { if (!FLAGS.luckyServe) throw redirect({ to: "/players" }); },
@@ -65,16 +70,38 @@ function Lucky() {
           <div className="font-display text-2xl mt-3">{t("lucky.spinning")}</div>
         </div>
       ) : player ? (
-        <div className="ccard p-5 text-center space-y-3">
-          <Link to="/players/$id" params={{ id: player.id }} className="inline-block">
-            <Avatar src={player.photo_url} name={player.name} seed={player.id} size={140} />
-          </Link>
-          <div className="font-display text-3xl">{player.name}</div>
-          <div className="font-extrabold" style={{ fontSize: 17 }}>📍 {player.home_city ?? "—"} · L<span style={{ color: lm?.color }}>{player.level}</span></div>
-          {player.bio && <div className="text-[var(--ink)] italic" style={{ fontSize: 16.5 }}>"{player.bio}"</div>}
-          <button onClick={messageWa} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
-          <Link to="/players/$id" params={{ id: player.id }} className="cbtn cbtn-ghost w-full text-center block">{t("lucky.view_profile")}</Link>
-          <button onClick={() => void spin()} className="cbtn cbtn-coral w-full">{t("lucky.spin_again")}</button>
+        <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
+          <div style={{ width: 70, flexShrink: 0, background: "#EEF6D6", borderLeft: "4px solid var(--green-pop)", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 4px" }}>
+            <div style={{ fontSize: 26 }}>🎰</div>
+            <div style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(43,33,24,0.6)", marginTop: 6, textAlign: "center" }}>{t("lucky.rail")}</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, padding: "14px 14px" }}>
+            <div className="flex items-center gap-3">
+              <Link to="/players/$id" params={{ id: player.id }} className="shrink-0" style={{ borderRadius: 999, overflow: "hidden", border: "1.5px solid rgba(43,33,24,0.28)", display: "block" }}>
+                <Avatar src={player.photo_url} name={player.name} seed={player.id} size={64} />
+              </Link>
+              <div className="min-w-0">
+                <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.05 }}>{player.name}</div>
+                <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2 }}>📍 {player.home_city ?? "—"}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap mt-2" style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.65)" }}>
+              <span>L<span style={{ color: lm?.color, fontWeight: 800 }}>{player.level}</span></span>
+              {(player.sports ?? ["tennis"]).length > 0 && <span>{(player.sports ?? ["tennis"]).map((sp) => sportMeta(sp).emoji).join(" ")}</span>}
+              {player.vibe && <span>{vibeEmoji(player.vibe)}</span>}
+              {(player.games_played ?? 0) > 0 && <span>🎾 {player.games_played}</span>}
+              {(player.rescues_count ?? 0) > 0 && <span>🚑 {player.rescues_count}</span>}
+            </div>
+            {player.fav_shot && <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.65)", marginTop: 4 }}>🎾 {player.fav_shot}</div>}
+            {player.bio && <div className="font-display italic" style={{ fontSize: RF.note, marginTop: 6, lineHeight: 1.3 }}>"{player.bio}"</div>}
+            <div className="space-y-2 mt-3">
+              <button onClick={messageWa} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
+              <div className="grid grid-cols-2 gap-2">
+                <Link to="/players/$id" params={{ id: player.id }} className="cbtn cbtn-ghost text-center block">{t("lucky.view_profile")}</Link>
+                <button onClick={() => void spin()} className="cbtn cbtn-coral">{t("lucky.spin_again")}</button>
+              </div>
+            </div>
+          </div>
         </div>
       ) : empty ? (
         <div className="ccard p-6 text-center space-y-3">
