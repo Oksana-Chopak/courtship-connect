@@ -125,4 +125,18 @@ export function DeleteIcon() {
   );
 }
 
+/** Loading placeholder in the rail language — a shell with shimmer blocks. */
+export function SkeletonRail({ lines = 2 }: { lines?: number }) {
+  return (
+    <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.14)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
+      <div style={{ width: 70, flexShrink: 0, background: "rgba(43,33,24,0.05)", borderRight: "1px solid rgba(43,33,24,0.1)" }} />
+      <div style={{ flex: 1, padding: "14px 14px" }}>
+        {Array.from({ length: lines }).map((_, i) => (
+          <div key={i} className="skeleton-shimmer" style={{ height: i === 0 ? 18 : 12, width: i === 0 ? "60%" : "85%", borderRadius: 6, background: "rgba(43,33,24,0.08)", marginTop: i ? 10 : 0 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const clampLines = (n: number): React.CSSProperties => ({ display: "-webkit-box", WebkitLineClamp: n, WebkitBoxOrient: "vertical", overflow: "hidden" });

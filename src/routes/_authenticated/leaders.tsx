@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar } from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
+import { SkeletonRail } from "@/components/RailKit";
 import { oops } from "@/lib/oops";
 import { fetchFoundersWall, type FounderRow } from "@/lib/membership";
 
@@ -101,7 +102,10 @@ function LeadersPage() {
       </div>
 
       {!loaded ? (
-        <div className="text-center py-10 text-[var(--ink)]">{t("common.loading")}</div>
+        <div className="space-y-3">
+          <SkeletonRail lines={3} />
+          <SkeletonRail lines={3} />
+        </div>
       ) : !anyRows ? (
         <div className="ccard p-6 text-center space-y-2">
           <div className="text-4xl">🌱</div>
@@ -110,7 +114,7 @@ function LeadersPage() {
       ) : (
         boards.map((b) =>
           b.rows.length === 0 ? null : (
-            <div key={b.key} className="ccard p-4 space-y-2" style={b.hot ? { borderColor: "var(--coral)" } : undefined}>
+            <div key={b.key} className="space-y-2" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "14px 14px", borderLeft: `4px solid ${b.key === "rescuer" ? "#F0705B" : b.key === "host" ? "#8C5A33" : "#C9EE3F"}` }}>
               <div className="csection-label">{b.emoji} {b.title}</div>
               <div className="text-xs font-semibold text-[var(--ink)]/60">{b.hint}</div>
               {b.rows.slice(0, 5).map((r, i) => {

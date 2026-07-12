@@ -3,15 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchMyGameHistory } from "@/lib/games";
 import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak, RANK_LADDERS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
+import { RF, clampLines, SkeletonRail, railTone } from "@/components/RailKit";
 import { toast } from "@/lib/toast";
 
 type Tier = { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null;
 
-const TRACK_META: Record<string, { emoji: string; key: string }> = {
-  activity: { emoji: "🎾", key: "prog.track_activity" },
-  rescuer: { emoji: "🚑", key: "prog.track_rescuer" },
-  recruiter: { emoji: "🤝", key: "prog.track_recruiter" },
-  matchmaker: { emoji: "🎪", key: "prog.track_matchmaker" },
+const TRACK_META: Record<string, { emoji: string; key: string; bar: string; bg: string }> = {
+  activity: { emoji: "🎾", key: "prog.track_activity", bar: "#C9EE3F", bg: "#EEF6D6" },
+  rescuer: { emoji: "🚑", key: "prog.track_rescuer", bar: "#F0705B", bg: "#FCE9E4" },
+  recruiter: { emoji: "🤝", key: "prog.track_recruiter", bar: "#8C5A33", bg: "#F1E7DC" },
+  matchmaker: { emoji: "🎪", key: "prog.track_matchmaker", bar: "#9B9186", bg: "#ECE8E0" },
 };
 
 function mondayOf(d: Date): number {
@@ -110,7 +111,12 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
   }
 
   if (!loaded) {
-    return <div className="ccard p-6 text-center text-[var(--ink)]/60 font-semibold">{t("common.loading")}</div>;
+    return (
+      <div className="space-y-3">
+        <SkeletonRail lines={3} />
+        <SkeletonRail lines={2} />
+      </div>
+    );
   }
 
   // Ranks always show (a newcomer should see the four things they can grow); the
@@ -118,14 +124,16 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
   return (
     <div className="space-y-4">
       {streak.weeks >= 1 && (
-        <div className="ccard p-4">
+        <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
+          <div style={{ width: 70, flexShrink: 0, background: streak.playedThisWeek ? "#EEF6D6" : "#FCE9E4", borderLeft: `4px solid ${streak.playedThisWeek ? "#C9EE3F" : "#F0705B"}`, borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 4px" }}>
+            <div style={{ fontSize: 22 }}>🔥</div>
+            <div className="font-display" style={{ fontSize: RF.time, lineHeight: 1 }}>{streak.weeks}</div>
+            <div style={{ fontWeight: 800, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(43,33,24,0.6)", marginTop: 2 }}>{t("prog.weeks_short")}</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, padding: "12px 14px" }}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🔥</span>
-              <span className="font-display text-3xl">{streak.weeks}</span>
-              <span className="font-extrabold text-xs leading-tight" style={{ color: "var(--wood, #8a6d3b)" }}>{t("prog.week_streak")}</span>
-            </div>
-            <span className="font-extrabold text-xs px-2.5 py-1 rounded-full" style={{ background: "var(--green-pop)", border: "1px solid var(--ink)" }}>
+            <span className="font-display" style={{ fontSize: RF.name - 2 }}>{t("prog.week_streak")}</span>
+            <span className="font-extrabold px-2.5 py-1 rounded-full" style={{ fontSize: RF.tag, background: streak.playedThisWeek ? "var(--green-pop)" : "#FCE9E4", border: "1.5px solid var(--ink)", whiteSpace: "nowrap" }}>
               {streak.playedThisWeek ? t("streak.safe") : t("streak.keep")}
             </span>
           </div>
@@ -142,27 +150,33 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
                   );
                 })}
               </div>
-              <div className="text-xs font-bold text-center mt-1" style={{ color: "var(--ink)", opacity: 0.6 }}>{t("prog.per_week")}</div>
+              <div className="font-bold text-center mt-1" style={{ fontSize: RF.tag, color: "var(--ink)", opacity: 0.6 }}>{t("prog.per_week")}</div>
             </>
           )}
+          </div>
         </div>
       )}
 
       {closest && (
         <div>
           <div className="csection-label">{t("prog.closest")}</div>
-          <div className="ccard p-4 flex items-center gap-3 mt-2">
-            <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 56, height: 56, background: "var(--green-pop)", border: "2px solid var(--ink)" }}>
-              <span style={{ fontSize: 28 }}>{closest.tier!.emoji}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display text-lg leading-tight">{closest.tier!.name} → {closest.tier!.nextName}</div>
-              <div className="mt-2 h-2.5 rounded-full overflow-hidden" style={{ background: "var(--cream2)", border: "1.5px solid var(--ink)" }}>
-                <div style={{ width: `${Math.min(100, Math.max(6, ((closest.count - closest.tier!.at) / Math.max(1, closest.span)) * 100))}%`, height: "100%", background: "var(--coral)" }} />
+          {(() => {
+            const tm = TRACK_META[closest.track];
+            return (
+              <div className="mt-2" style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
+                <div style={{ width: 70, flexShrink: 0, background: tm.bg, borderLeft: `4px solid ${tm.bar}`, borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 30 }}>{closest.tier!.emoji}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0, padding: "13px 14px" }}>
+                  <div className="font-display" style={{ fontSize: RF.name - 2, lineHeight: 1.15, ...clampLines(1) }}>{closest.tier!.name} → {closest.tier!.nextName}</div>
+                  <div className="mt-2 rounded-full overflow-hidden" style={{ height: 10, background: "var(--cream2)", border: "1.5px solid var(--ink)" }}>
+                    <div style={{ width: `${Math.min(100, Math.max(6, ((closest.count - closest.tier!.at) / Math.max(1, closest.span)) * 100))}%`, height: "100%", background: tm.bar }} />
+                  </div>
+                  <div className="font-bold mt-1.5" style={{ fontSize: RF.meta, color: "rgba(43,33,24,0.65)" }}>{t("prog.to_go", { n: closest.toNext })}</div>
+                </div>
               </div>
-              <div className="text-xs font-bold mt-1" style={{ color: "var(--ink)", opacity: 0.65 }}>{t("prog.to_go", { n: closest.toNext })}</div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
 
@@ -174,13 +188,13 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
             const meta = TRACK_META[x.track];
             const started = !!x.tier;
             return (
-              <button key={x.track} type="button" onClick={() => setOpenTrack(x.track)} className="ccard p-2 flex flex-col items-center text-center gap-1 relative">
+              <button key={x.track} type="button" onClick={() => setOpenTrack(x.track)} className="flex flex-col items-center text-center gap-1 relative overflow-hidden" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 4px 8px", borderTop: `4px solid ${meta.bar}` }}>
                 <span className="absolute top-1 right-1.5 text-xs leading-none opacity-40">ⓘ</span>
-                <div className="flex items-center justify-center rounded-full" style={{ width: 52, height: 52, background: started ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: started ? 1 : 0.55 }}>
+                <div className="flex items-center justify-center rounded-full" style={{ width: 52, height: 52, background: started ? meta.bg : "var(--cream2)", border: "1.5px solid rgba(43,33,24,0.3)", opacity: started ? 1 : 0.55 }}>
                   <span style={{ fontSize: 24 }}>{started ? x.tier!.emoji : meta.emoji}</span>
                 </div>
-                <div className="font-extrabold text-xs leading-tight">{started ? x.tier!.name : t("prog.not_yet")}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wide leading-tight" style={{ color: "var(--wood, #8a6d3b)" }}>{t(meta.key)}</div>
+                <div className="font-extrabold leading-tight" style={{ fontSize: RF.tag }}>{started ? x.tier!.name : t("prog.not_yet")}</div>
+                <div className="font-bold uppercase tracking-wide leading-tight" style={{ fontSize: 10, color: "#8C5A33" }}>{t(meta.key)}</div>
               </button>
             );
           })}
