@@ -1365,6 +1365,7 @@ export type Database = {
         Args: { _data: Json; _id: string }
         Returns: undefined
       }
+      weekly_recap_push: { Args: never; Returns: number }
       withdraw_application: { Args: { _sos_id: string }; Returns: boolean }
       withdraw_claim: {
         Args: { _sos_id: string }
