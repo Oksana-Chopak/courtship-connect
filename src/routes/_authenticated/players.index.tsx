@@ -355,8 +355,8 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
     <Link
       to="/players/$id"
       params={{ id: p.id }}
-      className="flex gap-3 rounded-2xl overflow-hidden hover:translate-y-[-2px] transition-transform"
-      style={{ border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.14)", background: "var(--cream2)", minHeight: 128 }}
+      className="flex gap-3 overflow-hidden hover:translate-y-[-2px] transition-transform"
+      style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", minHeight: 128 }}
     >
       <div className="relative shrink-0 self-stretch" style={{ width: 104, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}>
         {hasPhoto ? (
@@ -370,7 +370,7 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
       </div>
       <div className="flex-1 min-w-0 py-2.5 pr-3 flex flex-col justify-center">
         <div className="flex items-start justify-between gap-2">
-          <span className="font-display text-lg leading-tight">{p.name}{p.last_name ? " " + p.last_name : ""}{p.member_tier ? <span title="Member" style={{ marginLeft: 4 }}>🏆</span> : null}</span>
+          <span className="font-display leading-tight" style={{ fontSize: 20 }}>{p.name}{p.last_name ? " " + p.last_name : ""}{p.member_tier ? <span title="Member" style={{ marginLeft: 4 }}>🏆</span> : null}</span>
           <span className="inline-flex gap-0.5 shrink-0 mt-1.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <span key={i} className="rounded-full" style={{ width: 7, height: 7, background: i <= p.level ? lm.color : "transparent", border: `1.5px solid ${i <= p.level ? lm.color : "var(--ink)"}`, opacity: i <= p.level ? 1 : 0.3, boxSizing: "border-box" }} />

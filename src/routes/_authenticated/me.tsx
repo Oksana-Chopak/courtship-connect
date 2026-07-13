@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
 import { SeasonPanel } from "@/components/SeasonPanel";
+import { RF } from "@/components/RailKit";
 import { MembershipCard } from "@/components/MembershipCard";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
@@ -106,23 +107,8 @@ function MePage() {
       <MembershipCard />
 
       {/* Matches — friends now live in the Players tab, not here */}
-      <Link to="/matches" className="ccard p-4 flex items-center gap-3">
-        <span className="text-2xl">🎾</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-display text-lg leading-tight">{t("matches.title")}</div>
-          <div className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.matches_sub", { n: gamesPlayed })}</div>
-        </div>
-        <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
-      </Link>
-
-      <Link to="/plans" className="ccard p-4 flex items-center gap-3">
-        <span className="text-2xl">🏆</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-display text-lg leading-tight">{t("menu.plans")}</div>
-          <div className="text-xs font-semibold" style={{ opacity: 0.55 }}>{t("menu.plans_sub")}</div>
-        </div>
-        <span className="text-2xl" style={{ opacity: 0.4 }}>›</span>
-      </Link>
+      <MenuRail to="/matches" emoji="🎾" bar="#C9EE3F" bg="#EEF6D6" title={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />
+      <MenuRail to="/plans" emoji="🏆" bar="#8C5A33" bg="#F1E7DC" title={t("menu.plans")} sub={t("menu.plans_sub")} />
 
       {/* Courts Passport — collection lives at the bottom */}
       <CourtsPassport />
@@ -131,5 +117,20 @@ function MePage() {
         💬 {t("help.title")}
       </Link>
     </div>
+  );
+}
+
+function MenuRail({ to, emoji, bar, bg, title, sub }: { to: string; emoji: string; bar: string; bg: string; title: string; sub: string }) {
+  return (
+    <Link to={to as any} style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", textDecoration: "none", color: "var(--ink)" }}>
+      <div style={{ width: 58, flexShrink: 0, background: bg, borderLeft: `4px solid ${bar}`, borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 24 }}>{emoji}</span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
+        <div className="font-display" style={{ fontSize: RF.name - 3, lineHeight: 1.1 }}>{title}</div>
+        <div style={{ fontWeight: 700, fontSize: RF.meta - 1, color: "rgba(43,33,24,0.55)", marginTop: 2 }}>{sub}</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", paddingRight: 12, fontSize: 20, color: "rgba(43,33,24,0.35)" }}>›</div>
+    </Link>
   );
 }
