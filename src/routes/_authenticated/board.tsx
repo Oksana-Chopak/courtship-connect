@@ -62,8 +62,11 @@ function BoardPage() {
   const [myName, setMyName] = useState<string>("");
 
   const load = useCallback(async () => {
-    const { data: au } = await supabase.auth.getUser();
-    const uid = au.user?.id ?? null;
+    // getSession() reads the locally persisted session — no network race on PWA
+    // cold start, so a signed-in player is never briefly served the guest feed
+    // (which includes their OWN games and once inflated the 🚨 banner).
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user?.id ?? null;
     setMeId(uid);
 
     if (!uid) {
@@ -178,8 +181,11 @@ function BoardPage() {
     (fCity == null || r.court_city === fCity) &&
     (fLevel == null || (r.level_min <= fLevel && fLevel <= r.level_max));
   const eventMatch = (e: EventRow) => fCity == null || e.city === fCity;
+  // Belt & braces: whatever feed produced them, my own games are never
+  // "a player nearby needs a partner" — not in the banner, not as 🚨 cards.
+  const urgentOthers = urgent.filter((r) => !meId || r.caller_id !== meId);
   const showKind = (k: "urgent" | "planned" | "event") => fType === "any" || fType === k;
-  const nothing = !loading && urgent.length === 0 && planned.length === 0 && mine.length === 0 && events.length === 0;
+  const nothing = !loading && urgentOthers.length === 0 && planned.length === 0 && mine.length === 0 && events.length === 0;
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
   const filterCount =
     (ctFilter !== "any" ? 1 : 0) + (fCity != null ? 1 : 0) + (fLevel != null ? 1 : 0) + (fType !== "any" ? 1 : 0);
@@ -187,7 +193,7 @@ function BoardPage() {
     | { id: string; t: number; kind: "sos" | "open" | "mine"; r: EligibleSosRow }
     | { id: string; t: number; kind: "event"; e: EventRow };
   const timeline: TLItem[] = [
-    ...(showKind("urgent") ? urgent.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
+    ...(showKind("urgent") ? urgentOthers.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "sos", r })),
     ...(showKind("planned") ? planned.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "open", r })),
     ...(showKind("planned") ? mine.filter(gameMatch) : []).map((r): TLItem => ({ id: r.id, t: new Date(r.play_at).getTime(), kind: "mine", r })),
     ...(showKind("event") ? events.filter((e) => eventMatch(e) && sportOk((e as any).sport)) : []).map((e): TLItem => ({ id: e.id, t: new Date(e.starts_at).getTime(), kind: "event", e })),
@@ -252,14 +258,14 @@ function BoardPage() {
       <InstallBanner />
       <StandaloneNotifPrompt />
 
-      {!loading && urgent.length > 0 && (
+      {!loading && urgentOthers.length > 0 && (
         <div
           className="rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
           style={{ background: "var(--coral)", color: "#FFF6E8", boxShadow: "4px 4px 0 var(--ink)" }}
           role="status"
         >
           <div className="font-display text-lg leading-tight">
-            🚨 {t(urgent.length === 1 ? "board.rescue_one" : "board.rescue_many", { n: urgent.length })}
+            🚨 {t(urgentOthers.length === 1 ? "board.rescue_one" : "board.rescue_many", { n: urgentOthers.length })}
           </div>
           <div className="text-sm font-semibold" style={{ opacity: 0.9 }}>{t("board.rescue_sub")}</div>
         </div>

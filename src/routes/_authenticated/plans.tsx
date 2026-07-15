@@ -4,11 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { fetchMemberLinks, fetchMyTier, fetchSwishNumber, type MemberLinks, type MemberTier } from "@/lib/membership";
 import { SwishPayBlock } from "@/components/SwishPayBlock";
+import { RF } from "@/components/RailKit";
 
 export const Route = createFileRoute("/_authenticated/plans")({
   head: () => ({ meta: [{ title: "Plans — Courtship" }] }),
   component: PlansPage,
 });
+
+function PlanShell({ rail, railBg, emoji, tag, children }: { rail: string; railBg: string; emoji: string; tag: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
+      <div style={{ width: 62, flexShrink: 0, background: railBg, borderLeft: `4px solid ${rail}`, borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 4px" }}>
+        <span style={{ fontSize: 26 }}>{emoji}</span>
+        <span style={{ fontWeight: 800, fontSize: 9.5, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(43,33,24,0.6)", textAlign: "center", lineHeight: 1.2 }}>{tag}</span>
+      </div>
+      <div className="space-y-3" style={{ flex: 1, minWidth: 0, padding: "14px 14px" }}>{children}</div>
+    </div>
+  );
+}
 
 function Perk({ children }: { children: React.ReactNode }) {
   return (
@@ -52,7 +65,10 @@ function PlansPage() {
     })();
   }, []);
 
+  const [proPlan, setProPlan] = useState<"yearly" | "monthly">("yearly");
   const foundingAmount = plan === "yearly" ? 690 : 69;
+  const proAmount = proPlan === "yearly" ? 2490 : 249;
+  const proTag = `Courtship PRO${proPlan === "yearly" ? " YEAR" : ""} ${myName || ""}`.trim();
   const foundingTag = `Courtship FOUNDING${plan === "yearly" ? " YEAR" : ""} ${myName || ""}`.trim();
 
   return (
@@ -64,16 +80,16 @@ function PlansPage() {
       </div>
 
       {tier && (
-        <div className="ccard p-3 text-center font-extrabold" style={{ background: "var(--green-pop)" }}>
-          {tier === "pro" ? t("plans.have_pro") : t("plans.have_founding")}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "#EEF6D6", borderLeft: "4px solid #C9EE3F", padding: "12px 14px" }}>
+          <span style={{ fontSize: 22 }}>✓</span>
+          <span className="font-extrabold" style={{ fontSize: RF.club }}>{tier === "pro" ? t("plans.have_pro") : t("plans.have_founding")}</span>
         </div>
       )}
 
       {/* ── Founding Member — for players ── */}
-      <div className="ccard p-4 space-y-3" style={{ borderColor: "var(--coral)" }}>
+      <PlanShell rail="#F0705B" railBg="#FCE9E4" emoji="🏆" tag={t("plans.f_for")}>
         <div>
-          <div className="font-display text-2xl leading-tight">🏆 {t("plans.f_title")}</div>
-          <div className="text-xs font-extrabold uppercase tracking-wide" style={{ color: "var(--wood, #8a6d3b)" }}>{t("plans.f_for")}</div>
+          <div className="font-display leading-tight" style={{ fontSize: RF.name + 2 }}>{t("plans.f_title")}</div>
         </div>
         <div className="text-sm font-semibold text-[var(--ink)]/80">{t("mem.pitch")}</div>
 
@@ -108,16 +124,19 @@ function PlansPage() {
         ) : isAdmin ? (
           <div className="text-sm font-semibold text-[var(--ink)]/70" style={{ borderTop: "1px dashed var(--ink)", paddingTop: 8 }}>{t("mem.admin_setup")}</div>
         ) : null}
-      </div>
+      </PlanShell>
 
       {/* ── Courtship Pro — for clubs, coaches, organizers ── */}
-      <div className="ccard p-4 space-y-3">
+      <PlanShell rail="#8C5A33" railBg="#F1E7DC" emoji="💼" tag={t("plans.p_for")}>
         <div>
-          <div className="font-display text-2xl leading-tight">💼 {t("plans.p_title")}</div>
-          <div className="text-xs font-extrabold uppercase tracking-wide" style={{ color: "var(--wood, #8a6d3b)" }}>{t("plans.p_for")}</div>
+          <div className="font-display leading-tight" style={{ fontSize: RF.name + 2 }}>{t("plans.p_title")}</div>
         </div>
         <div className="text-sm font-semibold text-[var(--ink)]/80">{t("plans.p_pitch")}</div>
-        <div className="text-center font-extrabold">{t("plans.p_price")}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setProPlan("yearly")} className={`cchip w-full justify-center ${proPlan === "yearly" ? "cchip-on" : ""}`}>{t("mem.plan_yearly")}</button>
+          <button type="button" onClick={() => setProPlan("monthly")} className={`cchip w-full justify-center ${proPlan === "monthly" ? "cchip-on" : ""}`}>{t("mem.plan_monthly")}</button>
+        </div>
+        <div className="text-center font-extrabold" style={{ fontSize: RF.club }}>{proPlan === "yearly" ? t("plans.p_price_yearly") : t("plans.p_price_monthly")}</div>
         <div className="text-xs font-extrabold" style={{ color: "var(--coral)" }}>{t("plans.p_founding")}</div>
 
         <div className="space-y-1.5 pt-1">
@@ -131,13 +150,13 @@ function PlansPage() {
           <a href={links.pro} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-coral w-full text-center block">{t("plans.p_cta")}</a>
         ) : swish ? (
           <>
-            <SwishPayBlock number={swish} amountSek={249} message={`Courtship PRO ${myName || ""}`.trim()} />
+            <SwishPayBlock number={swish} amountSek={proAmount} message={proTag} />
             <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("plans.p_swish_note")}</div>
           </>
         ) : isAdmin ? (
           <div className="text-sm font-semibold text-[var(--ink)]/70" style={{ borderTop: "1px dashed var(--ink)", paddingTop: 8 }}>{t("mem.admin_setup")}</div>
         ) : null}
-      </div>
+      </PlanShell>
 
       <div className="text-xs font-semibold text-center text-[var(--ink)]/55 pb-2">{t("plans.footer")}</div>
     </div>
