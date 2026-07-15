@@ -5,6 +5,7 @@ import { CourtCombobox } from "@/components/CourtCombobox";
 import { DateChipPicker } from "@/components/DateChipPicker";
 import { SlotPicker } from "@/components/SlotPicker";
 import { useI18n } from "@/lib/i18n";
+import { RF } from "@/components/RailKit";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 
@@ -86,8 +87,13 @@ export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } =
 
   if (!open) {
     return (
-      <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => setOpen(true)}>
-        ➕ {t("log.cta")}
+      <button type="button" onClick={() => setOpen(true)} className="w-full text-left" style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", padding: 0 }}>
+        <span style={{ width: 58, flexShrink: 0, background: "#EEF6D6", borderLeft: "4px solid #C9EE3F", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>✍️</span>
+        <span style={{ flex: 1, minWidth: 0, padding: "12px 13px", display: "block" }}>
+          <span className="font-display" style={{ fontSize: RF.name - 3, lineHeight: 1.1, display: "block" }}>{t("log.cta")}</span>
+          <span style={{ fontWeight: 700, fontSize: RF.meta - 1, color: "rgba(43,33,24,0.55)", marginTop: 2, display: "block" }}>{t("log.cta_sub")}</span>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", paddingRight: 12, fontSize: 20, color: "rgba(43,33,24,0.35)" }}>›</span>
       </button>
     );
   }
