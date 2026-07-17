@@ -19,6 +19,9 @@ import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
+  validateSearch: (s: Record<string, unknown>): { claim?: string } => ({
+    claim: typeof s.claim === "string" && s.claim ? s.claim : undefined,
+  }),
   component: SosDetail,
 });
 
@@ -87,6 +90,23 @@ function SosDetail() {
   }, [sos?.id, sos?.status]);
 
   const isCaller = !!(sos && me && sos.caller_id === me.id);
+
+  // 👻 Handover: arriving with ?claim=<token> (from the invite link the admin
+  // sent) transfers this ghost game to the freshly signed-up owner — so the
+  // first thing they see after onboarding is their own game with candidates.
+  const { claim } = Route.useSearch();
+  const navigate2 = useNavigate();
+  useEffect(() => {
+    if (!claim || !me || !sos) return;
+    void (async () => {
+      const { data, error } = await (supabase as any).rpc("claim_ghost_game", { _sos_id: sos.id, _token: claim });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!error && row?.ok) toast.success(t("sos.ghost_claimed"));
+      navigate2({ to: "/sos/$id", params: { id: sos.id }, search: {}, replace: true });
+      await load();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claim, me?.id, sos?.id]);
 
   useEffect(() => {
     if (!sos || !me || isCaller || sos.kind !== "open") { setMyApplied(false); return; }
@@ -217,8 +237,8 @@ function SosDetail() {
         {other && (
           <div className="ccard p-5 space-y-3 text-center">
             <div className="csection-label">{t("sos.your_host")}</div>
-            <Avatar src={other.photo_url} name={other.name} seed={other.id} size={120} />
-            <div className="font-display text-2xl">{other.name}</div>
+            <Avatar src={(sos as any).ghost_name ? null : other.photo_url} name={((sos as any).ghost_name as string) ?? other.name} seed={other.id} size={120} />
+            <div className="font-display text-2xl">{((sos as any).ghost_name as string) ?? other.name}</div>
             <button className="cbtn cbtn-green w-full" onClick={() => messageWa(other.id)}>{t("sos.message_wa")}</button>
           </div>
         )}
@@ -287,6 +307,19 @@ function SosDetail() {
 
         {isOpen && !full && (
           <div className="ccard p-4 space-y-3">
+            {(sos as any).ghost_claim_token && (
+              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", marginBottom: 12 }}>
+                <div style={{ width: 58, flexShrink: 0, background: "#ECE8E0", borderLeft: "4px solid #9B9186", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>👻</div>
+                <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
+                  <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.ghost_for", { name: (sos as any).ghost_name ?? "" })}</div>
+                  <button type="button" className="cbtn cbtn-green w-full mt-2" onClick={async () => {
+                    const url = await myInviteLink(`/sos/${sos.id}?claim=${(sos as any).ghost_claim_token}`);
+                    try { await navigator.clipboard.writeText(url); toast.success(t("sos.handover_copied")); } catch { toast.error(url); }
+                  }}>🔗 {t("sos.handover_copy")}</button>
+                  <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.handover_hint")}</p>
+                </div>
+              </div>
+            )}
             <div className="csection-label">🙋 {t("app.candidates")}</div>
             {applicants.length === 0 ? (
               <div className="space-y-2">

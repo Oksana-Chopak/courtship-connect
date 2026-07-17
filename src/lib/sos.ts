@@ -29,6 +29,7 @@ export type EligibleSosRow = SosRow & {
   caller_last_name?: string | null;
   caller_photo_url?: string | null;
   play_until?: string | null;
+  ghost_name?: string | null;
   court_name: string | null;
   court_city: string | null;
   court_area: string | null;
@@ -56,7 +57,10 @@ export async function hydrateCallers(rows: EligibleSosRow[]): Promise<EligibleSo
     const byId = new Map<string, any>(((data as any[]) ?? []).map((p) => [p.id, p]));
     return rows.map((r) => {
       const p = byId.get(r.caller_id);
-      return p ? { ...r, caller_last_name: p.last_name ?? null, caller_photo_url: p.photo_url ?? null } : r;
+      if (!p) return r;
+      // ghost games keep the SQL-provided ghost identity — never the admin's photo
+      if ((r as any).ghost_name) return { ...r, caller_last_name: null, caller_photo_url: null };
+      return { ...r, caller_last_name: p.last_name ?? null, caller_photo_url: p.photo_url ?? null };
     });
   } catch {
     return rows;

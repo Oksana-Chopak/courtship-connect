@@ -47,7 +47,7 @@ function NewSos() {
       try {
         const { data: u } = await supabase.auth.getUser();
         if (!u.user) return;
-        const { data } = await (supabase as any).from("profiles").select("sports").eq("id", u.user.id).maybeSingle();
+        const { data } = await (supabase as any).from("profiles").select("sports,is_admin").eq("id", u.user.id).maybeSingle();
         const sp = ((data?.sports as Sport[] | null) ?? ["tennis"]).filter((x): x is Sport => x === "tennis" || x === "padel" || x === "badminton");
         if (sp.length) { setMySports(sp); if (!sp.includes("tennis")) setSport(sp[0]); }
       } catch { /* pre-SQL */ }
@@ -62,6 +62,8 @@ function NewSos() {
   const [note, setNote] = useState("");
   const [autoFlare, setAutoFlare] = useState(true);
   const [flexible, setFlexible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [ghostName, setGhostName] = useState("");
   const [untilTime, setUntilTime] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -166,6 +168,15 @@ function NewSos() {
     return base;
   }, [date, time]);
 
+  useEffect(() => {
+    void (async () => {
+      const { data: au } = await supabase.auth.getUser();
+      if (!au.user) return;
+      const { data } = await (supabase as any).from("profiles").select("is_admin").eq("id", au.user.id).maybeSingle();
+      setIsAdmin(!!data?.is_admin);
+    })();
+  }, []);
+
   const playUntil = useMemo(() => {
     if (!flexible || !untilTime) return null;
     const base = new Date(date);
@@ -243,6 +254,7 @@ function NewSos() {
       caller_id: uid,
       play_at: playAt.toISOString(),
       play_until: flexible && playUntil ? playUntil.toISOString() : null,
+      ...(isAdmin && ghostName.trim() ? { ghost_name: ghostName.trim(), ghost_claim_token: crypto.randomUUID() } : {}),
       court_id: courtId,
       format,
       level_min: anyone ? 1 : levelMin,
@@ -263,6 +275,11 @@ function NewSos() {
       res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
     }
     let createWindowDropped = false;
+    if (res.error && /ghost_/i.test(res.error.message || "")) {
+      const { ghost_name: _g1, ghost_claim_token: _g2, ...noGhost } = insertRow;
+      res = await (supabase as any).from("sos_requests").insert(noGhost).select("id").single();
+      if (!res.error) toast.warning(t("sos.ghost_not_saved"), { duration: 9000 });
+    }
     if (res.error && /play_until/i.test(res.error.message || "")) {
       // window column not migrated yet — post as exact-time so creation never breaks, but SAY so
       createWindowDropped = flexible && !!playUntil;
@@ -454,6 +471,13 @@ function NewSos() {
           maxLength={140}
         />
       </Section>
+
+      {isAdmin && !editing && (
+        <Section label={`👻 ${t("sos.ghost_label")}`}>
+          <input className="cinput" placeholder={t("sos.ghost_ph")} value={ghostName} onChange={(e) => setGhostName(e.target.value)} maxLength={60} />
+          <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.ghost_hint")}</p>
+        </Section>
+      )}
 
       {!urgent && !editing && (
         <Section label={t("post.auto_flare_label")}>
