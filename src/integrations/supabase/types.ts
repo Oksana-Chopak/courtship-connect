@@ -659,6 +659,8 @@ export type Database = {
           duration_min: number
           flared_at: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
+          ghost_claim_token: string | null
+          ghost_name: string | null
           id: string
           kind: string
           level_max: number
@@ -683,6 +685,8 @@ export type Database = {
           duration_min?: number
           flared_at?: string | null
           format: Database["public"]["Enums"]["sos_format_t"]
+          ghost_claim_token?: string | null
+          ghost_name?: string | null
           id?: string
           kind?: string
           level_max?: number
@@ -707,6 +711,8 @@ export type Database = {
           duration_min?: number
           flared_at?: string | null
           format?: Database["public"]["Enums"]["sos_format_t"]
+          ghost_claim_token?: string | null
+          ghost_name?: string | null
           id?: string
           kind?: string
           level_max?: number
@@ -905,6 +911,13 @@ export type Database = {
       }
       cancel_sos: { Args: { _sos_id: string }; Returns: undefined }
       check_invite_code: { Args: { _code: string }; Returns: boolean }
+      claim_ghost_game: {
+        Args: { _sos_id: string; _token: string }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       claim_sos: {
         Args: { _sos_id: string }
         Returns: {
@@ -974,6 +987,7 @@ export type Database = {
           court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
+          ghost_name: string
           id: string
           is_buddy: boolean
           level_max: number
@@ -999,6 +1013,7 @@ export type Database = {
           court_type: Database["public"]["Enums"]["court_type_t"]
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
+          ghost_name: string
           id: string
           is_buddy: boolean
           level_max: number
