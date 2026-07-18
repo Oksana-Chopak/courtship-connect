@@ -357,6 +357,18 @@ function BoardPage() {
         <SoonCard emoji="🎾❔" title={t("soon.mystery")} />
       </div>
 
+      {/* Filters ate everything — give a way OUT (Lovable's stuck-state report) */}
+      {!loading && !nothing && timeline.length === 0 && (
+        <div className="ccard p-5 text-center space-y-3">
+          <div className="text-3xl">🔍</div>
+          <div className="font-display text-xl">{t("board.f_empty_title")}</div>
+          <div className="flex gap-2 justify-center pt-1">
+            <button type="button" className="cbtn cbtn-coral" onClick={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); }}>✕ {t("board.f_clear")}</button>
+            <button type="button" className="cbtn cbtn-ghost" onClick={() => setFiltersOpen(true)}>{t("players.filters")} ▾</button>
+          </div>
+        </div>
+      )}
+
       {nothing && (
         <div className="ccard p-6 text-center space-y-3">
           <div className="text-3xl">🌅</div>
