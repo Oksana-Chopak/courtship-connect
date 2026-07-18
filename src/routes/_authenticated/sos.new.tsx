@@ -98,8 +98,13 @@ function NewSos() {
       } catch { /* ignore */ }
       // Default the court to MY home club (from profile home_courts), not the
       // alphabetically-first court. Fall back to first-in-my-city, then first overall.
+      // Fuzzy on purpose: profile home_courts is free text ("Fyrishov"), the
+      // directory holds full names ("Fyrishov Tenniscenter") — exact equality
+      // regressed to first-in-list. Either side may contain the other.
+      const norm = (x: string) => x.toLowerCase().replace(/[^a-zà-öø-ÿ0-9]+/gi, " ").trim();
       const homeCourtName = String((p as any)?.home_courts ?? "").split(",").map((x) => x.trim()).filter(Boolean)[0];
-      const homeCourt = homeCourtName ? cs.find((c) => c.name.toLowerCase() === homeCourtName.toLowerCase()) : undefined;
+      const hcn = homeCourtName ? norm(homeCourtName) : "";
+      const homeCourt = hcn ? cs.find((c) => { const n = norm(c.name); return n.includes(hcn) || hcn.includes(n); }) : undefined;
       const first = homeCourt ?? cs.find((c) => c.city === hc) ?? cs[0];
       if (first) { setCourtId(first.id); if (homeCourt) setCity(homeCourt.city as City); }
       setLevelMin(Math.max(1, lv - 1));
@@ -366,16 +371,9 @@ function NewSos() {
           </div>
         </div>
         {time && !editing && (
-          <div
-            className="mt-2 rounded-2xl border-2 border-[var(--ink)] px-3 py-2 font-semibold"
-            style={{
-              background: urgent ? "var(--coral)" : "var(--green-pop)",
-              color: urgent ? "#FFF6E8" : "var(--ink)",
-              fontSize: "1rem",
-            }}
-            aria-live="polite"
-          >
-            {urgent ? t("post.info_urgent") : t("post.info_planned")}
+          <div className="mt-2 flex items-start gap-2" aria-live="polite" style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.65)" }}>
+            <span className={urgent ? "sos-dot" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: urgent ? "#F0705B" : "#C9EE3F", marginTop: 5, flexShrink: 0 }} />
+            <span><b style={{ color: urgent ? "#F0705B" : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
           </div>
         )}
       </Section>

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { whatsappLink, levelMeta, sportMeta, vibeEmoji } from "@/lib/courtship";
 import { RF } from "@/components/RailKit";
+import { PlayerDossierSheet, type DossierPlayer } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
 import { oops } from "@/lib/oops";
 
@@ -26,6 +27,7 @@ function Lucky() {
   const [player, setPlayer] = useState<LuckyPlayer | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [empty, setEmpty] = useState(false);
+  const [sheet, setSheet] = useState(false);
 
   async function spin() {
     setSpinning(true);
@@ -80,8 +82,8 @@ function Lucky() {
               <Link to="/players/$id" params={{ id: player.id }} className="shrink-0" style={{ borderRadius: 999, overflow: "hidden", border: "1.5px solid rgba(43,33,24,0.28)", display: "block" }}>
                 <Avatar src={player.photo_url} name={player.name} seed={player.id} size={64} />
               </Link>
-              <div className="min-w-0">
-                <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.05 }}>{player.name}</div>
+              <div className="min-w-0" role="button" onClick={() => setSheet(true)}>
+                <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.05 }}>{player.name} <span style={{ fontSize: 13, opacity: 0.5 }}>ⓘ</span></div>
                 <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2 }}>📍 {player.home_city ?? "—"}</div>
               </div>
             </div>
@@ -94,6 +96,7 @@ function Lucky() {
             </div>
             {player.fav_shot && <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.65)", marginTop: 4 }}>🎾 {player.fav_shot}</div>}
             {player.bio && <div className="font-display italic" style={{ fontSize: RF.note, marginTop: 6, lineHeight: 1.3 }}>"{player.bio}"</div>}
+            <button type="button" className="font-extrabold underline text-sm mt-1" onClick={() => setSheet(true)}>{t("crush.tap_more")}</button>
             <div className="space-y-2 mt-3">
               <button onClick={messageWa} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
               <div className="grid grid-cols-2 gap-2">
@@ -112,6 +115,7 @@ function Lucky() {
       ) : null}
 
       <style>{`.lucky-spin{display:inline-block;animation:luckySpin 0.9s linear infinite}@keyframes luckySpin{to{transform:rotate(360deg)}}`}</style>
+      {sheet && player && <PlayerDossierSheet card={player as unknown as DossierPlayer} onClose={() => setSheet(false)} />}
     </div>
   );
 }

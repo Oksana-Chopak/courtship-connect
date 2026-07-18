@@ -270,7 +270,7 @@ function SosDetail() {
           const railTime = winEnd ? `${d.getHours()}–${winEnd.getHours()}` : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
           return (
             <RailShell>
-              <TimeRail day={day} time={railTime} ct={full ? "🎾" : isOpen ? "🎾" : "🚨"} tone={tone} dateStr={dateStr} />
+              <TimeRail day={day} time={railTime} ct={full ? "🎾" : isOpen ? "🎾" : "🚨"} tone={tone} dateStr={dateStr} ctSub={(sos as any).court_type_any ? t("ct.sub_any") : sos.court_type === "indoor" ? t("ct.sub_in") : t("ct.sub_out")} />
               <div style={{ flex: 1, minWidth: 0, padding: "13px 14px" }}>
                 {!full && !isOpen && (
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: "#F0705B", marginBottom: 6 }}>

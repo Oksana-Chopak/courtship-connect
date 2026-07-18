@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City, sportMeta } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
+import { shareInvite } from "@/lib/share";
 import { fetchBuddyIds, fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
@@ -135,8 +136,32 @@ function Players() {
         </div>
       )}
 
-      {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-coral w-full text-center block">{t("lucky.cta")}</Link>}
-      {FLAGS.swipeDeck && <Link to="/match" className="cbtn cbtn-green w-full text-center flex items-center justify-center gap-2"><BallHeart size={20} /> {t("match.cta")}</Link>}
+      {/* Hero — invite friends (mirrors the board hero composition; ONE loud thing) */}
+      <div>
+        <button type="button" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}
+          className="w-full text-left" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px" }}>
+          <span style={{ fontSize: 24 }}>🤗</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("players.hero_title")}</span>
+            <span style={{ display: "block", fontWeight: 800, fontSize: 13.5, opacity: 0.95, marginTop: 2 }}>{t("players.hero_sub")}</span>
+          </span>
+          <span style={{ fontSize: 20 }}>→</span>
+        </button>
+        {(FLAGS.swipeDeck || FLAGS.luckyServe) && (
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            {FLAGS.swipeDeck && (
+              <Link to="/match" className="flex items-center gap-2 justify-center" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 8px", fontWeight: 800, fontSize: 14 }}>
+                <BallHeart size={18} /> {t("feat.crush")}
+              </Link>
+            )}
+            {FLAGS.luckyServe && (
+              <Link to="/lucky" className="flex items-center gap-2 justify-center" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 8px", fontWeight: 800, fontSize: 14 }}>
+                🎰 {t("soon.lucky")}
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* buddy requests — act on them right here */}
       {reqs.length > 0 && (

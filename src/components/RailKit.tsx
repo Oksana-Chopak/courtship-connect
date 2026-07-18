@@ -77,14 +77,16 @@ export function CalIcon({ added }: { added?: boolean }) {
 }
 
 /** The colored left time-rail: DAY / TIME / court-type emoji, tinted by tone. */
-export function TimeRail({ day, time, ct, tone, dateStr }: { day: string; time: string; ct: string; tone: RailTone; dateStr?: string }) {
+export function TimeRail({ day, time, ct, tone, dateStr, ctSub }: { day: string; time: string; ct: string; tone: RailTone; dateStr?: string; ctSub?: string }) {
+  const isRange = time.includes("–");
   const { bar, bg } = railTone(tone);
   return (
     <div style={{ width: 70, flexShrink: 0, background: bg, borderRight: "1px solid rgba(43,33,24,0.15)", borderLeft: `4px solid ${bar}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 4px", textAlign: "center" }}>
       <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.day, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(43,33,24,0.6)" }}>{day}</div>
       {dateStr && <div style={{ fontWeight: 700, fontSize: 11, color: "rgba(43,33,24,0.55)", marginTop: 1, lineHeight: 1, whiteSpace: "nowrap" }}>{dateStr}</div>}
-      <div style={{ fontFamily: "var(--font-display)", fontSize: RF.time, lineHeight: 1.05, marginTop: 3 }}>{time}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: isRange ? RF.time - 4 : RF.time, lineHeight: 1.05, marginTop: 3, whiteSpace: "nowrap" }}>{time}</div>
       <div style={{ fontSize: 16, marginTop: 4 }}>{ct}</div>
+      {ctSub && <div style={{ fontWeight: 800, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(43,33,24,0.5)", marginTop: 1 }}>{ctSub}</div>}
     </div>
   );
 }

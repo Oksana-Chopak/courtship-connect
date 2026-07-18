@@ -29,27 +29,40 @@ export function SwishPayBlock({ number, amountSek, message }: { number: string; 
     window.addEventListener("pagehide", clear, { once: true });
     window.location.href = "swish://";
   }
+  const [open, setOpen] = useState(false);
+  function payNow() {
+    setOpen(true);
+    openSwish();
+  }
   return (
-    <div className="ccard p-3 space-y-2" style={{ background: "var(--cream2)" }}>
-      <div className="font-extrabold">{t("swish.pay_title")}</div>
-      <button type="button" onClick={() => copy(number, "num")}
-        className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left" style={{ background: "var(--cream)", border: "2px solid var(--ink)" }}>
-        <span><span className="text-xs font-bold uppercase tracking-wide opacity-60 block">{t("swish.number")}</span><span className="font-extrabold text-lg tracking-wide">📱 {number}</span></span>
-        <span className="text-sm font-extrabold shrink-0">{done === "num" ? "✓" : "📋"}</span>
+    <div className="space-y-2">
+      {/* Primary, consumer-standard: one Pay button. Details reveal quietly under it. */}
+      <button type="button" onClick={payNow} className="cbtn cbtn-green w-full">
+        💸 {t("swish.pay_cta", { amount: amountSek })}
       </button>
-      <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2" style={{ background: "var(--cream)", border: "2px solid var(--ink)" }}>
-        <span className="text-xs font-bold uppercase tracking-wide opacity-60">{t("swish.amount")}</span>
-        <span className="font-extrabold text-lg">{amountSek} SEK</span>
-      </div>
-      <button type="button" onClick={() => copy(message, "msg")}
-        className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left" style={{ background: "var(--cream)", border: "2px solid var(--ink)" }}>
-        <span className="min-w-0"><span className="text-xs font-bold uppercase tracking-wide opacity-60 block">{t("swish.message")}</span><span className="font-extrabold">✏️ {message}</span></span>
-        <span className="text-sm font-extrabold shrink-0">{done === "msg" ? "✓" : "📋"}</span>
-      </button>
-      <button type="button" onClick={openSwish} className="cbtn cbtn-coral w-full">
-        📲 {t("swish.open")}
-      </button>
-      <div className="text-xs text-[var(--ink)] opacity-70">{t("swish.confirm_note")}</div>
+      {open && (
+        <div className="space-y-1.5" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 12px" }}>
+          <Row label={t("swish.number")} value={`📱 ${number}`} onCopy={() => copy(number, "num")} done={done === "num"} />
+          <Row label={t("swish.amount")} value={`${amountSek} SEK`} />
+          <Row label={t("swish.message")} value={message} onCopy={() => copy(message, "msg")} done={done === "msg"} />
+          <div className="text-xs font-semibold" style={{ color: "rgba(43,33,24,0.6)" }}>{t("swish.confirm_note")}</div>
+          <button type="button" onClick={openSwish} className="font-extrabold underline text-sm">📲 {t("swish.open")}</button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function Row({ label, value, onCopy, done }: { label: string; value: string; onCopy?: () => void; done?: boolean }) {
+  const inner = (
+    <>
+      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "rgba(43,33,24,0.5)", flexShrink: 0 }}>{label}</span>
+      <span className="font-extrabold text-right" style={{ fontSize: 15, minWidth: 0, overflowWrap: "anywhere" }}>{value}{onCopy ? <span className="ml-2 text-sm">{done ? "✓" : "📋"}</span> : null}</span>
+    </>
+  );
+  return onCopy ? (
+    <button type="button" onClick={onCopy} className="w-full flex items-center justify-between gap-3 text-left">{inner}</button>
+  ) : (
+    <div className="flex items-center justify-between gap-3">{inner}</div>
   );
 }

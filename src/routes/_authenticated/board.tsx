@@ -476,7 +476,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
 
   return (
     <RailShell>
-      <TimeRail day={day} time={time} ct={ctMeta.emoji} tone={tone} dateStr={dateStr} />
+      <TimeRail day={day} time={time} ct={(sos as any).court_type_any ? "🏟️" : ctMeta.emoji} tone={tone} dateStr={dateStr} ctSub={(sos as any).court_type_any ? t("ct.sub_any") : sos.court_type === "indoor" ? t("ct.sub_in") : t("ct.sub_out")} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
         {/* tags row — only when there's a tag, so the name never floats below empty space */}
         {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { whatsappLink, levelMeta, monogramColors, sportMeta, vibeEmoji } from "@/lib/courtship";
 import { BallHeart, RF, clampLines } from "@/components/RailKit";
+import { PlayerDossierSheet } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
 import { oops } from "@/lib/oops";
 
@@ -147,7 +148,7 @@ function MatchDeck() {
             <button onClick={() => swipe(true)} disabled={busy} aria-label={t("match.like")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--green-pop)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>🎾</button>
           </div>
           <div className="text-center text-xs font-bold" style={{ color: "rgba(43,33,24,0.5)" }}>{t("match.pass")} · {t("match.like")}</div>
-          {details && card && <DetailsSheet card={card} onClose={() => setDetails(false)} />}
+          {details && card && <PlayerDossierSheet card={card} onClose={() => setDetails(false)} />}
         </>
       ) : (
         <div className="ccard p-6 text-center space-y-3">
@@ -217,74 +218,6 @@ function SwipeCard({ card, photoIdx = 0 }: { card: Card; photoIdx?: number }) {
         {card.fav_shot && <div className="mt-1.5" style={{ fontSize: 14, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
         {card.bio && <div className="font-display italic mt-1.5" style={{ fontSize: 16, color: "#FFF6E8", lineHeight: 1.3, ...clampLines(2) }}>"{card.bio}"</div>}
         <div className="mt-2 font-extrabold" style={{ fontSize: 12, color: "rgba(236,230,216,0.65)", letterSpacing: "0.05em" }}>ⓘ {t("crush.tap_more")}</div>
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="csection-label" style={{ marginBottom: 4 }}>{label}</div>
-      <div style={{ fontWeight: 700, fontSize: RF.club }}>{children}</div>
-    </div>
-  );
-}
-
-function DetailsSheet({ card, onClose }: { card: Card; onClose: () => void }) {
-  const { t } = useI18n();
-  const sports = (card.sports?.length ? card.sports : ["tennis"]) as string[];
-  const chips = (arr?: string[] | null, keyPrefix?: string) =>
-    (arr ?? []).length ? (
-      <span className="inline-flex gap-1.5 flex-wrap">
-        {(arr ?? []).map((v) => (
-          <span key={v} className="cchip" style={{ pointerEvents: "none", fontSize: 13, padding: "3px 10px" }}>{keyPrefix ? t(`${keyPrefix}.${v}`) : v}</span>
-        ))}
-      </span>
-    ) : null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(43,33,24,0.45)" }} onClick={onClose}>
-      <div className="w-full max-w-md overflow-y-auto" style={{ maxHeight: "78vh", background: "var(--cream2)", borderTop: "2.5px solid var(--ink)", borderLeft: "2.5px solid var(--ink)", borderRight: "2.5px solid var(--ink)", borderRadius: "18px 18px 0 0", padding: "18px 18px 26px" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <div className="font-display" style={{ fontSize: 26 }}>{card.name}</div>
-          <button type="button" onClick={onClose} aria-label={t("common.close")} className="font-extrabold" style={{ fontSize: 22, padding: "0 6px" }}>✕</button>
-        </div>
-        <div className="space-y-4 mt-3">
-          {card.bio && <div className="font-display italic" style={{ fontSize: RF.note, lineHeight: 1.35 }}>"{card.bio}"</div>}
-          <DetailRow label={`🎾 ${t("crush.tennis")}`}>
-            L{card.level}
-            {card.experience && <> · {t(`exp.${card.experience}`)}</>}
-            {card.fav_shot && <> · {card.fav_shot}</>}
-          </DetailRow>
-          <DetailRow label={`🏃 ${t("crush.plays")}`}>
-            <div className="space-y-1.5">
-              <div>{sports.map((sp) => `${sportMeta(sp).emoji} ${t(sportMeta(sp).key)}`).join(" · ")}{card.looking_for ? ` · ${t(`lf.${card.looking_for}`)}` : ""}</div>
-              {chips(card.formats ?? undefined)}
-              {chips(card.play_times ?? undefined)}
-            </div>
-          </DetailRow>
-          {(card.goals ?? []).length > 0 && <DetailRow label={`🎯 ${t("crush.goals")}`}>{chips(card.goals ?? undefined, "goal")}</DetailRow>}
-          {(card.home_courts || card.home_city || (card.home_cities ?? []).length > 0) && (
-            <DetailRow label={`📍 ${t("crush.courts")}`}>
-              {[...new Set([card.home_city, ...(card.home_cities ?? [])].filter(Boolean))].join(" · ")}
-              {card.home_courts && <div style={{ marginTop: 2 }}>{card.home_courts}</div>}
-            </DetailRow>
-          )}
-          {((card.games_played ?? 0) > 0 || (card.rescues_count ?? 0) > 0) && (
-            <DetailRow label={`📈 ${t("crush.progress")}`}>
-              {[
-                (card.games_played ?? 0) > 0 ? `🎾 ${t("crush.games_n", { n: card.games_played as number })}` : null,
-                (card.rescues_count ?? 0) > 0 ? `🚑 ${t("crush.rescues_n", { n: card.rescues_count as number })}` : null,
-              ].filter(Boolean).join(" · ")}
-            </DetailRow>
-          )}
-          {card.member_since && (
-            <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.55)" }}>
-              {t("crush.member_since", { d: new Date(card.member_since).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) })}
-            </div>
-          )}
-          <Link to="/players/$id" params={{ id: card.id }} className="cbtn cbtn-ghost w-full text-center block">{t("lucky.view_profile")}</Link>
-        </div>
       </div>
     </div>
   );
