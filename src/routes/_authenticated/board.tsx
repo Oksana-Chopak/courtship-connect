@@ -9,7 +9,6 @@ import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { EventCard } from "@/components/EventCard";
-import { FLAGS } from "@/lib/flags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
@@ -331,31 +330,7 @@ function BoardPage() {
 
 
 
-      {/* Feature drops — live ones link in, the rest tease */}
-      <div className="space-y-3">
-        <div className="csection-label">{t("feat.title")}</div>
-        <div className="grid grid-cols-2 gap-3">
-          {FLAGS.swipeDeck ? (
-            <Link to="/match" className="ccard p-4 text-center block" style={{ borderColor: "var(--coral)" }}>
-              <div className="flex justify-center"><BallHeart size={32} /></div>
-              <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>{t("feat.crush")}</div>
-              <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.65)", marginTop: 2 }}>{t("feat.crush_sub")}</div>
-            </Link>
-          ) : (
-            <SoonCard emoji="💘" title={t("feat.crush")} />
-          )}
-          {FLAGS.luckyServe ? (
-            <Link to="/lucky" className="ccard p-4 text-center block" style={{ borderColor: "var(--green-pop)" }}>
-              <div style={{ fontSize: 30 }}>🎰</div>
-              <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>{t("soon.lucky")}</div>
-              <div className="font-bold" style={{ fontSize: 13, color: "rgba(43,33,24,0.65)", marginTop: 2 }}>{t("feat.lucky_sub")}</div>
-            </Link>
-          ) : (
-            <SoonCard emoji="🎰" title={t("soon.lucky")} />
-          )}
-        </div>
-        <SoonCard emoji="🎾❔" title={t("soon.mystery")} />
-      </div>
+      {/* Features live in flows (Players page, no-takers nudge, empty state) — never as ad cards on the board. */}
 
       {/* Filters ate everything — give a way OUT (Lovable's stuck-state report) */}
       {!loading && !nothing && timeline.length === 0 && (
@@ -374,11 +349,11 @@ function BoardPage() {
           <div className="text-3xl">🌅</div>
           <div className="font-display text-xl">{t("rescue.empty_title")}</div>
           <div className="text-base text-[var(--ink)] font-semibold">{t("rescue.empty_sub")}</div>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
-            <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral">📅 {t("board.plan_game")}</Link>
-            {FLAGS.luckyServe && <Link to="/lucky" className="cbtn cbtn-green">🎰 {t("feat.lucky_spin")}</Link>}
-            <button type="button" className="cbtn cbtn-green" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
-            <Link to="/me" className="cbtn cbtn-ghost">🎾 {t("empty.dir_new_cta")}</Link>
+          <div className="pt-1">
+            <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral inline-block" style={{ minWidth: 220 }}>🎾 {t("board.post_game")}</Link>
+            <div className="mt-3">
+              <button type="button" className="font-extrabold underline text-sm" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
+            </div>
           </div>
         </div>
       )}
@@ -622,19 +597,4 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
   );
 }
 
-function SoonCard({ emoji, title }: { emoji: string; title: string }) {
-  const { t } = useI18n();
-  return (
-    <div className="ccard p-4 text-center" style={{ opacity: 0.75, borderStyle: "dashed" }}>
-      <div className="text-3xl">{emoji}</div>
-      <div className="font-display text-lg mt-1 leading-tight">{title}</div>
-      <div
-        className="inline-block text-xs font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full mt-2"
-        style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
-      >
-        {t("soon.badge")}
-      </div>
-    </div>
-  );
-}
 
