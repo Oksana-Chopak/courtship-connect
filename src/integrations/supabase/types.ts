@@ -608,6 +608,7 @@ export type Database = {
         Row: {
           applicant_id: string
           created_at: string
+          ct_pref: string | null
           id: string
           proposed_at: string | null
           sos_id: string
@@ -616,6 +617,7 @@ export type Database = {
         Insert: {
           applicant_id: string
           created_at?: string
+          ct_pref?: string | null
           id?: string
           proposed_at?: string | null
           sos_id: string
@@ -624,6 +626,7 @@ export type Database = {
         Update: {
           applicant_id?: string
           created_at?: string
+          ct_pref?: string | null
           id?: string
           proposed_at?: string | null
           sos_id?: string
@@ -649,12 +652,14 @@ export type Database = {
       sos_requests: {
         Row: {
           auto_flare: boolean
+          broadcast: boolean
           caller_id: string
           cancel_nudged_at: string | null
           claimed_by: string | null
           court_id: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type: Database["public"]["Enums"]["court_type_t"]
+          court_type_any: boolean
           created_at: string
           duration_min: number
           flared_at: string | null
@@ -662,6 +667,7 @@ export type Database = {
           ghost_claim_token: string | null
           ghost_name: string | null
           id: string
+          invite_join_token: string | null
           kind: string
           level_max: number
           level_min: number
@@ -675,12 +681,14 @@ export type Database = {
         }
         Insert: {
           auto_flare?: boolean
+          broadcast?: boolean
           caller_id: string
           cancel_nudged_at?: string | null
           claimed_by?: string | null
           court_id?: string | null
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type?: Database["public"]["Enums"]["court_type_t"]
+          court_type_any?: boolean
           created_at?: string
           duration_min?: number
           flared_at?: string | null
@@ -688,6 +696,7 @@ export type Database = {
           ghost_claim_token?: string | null
           ghost_name?: string | null
           id?: string
+          invite_join_token?: string | null
           kind?: string
           level_max?: number
           level_min?: number
@@ -701,12 +710,14 @@ export type Database = {
         }
         Update: {
           auto_flare?: boolean
+          broadcast?: boolean
           caller_id?: string
           cancel_nudged_at?: string | null
           claimed_by?: string | null
           court_id?: string | null
           court_status?: Database["public"]["Enums"]["court_status_t"]
           court_type?: Database["public"]["Enums"]["court_type_t"]
+          court_type_any?: boolean
           created_at?: string
           duration_min?: number
           flared_at?: string | null
@@ -714,6 +725,7 @@ export type Database = {
           ghost_claim_token?: string | null
           ghost_name?: string | null
           id?: string
+          invite_join_token?: string | null
           kind?: string
           level_max?: number
           level_min?: number
@@ -895,7 +907,7 @@ export type Database = {
         }[]
       }
       apply_to_game: {
-        Args: { _proposed_at?: string; _sos_id: string }
+        Args: { _ct_pref?: string; _proposed_at?: string; _sos_id: string }
         Returns: {
           ok: boolean
           reason: string
@@ -985,6 +997,7 @@ export type Database = {
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type: Database["public"]["Enums"]["court_type_t"]
+          court_type_any: boolean
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           ghost_name: string
@@ -1011,6 +1024,7 @@ export type Database = {
           court_name: string
           court_status: Database["public"]["Enums"]["court_status_t"]
           court_type: Database["public"]["Enums"]["court_type_t"]
+          court_type_any: boolean
           created_at: string
           format: Database["public"]["Enums"]["sos_format_t"]
           ghost_name: string
@@ -1123,6 +1137,13 @@ export type Database = {
           reason: string
         }[]
       }
+      join_game_by_token: {
+        Args: { _sos_id: string; _token: string }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       kudos_by: {
         Args: { _to: string }
         Returns: {
@@ -1222,6 +1243,7 @@ export type Database = {
           court_name: string
           court_status: string
           court_type: string
+          court_type_any: boolean
           created_at: string
           format: string
           id: string
