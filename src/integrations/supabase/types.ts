@@ -426,6 +426,7 @@ export type Database = {
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          email_notifs: boolean
           events_optin: boolean
           experience: string | null
           fav_shot: string | null
@@ -464,6 +465,7 @@ export type Database = {
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          email_notifs?: boolean
           events_optin?: boolean
           experience?: string | null
           fav_shot?: string | null
@@ -502,6 +504,7 @@ export type Database = {
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
           created_at?: string
+          email_notifs?: boolean
           events_optin?: boolean
           experience?: string | null
           fav_shot?: string | null
@@ -1087,6 +1090,7 @@ export type Database = {
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          email_notifs: boolean
           events_optin: boolean
           experience: string | null
           fav_shot: string | null
