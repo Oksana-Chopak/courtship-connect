@@ -373,3 +373,11 @@ export function matchmakerTier(count: number): { level: number; name: string; em
   const nx = idx < MATCHMAKER_TIERS.length - 1 ? MATCHMAKER_TIERS[idx + 1] : null;
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
+
+/** Maps get_contact_phone errors to honest, human toasts. */
+export function waErrorKey(message: string | undefined): string {
+  const m = message ?? "";
+  if (/no_number/i.test(m)) return "wa.no_number";
+  if (/forbidden/i.test(m)) return "wa.locked";
+  return "wa.failed";
+}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { waErrorKey } from "@/lib/courtship";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +61,10 @@ function PlayerDetail() {
     const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     try {
-      const { phone, name } = await getPhone({ data: { targetId: id } });
+      let phone: string, name: string;
+      try {
+        ({ phone, name } = await getPhone({ data: { targetId: id } }));
+      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappLink(phone, name);
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;

@@ -1,10 +1,11 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { FLAGS } from "@/lib/flags";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { whatsappLink, levelMeta, sportMeta, vibeEmoji } from "@/lib/courtship";
+import { whatsappLink, levelMeta, sportMeta, vibeEmoji, waErrorKey } from "@/lib/courtship";
 import { RF } from "@/components/RailKit";
 import { PlayerDossierSheet, type DossierPlayer } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
@@ -49,7 +50,10 @@ function Lucky() {
     if (!player) return;
     const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     try {
-      const { phone, name } = await getProfilePhone({ data: { targetId: player.id } });
+      let phone: string, name: string;
+      try {
+        ({ phone, name } = await getProfilePhone({ data: { targetId: player.id } }));
+      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappLink(phone, name);
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { waErrorKey } from "@/lib/courtship";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,7 +167,10 @@ function SosDetail() {
     // async phone fetch — opening after await is popup-blocked and breaks in iframes.
     const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     try {
-      const { phone } = await getPhone({ data: { targetId } });
+      let phone: string;
+      try {
+        ({ phone } = await getPhone({ data: { targetId } }));
+      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappClaimLink(phone, me!.name, when, courtName || "the court");
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;
@@ -241,6 +245,9 @@ function SosDetail() {
             <div className="csection-label">{t("sos.your_host")}</div>
             <Avatar src={(sos as any).ghost_name ? null : other.photo_url} name={((sos as any).ghost_name as string) ?? other.name} seed={other.id} size={120} />
             <div className="font-display text-2xl">{((sos as any).ghost_name as string) ?? other.name}</div>
+            {(sos as any).ghost_name && (
+              <div className="text-sm font-semibold" style={{ opacity: 0.6 }}>{t("sos.ghost_relay", { name: (sos as any).ghost_name })}</div>
+            )}
             <button className="cbtn cbtn-green w-full" onClick={() => messageWa(other.id)}>{t("sos.message_wa")}</button>
           </div>
         )}

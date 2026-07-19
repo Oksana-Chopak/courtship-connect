@@ -1,10 +1,11 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { FLAGS } from "@/lib/flags";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
-import { whatsappLink, levelMeta, monogramColors, sportMeta, vibeEmoji } from "@/lib/courtship";
+import { whatsappLink, levelMeta, monogramColors, sportMeta, vibeEmoji, waErrorKey } from "@/lib/courtship";
 import { BallHeart, RF, clampLines } from "@/components/RailKit";
 import { PlayerDossierSheet } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
@@ -65,7 +66,10 @@ function MatchDeck() {
   async function messageWa(p: Card) {
     const w = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     try {
-      const { phone, name } = await getProfilePhone({ data: { targetId: p.id } });
+      let phone: string, name: string;
+      try {
+        ({ phone, name } = await getProfilePhone({ data: { targetId: p.id } }));
+      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappLink(phone, name);
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;
