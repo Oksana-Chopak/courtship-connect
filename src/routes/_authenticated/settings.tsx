@@ -85,6 +85,10 @@ function SettingsPage() {
         />
       </div>
 
+      <Collapsible title={`📧 ${t("emailn.title")}`}>
+        <EmailNotifsToggle />
+      </Collapsible>
+
       <Collapsible title={`🔔 ${t("push.title")}`}>
         <PushControls bare />
       </Collapsible>
@@ -129,6 +133,37 @@ function SettingsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function EmailNotifsToggle() {
+  const { t } = useI18n();
+  const [on, setOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const { data: au } = await supabase.auth.getUser();
+      if (!au.user) return;
+      const { data } = await (supabase as any).from("profiles").select("email_notifs").eq("id", au.user.id).maybeSingle();
+      setOn(data?.email_notifs !== false);
+    })();
+  }, []);
+  async function toggle() {
+    const next = !(on ?? true);
+    setOn(next);
+    const { data: au } = await supabase.auth.getUser();
+    if (!au.user) return;
+    const { error } = await (supabase as any).from("profiles").update({ email_notifs: next }).eq("id", au.user.id);
+    if (error) { setOn(!next); toast.error(t("emailn.save_err")); } else toast.success(next ? t("emailn.on") : t("emailn.off"));
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("emailn.sub")}</p>
+      <button type="button" onClick={toggle} disabled={on === null}
+        className="w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+        style={{ borderColor: "var(--ink)", background: on ? "var(--green-pop)" : "var(--cream2)", opacity: on === null ? 0.6 : 1 }}>
+        {on ? "✅ " : "⬜ "}{t("emailn.toggle")}
+      </button>
     </div>
   );
 }
