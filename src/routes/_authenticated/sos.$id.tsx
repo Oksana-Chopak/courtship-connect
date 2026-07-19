@@ -19,8 +19,9 @@ import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>): { claim?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { claim?: string; join?: string } => ({
     claim: typeof s.claim === "string" && s.claim ? s.claim : undefined,
+    join: typeof s.join === "string" && s.join ? s.join : undefined,
   }),
   component: SosDetail,
 });
@@ -94,19 +95,20 @@ function SosDetail() {
   // 👻 Handover: arriving with ?claim=<token> (from the invite link the admin
   // sent) transfers this ghost game to the freshly signed-up owner — so the
   // first thing they see after onboarding is their own game with candidates.
-  const { claim } = Route.useSearch();
+  const { claim, join } = Route.useSearch();
   const navigate2 = useNavigate();
   useEffect(() => {
-    if (!claim || !me || !sos) return;
+    if ((!claim && !join) || !me || !sos) return;
     void (async () => {
-      const { data, error } = await (supabase as any).rpc("claim_ghost_game", { _sos_id: sos.id, _token: claim });
+      const fn = claim ? "claim_ghost_game" : "join_game_by_token";
+      const { data, error } = await (supabase as any).rpc(fn, { _sos_id: sos.id, _token: claim ?? join });
       const row = Array.isArray(data) ? data[0] : data;
-      if (!error && row?.ok) toast.success(t("sos.ghost_claimed"));
+      if (!error && row?.ok) toast.success(t(claim ? "sos.ghost_claimed" : "sos.joined_via_invite"));
       navigate2({ to: "/sos/$id", params: { id: sos.id }, search: {}, replace: true });
       await load();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [claim, me?.id, sos?.id]);
+  }, [claim, join, me?.id, sos?.id]);
 
   useEffect(() => {
     if (!sos || !me || isCaller || sos.kind !== "open") { setMyApplied(false); return; }
@@ -307,6 +309,19 @@ function SosDetail() {
 
         {isOpen && !full && (
           <div className="ccard p-4 space-y-3">
+            {(sos as any).invite_join_token && (
+              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", marginBottom: 12 }}>
+                <div style={{ width: 58, flexShrink: 0, background: "#EEF6D6", borderLeft: "4px solid #C9EE3F", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎟</div>
+                <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
+                  <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.invite_card_title")}</div>
+                  <button type="button" className="cbtn cbtn-green w-full mt-2" onClick={async () => {
+                    const url = await myInviteLink(`/sos/${sos.id}?join=${(sos as any).invite_join_token}`);
+                    try { await navigator.clipboard.writeText(url); toast.success(t("sos.handover_copied")); } catch { toast.error(url); }
+                  }}>🔗 {t("sos.invite_copy")}</button>
+                  <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.invite_hint2")}</p>
+                </div>
+              </div>
+            )}
             {(sos as any).ghost_claim_token && (
               <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", marginBottom: 12 }}>
                 <div style={{ width: 58, flexShrink: 0, background: "#ECE8E0", borderLeft: "4px solid #9B9186", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>👻</div>
@@ -336,6 +351,11 @@ function SosDetail() {
                   <div className="text-xs font-bold" style={{ color: "rgba(43,33,24,0.6)" }}>
                     L{a.level} · {vibeEmoji(a.vibe)}{(a.rescues_count ?? 0) >= 1 ? ` · 🚑 ${a.rescues_count}` : ""}
                   </div>
+                  {a.ct_pref && (
+                    <div className="text-sm font-extrabold mt-0.5" style={{ color: "#8C5A33" }}>
+                      {a.ct_pref === "indoor" ? "🏠" : "☀️"} {t("cand.prefers", { ct: a.ct_pref === "indoor" ? t("ct.indoor") : t("ct.outdoor") })}
+                    </div>
+                  )}
                   {a.proposed_at && (
                     <div className="text-sm font-extrabold mt-0.5" style={{ color: "var(--coral)" }}>
                       🕐 {t("app.suggests", { time: new Date(a.proposed_at).toLocaleTimeString(lang === "sv" ? "sv-SE" : "en-GB", { hour: "2-digit", minute: "2-digit" }) })}

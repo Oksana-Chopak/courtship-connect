@@ -64,6 +64,8 @@ function NewSos() {
   const [flexible, setFlexible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [ghostName, setGhostName] = useState("");
+  const [ctAny, setCtAny] = useState(false);
+  const [invitedMode, setInvitedMode] = useState(false);
   const [untilTime, setUntilTime] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -192,6 +194,7 @@ function NewSos() {
 
   // A flexible-window game is by definition planned, never an urgent SOS.
   const urgent = flexible ? false : playAt ? isUrgent(playAt) : false;
+  const effCtAny = ctAny && (courtStatus === "will_book" || courtStatus === "public");
   const canSubmit = !!(playAt && courtId && courtType && format) && (!flexible || (playUntil != null && playUntil.getTime() > (playAt?.getTime() ?? 0)));
 
   async function doSubmit() {
@@ -260,6 +263,8 @@ function NewSos() {
       play_at: playAt.toISOString(),
       play_until: flexible && playUntil ? playUntil.toISOString() : null,
       ...(isAdmin && ghostName.trim() ? { ghost_name: ghostName.trim(), ghost_claim_token: crypto.randomUUID() } : {}),
+      court_type_any: effCtAny,
+      ...(urgent && invitedMode ? { broadcast: false, invite_join_token: crypto.randomUUID() } : {}),
       court_id: courtId,
       format,
       level_min: anyone ? 1 : levelMin,
@@ -280,6 +285,11 @@ function NewSos() {
       res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
     }
     let createWindowDropped = false;
+    if (res.error && /court_type_any|broadcast|invite_join_token/i.test(res.error.message || "")) {
+      const { court_type_any: _c1, broadcast: _c2, invite_join_token: _c3, ...noNew } = insertRow;
+      res = await (supabase as any).from("sos_requests").insert(noNew).select("id").single();
+      if (!res.error && (effCtAny || invitedMode)) toast.warning(t("sos.batch_not_saved"), { duration: 9000 });
+    }
     if (res.error && /ghost_/i.test(res.error.message || "")) {
       const { ghost_name: _g1, ghost_claim_token: _g2, ...noGhost } = insertRow;
       res = await (supabase as any).from("sos_requests").insert(noGhost).select("id").single();
@@ -309,7 +319,7 @@ function NewSos() {
       });
     }
     if (urgent) {
-      void notifySos(data.id);
+      if (!(urgent && invitedMode)) void notifySos(data.id);
       if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
       else toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });
@@ -376,6 +386,14 @@ function NewSos() {
             <span><b style={{ color: urgent ? "#F0705B" : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
           </div>
         )}
+        {urgent && !editing && (
+          <button type="button" onClick={() => setInvitedMode(!invitedMode)}
+            className="mt-2 w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+            style={{ borderColor: "var(--ink)", background: invitedMode ? "var(--green-pop)" : "var(--cream2)" }}>
+            🎟 {t("sos.invited_label")}
+            <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{t("sos.invited_hint")}</span>
+          </button>
+        )}
       </Section>
 
       <Section label={t("sos.court")}>
@@ -394,6 +412,14 @@ function NewSos() {
             aria-label={t("ct.label")}
             className="grid grid-cols-2 gap-2"
           >
+            {(courtStatus === "will_book" || courtStatus === "public") && (
+              <button type="button" onClick={() => setCtAny(!ctAny)}
+                className="col-span-2 rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+                style={{ borderColor: "var(--ink)", background: ctAny ? "var(--green-pop)" : "var(--cream2)" }}>
+                🏟️ {t("ct.any_label")}
+                <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{t("ct.any_hint")}</span>
+              </button>
+            )}
             {COURT_TYPES.map((ct) => {
               const meta = courtTypeMeta(ct, lang);
               const on = courtType === ct;

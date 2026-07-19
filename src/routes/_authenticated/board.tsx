@@ -450,6 +450,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
   const [busy, setBusy] = useState(false);
   const [proposing, setProposing] = useState(false);
   const [propTime, setPropTime] = useState("");
+  const [prefCt, setPrefCt] = useState<"any" | "indoor" | "outdoor">("any");
   const isUrgent = sos.kind === "sos";
   const claimed = sos.status === "claimed";
   const tone: RailTone = mine ? "mine" : isUrgent ? "sos" : "plan";
@@ -554,7 +555,8 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
               <button type="button" disabled={busy} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}
                 onClick={async () => {
                   if (guest) { navigate({ to: "/auth", search: joinSearch("/board") }); return; }
-                  if (winEnd && !proposing) { setProposing(true); return; }
+                  const ctAnyGame = !!(sos as any).court_type_any;
+                  if ((winEnd || ctAnyGame) && !proposing) { setProposing(true); return; }
                   setBusy(true);
                   const r = await applyToGame(sos.id);
                   setBusy(false);
@@ -571,21 +573,39 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
           </div>
         )}
 
-        {/* Windowed game: propose a concrete time inside the host's window */}
-        {proposing && winEnd && !applied && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", flexShrink: 0 }}>{t("app.i_can_at")}</span>
-            <input type="time" className="cinput" style={{ flex: 1, padding: "7px 10px" }} value={propTime} onChange={(e) => setPropTime(e.target.value)} />
-            <button type="button" disabled={busy || !propTime} className="cbtn cbtn-green text-sm shrink-0" style={{ opacity: busy || !propTime ? 0.6 : 1 }}
+        {/* Windowed and/or Any-court game: propose time and/or court preference */}
+        {proposing && (winEnd || (sos as any).court_type_any) && !applied && (
+          <div style={{ marginTop: 8 }}>
+            {winEnd && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", flexShrink: 0 }}>{t("app.i_can_at")}</span>
+                <input type="time" className="cinput" style={{ flex: 1, padding: "7px 10px" }} value={propTime} onChange={(e) => setPropTime(e.target.value)} />
+              </div>
+            )}
+            {(sos as any).court_type_any && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: winEnd ? 8 : 0, flexWrap: "wrap" }}>
+                <span style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{t("app.pref_label")}</span>
+                {(["indoor", "outdoor", "any"] as const).map((v) => (
+                  <button key={v} type="button" onClick={() => setPrefCt(v)} className={`cchip ${prefCt === v ? "cchip-on" : ""}`} style={{ fontSize: 13, padding: "4px 11px" }}>
+                    {v === "indoor" ? `🏠 ${t("ct.indoor")}` : v === "outdoor" ? `☀️ ${t("ct.outdoor")}` : t("app.pref_any")}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button type="button" disabled={busy || (!!winEnd && !propTime)} className="cbtn cbtn-green w-full text-sm mt-2" style={{ opacity: busy || (!!winEnd && !propTime) ? 0.6 : 1 }}
               onClick={async () => {
-                const dd = new Date(sos.play_at);
-                const [h, m] = propTime.split(":").map(Number);
-                dd.setHours(h ?? 0, m ?? 0, 0, 0);
-                if (dd.getTime() < new Date(sos.play_at).getTime() || dd.getTime() > winEnd.getTime()) { toast.error(t("app.time_outside")); return; }
+                let iso: string | undefined;
+                if (winEnd) {
+                  const dd = new Date(sos.play_at);
+                  const [h, m] = propTime.split(":").map(Number);
+                  dd.setHours(h ?? 0, m ?? 0, 0, 0);
+                  if (dd.getTime() < new Date(sos.play_at).getTime() || dd.getTime() > winEnd.getTime()) { toast.error(t("app.time_outside")); return; }
+                  iso = dd.toISOString();
+                }
                 setBusy(true);
-                const r = await applyToGame(sos.id, dd.toISOString());
+                const r = await applyToGame(sos.id, iso, (sos as any).court_type_any && prefCt !== "any" ? prefCt : null);
                 setBusy(false);
-                if (!r.ok) { toast.error(r.reason === "bad_proposed_time" ? t("app.time_outside") : r.reason === "already_applied" ? t("app.already") : r.reason); return; }
+                if (!r.ok) { toast.error(r.reason === "bad_proposed_time" ? t("app.time_outside") : r.reason === "already_applied" ? t("app.already") : r.reason === "not_applicable" ? t("app.turned_urgent") : r.reason); if (r.reason === "not_applicable") onChange(); return; }
                 toast.success(t("app.sent"));
                 setProposing(false);
                 onChange();
