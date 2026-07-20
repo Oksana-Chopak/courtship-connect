@@ -56,6 +56,7 @@ type Dashboard = {
 };
 
 function UsersEmails() {
+  const { t, lang } = useI18n();
   const [rows, setRows] = useState<{ id: string; email: string; name: string | null; created_at: string; last_sign_in_at: string | null }[] | null>(null);
   const [missing, setMissing] = useState(false);
   const [open, setOpen] = useState(false);
@@ -78,30 +79,30 @@ function UsersEmails() {
       });
       if (error) { toast.error(String(error.message ?? error)); return; }
       if (!data?.ok && data?.error) { toast.error(String(data.error)); return; }
-      toast.success(test ? "Test sent to your inbox 📬" : `Sent to ${data?.sent ?? 0}/${data?.total ?? 0} 📬`);
+      toast.success(test ? t("admin.email_test_sent") : t("admin.email_sent_n", { sent: data?.sent ?? 0, total: data?.total ?? 0 }));
       if (!test) { setSubj(""); setBodyTxt(""); }
     } catch (e: any) {
       toast.error(String(e?.message ?? e));
     } finally { setSending(false); }
   }
   async function copyAll() {
-    try { await navigator.clipboard.writeText(emails.join(", ")); toast.success(`Copied ${emails.length} emails`); } catch { toast.error("Copy failed"); }
+    try { await navigator.clipboard.writeText(emails.join(", ")); toast.success(t("admin.emails_copied", { n: emails.length })); } catch { toast.error(t("admin.copy_failed")); }
   }
   return (
     <div className="ccard p-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="csection-label">📧 Users &amp; emails{rows ? ` · ${rows.length}` : ""}</div>
+        <div className="csection-label">📧 {t("admin.users_emails")}{rows ? ` · ${rows.length}` : ""}</div>
         <div className="flex items-center gap-2">
-          {emails.length > 0 && <button className="cbtn cbtn-green text-sm" onClick={copyAll}>Copy all</button>}
-          {rows && rows.length > 0 && <button className="cbtn cbtn-ghost text-sm" onClick={() => setOpen(!open)}>{open ? "Hide" : "Show"}</button>}
+          {emails.length > 0 && <button className="cbtn cbtn-ghost text-sm" onClick={copyAll}>{t("admin.copy_all")}</button>}
+          {rows && rows.length > 0 && <button className="cbtn cbtn-ghost text-sm" onClick={() => setOpen(!open)}>{open ? t("admin.hide") : t("admin.show")}</button>}
         </div>
       </div>
       {missing && (
         <div className="text-sm font-semibold mt-2" style={{ opacity: 0.7 }}>
-          Paste <code>admin_user_emails.sql</code> in Lovable to enable this list.
+          {t("admin.emails_missing_pre")} <code>admin_user_emails.sql</code> {t("admin.emails_missing_post")}
         </div>
       )}
-      {!missing && rows && rows.length === 0 && <div className="text-sm font-semibold mt-2" style={{ opacity: 0.7 }}>No users yet.</div>}
+      {!missing && rows && rows.length === 0 && <div className="text-sm font-semibold mt-2" style={{ opacity: 0.7 }}>{t("admin.no_users")}</div>}
       {open && rows && rows.length > 0 && (
         <div className="mt-3 space-y-1 max-h-80 overflow-y-auto">
           {rows.map((r) => (
@@ -110,27 +111,27 @@ function UsersEmails() {
                 <span className="font-extrabold text-sm">{r.name ?? "—"}</span>{" "}
                 <span className="text-sm break-all">{r.email}</span>
               </div>
-              <span className="text-xs shrink-0" style={{ opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString("en-GB")}</span>
+              <span className="text-xs shrink-0" style={{ opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB")}</span>
             </div>
           ))}
         </div>
       )}
       <div className="border-t border-[var(--ink)]/15 mt-3 pt-3 space-y-2">
-        <div className="csection-label">📨 Email broadcast</div>
-        <input className="cinput" placeholder="Subject" value={subj} onChange={(e) => setSubj(e.target.value)} />
-        <textarea className="cinput" rows={5} placeholder={"Message… (plain text; blank line = new paragraph)"} value={bodyTxt} onChange={(e) => setBodyTxt(e.target.value)} />
+        <div className="csection-label">📨 {t("admin.broadcast_title")}</div>
+        <input className="cinput" placeholder={t("admin.broadcast_subject_ph")} value={subj} onChange={(e) => setSubj(e.target.value)} />
+        <textarea className="cinput" rows={5} placeholder={t("admin.broadcast_body_ph")} value={bodyTxt} onChange={(e) => setBodyTxt(e.target.value)} />
         <div className="grid grid-cols-2 gap-2">
-          <button className="cbtn cbtn-ghost text-sm" disabled={sending || !subj.trim() || !bodyTxt.trim()} onClick={() => void sendBroadcast(true)}>
-            {sending ? "…" : "Send test to me"}
+          <button className="cbtn cbtn-green text-sm" disabled={sending || !subj.trim() || !bodyTxt.trim()} onClick={() => void sendBroadcast(true)}>
+            {sending ? "…" : t("admin.broadcast_test")}
           </button>
           <button className="cbtn cbtn-coral text-sm" disabled={sending || !subj.trim() || !bodyTxt.trim()} onClick={() => {
-            if (confirm(`Send this email to ALL ${rows?.length ?? 0} users?`)) void sendBroadcast(false);
+            if (confirm(t("admin.broadcast_confirm", { n: rows?.length ?? 0 }))) void sendBroadcast(false);
           }}>
-            {sending ? "…" : `Send to all${rows ? ` (${rows.length})` : ""}`}
+            {sending ? "…" : `${t("admin.broadcast_send")}${rows ? ` (${rows.length})` : ""}`}
           </button>
         </div>
         <div className="text-xs font-semibold" style={{ opacity: 0.6 }}>
-          Needs RESEND_API_KEY secret on the email-broadcast edge function. Until the court-ship.com domain is verified in Resend, sends from onboarding@resend.dev. Or: Copy all → BCC in your mail app.
+          {t("admin.broadcast_hint")}
         </div>
       </div>
     </div>
@@ -182,7 +183,7 @@ function AdminPage() {
 
   async function createCode() {
     const code = newCode.trim().toUpperCase();
-    if (!code) { toast.error("Code required"); return; }
+    if (!code) { toast.error(t("admin.code_required")); return; }
     let ownerId: string | null = null;
     if (newOwnerEmail.trim()) {
       const { data: u } = await (supabase as any).rpc("players_directory");
@@ -199,10 +200,10 @@ function AdminPage() {
   }
 
   async function removeCode(code: string) {
-    if (typeof window !== "undefined" && !window.confirm(`Delete code ${code}? This can't be undone.`)) return;
+    if (typeof window !== "undefined" && !window.confirm(t("admin.delete_confirm", { code }))) return;
     const { error } = await (supabase as any).rpc("admin_delete_invite_code", { _code: code });
     if (error) { toast.error(error.message); return; }
-    toast.success("Code deleted");
+    toast.success(t("admin.code_deleted"));
     load();
   }
 
@@ -249,9 +250,9 @@ function AdminPage() {
   if (allowed === false) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-3xl">Members only 🚪</h1>
-        <p className="text-[var(--ink)] font-semibold">This page is for club admins.</p>
-        <Link to="/board" className="cbtn cbtn-coral inline-flex">Back home</Link>
+        <h1 className="font-display text-3xl">{t("admin.denied_title")}</h1>
+        <p className="text-[var(--ink)] font-semibold">{t("admin.denied_body")}</p>
+        <Link to="/board" className="cbtn cbtn-green inline-flex">{t("admin.denied_back")}</Link>
       </div>
     );
   }
@@ -260,18 +261,18 @@ function AdminPage() {
 
   async function approveEvent(id: string) {
     try { await setEventStatus(id, "approved"); setPendingEvents((p) => p.filter((e) => e.id !== id)); toast.success(t("admin.ev_approved")); }
-    catch (e: any) { toast.error(e?.message ?? "Error"); }
+    catch (e: any) { toast.error(e?.message ?? t("admin.error")); }
   }
   async function rejectEvent(id: string) {
     try { await setEventStatus(id, "rejected"); setPendingEvents((p) => p.filter((e) => e.id !== id)); toast.success(t("admin.ev_rejected")); }
-    catch (e: any) { toast.error(e?.message ?? "Error"); }
+    catch (e: any) { toast.error(e?.message ?? t("admin.error")); }
   }
 
   async function toggleCourtHidden(c: AdminCourt) {
     try {
       await adminSetCourtHidden(c.id, !c.hidden);
       setAdminCourts((p) => p.map((x) => x.id === c.id ? { ...x, hidden: !c.hidden } : x));
-    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    } catch (e: any) { toast.error(e?.message ?? t("admin.error")); }
   }
 
   function startEdit(c: AdminCourt) {
@@ -283,7 +284,7 @@ function AdminPage() {
       setAdminCourts((p) => p.map((x) => x.id === c.id ? { ...x, name: editName.trim(), area: editArea.trim() || null } : x));
       setEditingCourt(null);
       toast.success(t("admin.court_saved"));
-    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    } catch (e: any) { toast.error(e?.message ?? t("admin.error")); }
   }
 
   return (
@@ -372,12 +373,12 @@ function AdminPage() {
         </div>
         <div className="space-y-2">
           {codes.length === 0 ? (
-            <div className="ccard p-4 text-center text-[var(--ink)]">No codes yet.</div>
+            <div className="ccard p-4 text-center text-[var(--ink)]">{t("admin.no_codes")}</div>
           ) : codes.map((c) => (
             <div key={c.code} className="ccard p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-display text-base tracking-wide truncate">{c.code}</div>
-                <div className="text-sm text-[var(--ink)]">{c.uses_remaining} uses left · {c.signups ?? 0} joined</div>
+                <div className="text-sm text-[var(--ink)]">{t("admin.uses_left", { n: c.uses_remaining })} · {t("admin.joined_n", { n: c.signups ?? 0 })}</div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -385,12 +386,12 @@ function AdminPage() {
                   onClick={() => toggle(c.code, !c.active)}
                   className="inline-flex items-center gap-1.5 text-sm font-extrabold px-2.5 py-1 rounded-full"
                   style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
-                  title={c.active ? "Active — tap to deactivate" : "Off — tap to activate"}
+                  title={c.active ? t("admin.code_active_hint") : t("admin.code_off_hint")}
                 >
                   <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: c.active ? "var(--green-pop)" : "#c9c4bb" }} />
-                  {c.active ? "Active" : "Off"}
+                  {c.active ? t("admin.code_active") : t("admin.code_off")}
                 </button>
-                <button type="button" onClick={() => removeCode(c.code)} className="text-base px-2 py-1 opacity-60" title="Delete code">🗑</button>
+                <button type="button" onClick={() => removeCode(c.code)} className="text-base px-2 py-1 opacity-60" title={t("admin.code_delete")}>🗑</button>
               </div>
             </div>
           ))}
@@ -399,7 +400,7 @@ function AdminPage() {
 
       {players.length > 0 && (
         <div>
-          <div className="csection-label mb-2">👥 All players · {players.length}</div>
+          <div className="csection-label mb-2">👥 {t("admin.all_players")} · {players.length}</div>
           <div className="space-y-2">
             {players.map((p) => {
               const lvl = p.level ? levelMeta(p.level) : null;
@@ -411,7 +412,7 @@ function AdminPage() {
                     <div className="min-w-0">
                       <div className="font-extrabold truncate">
                         {[p.name, p.last_name].filter(Boolean).join(" ") || "—"}
-                        {p.is_admin ? <span className="ml-1.5 text-xs font-extrabold text-[var(--coral)]">ADMIN</span> : null}
+                        {p.is_admin ? <span className="ml-1.5 text-xs font-extrabold text-[var(--coral)]">{t("admin.badge_admin")}</span> : null}
                       </div>
                       {(lvl || p.vibe || p.looking_for) ? (
                         <div className="text-sm text-[var(--ink)]/60 truncate">
@@ -424,7 +425,7 @@ function AdminPage() {
                     {p.signup_code ? (
                       <span className="text-xs font-extrabold shrink-0 px-2 py-0.5 rounded-full" style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}>{p.signup_code}</span>
                     ) : (
-                      <span className="text-xs shrink-0 text-[var(--ink)]/40">no code</span>
+                      <span className="text-xs shrink-0 text-[var(--ink)]/40">{t("admin.no_code")}</span>
                     )}
                   </div>
                   {hasPlay ? (
@@ -437,7 +438,7 @@ function AdminPage() {
                   {p.bio ? <div className="text-sm italic text-[var(--ink)]/60">"{p.bio}"</div> : null}
                   {p.fav_shot ? <div className="text-sm text-[var(--ink)]/60">🎾 {p.fav_shot}</div> : null}
                   <div className="text-xs text-[var(--ink)]/40">
-                    🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · buddy ${p.buddy_radius_km ?? 10}km` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB")}
+                    🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · ${t("admin.player_buddy_km", { n: p.buddy_radius_km ?? 10 })}` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB")}
                   </div>
                 </div>
               );
@@ -518,13 +519,13 @@ function AdminPage() {
       <Collapsible title={`💳 ${t("mem.admin_links_title")}`}>
         <div className="space-y-2">
           <div className="text-sm text-[var(--ink)]/60">{t("mem.admin_links_hint")}</div>
-          <label className="csection-label">Member · monthly (69 SEK)</label>
+          <label className="csection-label">{t("admin.plan_member_monthly")}</label>
           <input className="cinput" value={memLinks.m} onChange={(e) => setMemLinks({ ...memLinks, m: e.target.value })} placeholder="https://buy.stripe.com/..." />
           <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_member_monthly", memLinks.m)}>{t("admin.support_save")}</button>
-          <label className="csection-label">Member · yearly (690 SEK)</label>
+          <label className="csection-label">{t("admin.plan_member_yearly")}</label>
           <input className="cinput" value={memLinks.y} onChange={(e) => setMemLinks({ ...memLinks, y: e.target.value })} placeholder="https://buy.stripe.com/..." />
           <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_member_yearly", memLinks.y)}>{t("admin.support_save")}</button>
-          <label className="csection-label">Pro · monthly (249 SEK)</label>
+          <label className="csection-label">{t("admin.plan_pro_monthly")}</label>
           <input className="cinput" value={memLinks.p} onChange={(e) => setMemLinks({ ...memLinks, p: e.target.value })} placeholder="https://buy.stripe.com/..." />
           <button type="button" className="cbtn cbtn-ghost w-full" onClick={() => saveMemLink("stripe_pro_monthly", memLinks.p)}>{t("admin.support_save")}</button>
         </div>
@@ -534,7 +535,7 @@ function AdminPage() {
         <div className="space-y-2">
           <div className="text-sm text-[var(--ink)]/60">{t("admin.support_hint")}</div>
           <input className="cinput" value={supportSwish} onChange={(e) => setSupportSwish(e.target.value)} placeholder={t("admin.support_ph")} inputMode="tel" />
-          <button type="button" className="cbtn cbtn-coral w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
+          <button type="button" className="cbtn cbtn-green w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
         </div>
       </Collapsible>
     </div>
