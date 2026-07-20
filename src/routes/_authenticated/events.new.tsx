@@ -134,10 +134,14 @@ function NewEvent() {
   }, [date, time]);
 
   const court = courts.find((c) => c.id === courtId);
-  const canSubmit = !!(title.trim() && startsAt && courtId && court);
+  // An event in the past is nonsensical (it can never be joined and won't show
+  // on the board) — require a future start, like /post and sos.new (2026-07-20).
+  const startInFuture = !!startsAt && startsAt.getTime() > Date.now();
+  const canSubmit = !!(title.trim() && startsAt && courtId && court && startInFuture);
 
   async function submit() {
-    if (!canSubmit || !startsAt || !court) { toast.error(t("ev.fill_required")); return; }
+    if (!title.trim() || !startsAt || !court) { toast.error(t("ev.fill_required")); return; }
+    if (!startInFuture) { toast.error(t("sos.err_time_gone")); return; }
     setBusy(true);
     const payload = {
         sport,
