@@ -45,6 +45,11 @@ function SosDetail() {
   const [gamePlayerBs, setGamePlayerBs] = useState<string[]>([]);
   const [rescuerCount, setRescuerCount] = useState(0);
   const [busy, setBusy] = useState(false);
+  // Windowed / Any-court games: let the applicant say "I can at …" and pick
+  // IN/OUT right here too — previously only the board card offered this.
+  const [proposing, setProposing] = useState(false);
+  const [propTime, setPropTime] = useState("");
+  const [prefCt, setPrefCt] = useState<"any" | "indoor" | "outdoor">("any");
   const getPhone = useServerFn(getProfilePhone);
 
   async function load() {
@@ -83,7 +88,8 @@ function SosDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (!sos || sos.status !== "active") return;
+    // Private (broadcast=false) games reach nobody — "N rescuers" would be a lie.
+    if (!sos || sos.status !== "active" || (sos as any).broadcast === false) return;
     let cancelled = false;
     (async () => {
       const n = await countMatchingRescuers(sos.id);
@@ -208,14 +214,22 @@ function SosDetail() {
 
   // Owner one-tap widen: open the SOS to all levels and re-flare, so the
   // existing notify_on_flare trigger re-blasts the now-wider rescuer audience.
+  // Direct UPDATE on sos_requests was revoked in the June-19 hardening, so this
+  // goes through the widen_my_game RPC (2026-07-20 audit fix); the old direct
+  // update stays as a fallback for a DB where the RPC isn't applied yet.
   async function widenLevels() {
     setBusy(true);
-    const { error } = await (supabase as any)
-      .from("sos_requests")
-      .update({ level_min: 1, level_max: 5, flared_at: new Date().toISOString() })
-      .eq("id", sos!.id);
+    let { data, error } = await (supabase as any).rpc("widen_my_game", { _sos_id: sos!.id });
+    if (error && /does not exist|schema cache|PGRST202/i.test(error.message ?? "")) {
+      ({ error } = await (supabase as any)
+        .from("sos_requests")
+        .update({ level_min: 1, level_max: 5, flared_at: new Date().toISOString() })
+        .eq("id", sos!.id));
+      data = error ? null : [{ ok: true }];
+    }
     setBusy(false);
-    if (error) { oops(error); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.ok) { oops(error ?? new Error(String(row?.reason ?? "widen_failed"))); return; }
     toast.success(t("sos.widen_done"));
     load();
   }
@@ -306,7 +320,7 @@ function SosDetail() {
                   </div>
                 )}
                 <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.12 }}>
-                  {full ? (isOpen ? t("sos.group_set") : t("sos.rescued_title")) : isOpen ? t("sos.on_board") : t("sos.broadcasting", { n: rescuerCount })}
+                  {full ? (isOpen ? t("sos.group_set") : t("sos.rescued_title")) : isOpen ? t("sos.on_board") : (sos as any).broadcast === false ? t("sos.private_waiting") : t("sos.broadcasting", { n: rescuerCount })}
                 </div>
                 <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 4, ...clampLines(1) }}>📍 {courtCity} · {courtName}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap" }}>
@@ -333,10 +347,13 @@ function SosDetail() {
           </div>
         )}
 
-        {isOpen && !full && (
+        {/* Token cards live OUTSIDE the open-game block: invited (🎟) games are
+            always kind='sos' and ghost handover stays useful even after claim —
+            gating these on isOpen made both links unreachable (2026-07-20 audit). */}
+        {(((sos as any).invite_join_token && !full) || (sos as any).ghost_claim_token) && (
           <div className="ccard p-4 space-y-3">
-            {(sos as any).invite_join_token && (
-              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", marginBottom: 12 }}>
+            {(sos as any).invite_join_token && !full && (
+              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
                 <div style={{ width: 58, flexShrink: 0, background: "#EEF6D6", borderLeft: "4px solid #C9EE3F", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎟</div>
                 <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
                   <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.invite_card_title")}</div>
@@ -349,7 +366,7 @@ function SosDetail() {
               </div>
             )}
             {(sos as any).ghost_claim_token && (
-              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", marginBottom: 12 }}>
+              <div style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)" }}>
                 <div style={{ width: 58, flexShrink: 0, background: "#ECE8E0", borderLeft: "4px solid #9B9186", borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>👻</div>
                 <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
                   <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.ghost_for", { name: (sos as any).ghost_name ?? "" })}</div>
@@ -361,6 +378,10 @@ function SosDetail() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+        {isOpen && !full && (
+          <div className="ccard p-4 space-y-3">
             <div className="csection-label">🙋 {t("app.candidates")}</div>
             {applicants.length === 0 ? (
               <div className="space-y-2">
@@ -492,27 +513,68 @@ function SosDetail() {
               {t("app.withdraw")}
             </button>
           </div>
-        ) : (
-          <button className="cbtn cbtn-coral w-full" disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              const r = await applyToGame(sos.id);
-              setBusy(false);
-              if (!r.ok) {
-                if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); }
-                else if (r.reason === "already_applied") toast.error(t("app.already"));
-                else if (r.reason === "already_in") toast.error(t("sos.already_in"));
-                else toast.error(r.reason);
-                await load();
-                return;
-              }
-              if (r.fallbackClaimed) { toast.success(t("claim.in")); await load(); return; }
-              setMyApplied(true);
-              toast.success(t("app.sent"));
-            }}>
-            🙋 {t("app.im_interested")}
-          </button>
-        )
+        ) : (() => {
+          const ctAnyGame = !!(sos as any).court_type_any;
+          const needsPanel = !!winEnd || ctAnyGame;
+          const sendApply = async (iso?: string | null, pref?: "indoor" | "outdoor" | null) => {
+            setBusy(true);
+            const r = await applyToGame(sos.id, iso ?? null, pref ?? null);
+            setBusy(false);
+            if (!r.ok) {
+              if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); }
+              else if (r.reason === "already_applied") toast.error(t("app.already"));
+              else if (r.reason === "already_in") toast.error(t("sos.already_in"));
+              else if (r.reason === "bad_proposed_time") toast.error(t("app.time_outside"));
+              else toast.error(r.reason);
+              await load();
+              return;
+            }
+            if (r.fallbackClaimed) { toast.success(t("claim.in")); await load(); return; }
+            setMyApplied(true);
+            setProposing(false);
+            toast.success(t("app.sent"));
+          };
+          return (
+            <div className="space-y-2">
+              <button className="cbtn cbtn-coral w-full" disabled={busy}
+                onClick={() => { if (needsPanel && !proposing) { setProposing(true); return; } void sendApply(); }}>
+                🙋 {t("app.im_interested")}
+              </button>
+              {proposing && needsPanel && (
+                <div className="ccard p-3">
+                  {winEnd && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.6)", flexShrink: 0 }}>{t("app.i_can_at")}</span>
+                      <input type="time" className="cinput" style={{ flex: 1, padding: "7px 10px" }} value={propTime} onChange={(e) => setPropTime(e.target.value)} />
+                    </div>
+                  )}
+                  {ctAnyGame && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: winEnd ? 8 : 0, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.6)" }}>{t("app.pref_label")}</span>
+                      {(["indoor", "outdoor", "any"] as const).map((v) => (
+                        <button key={v} type="button" onClick={() => setPrefCt(v)} className={`cchip ${prefCt === v ? "cchip-on" : ""}`} style={{ fontSize: 13, padding: "4px 11px" }}>
+                          {v === "indoor" ? `🏠 ${t("ct.indoor")}` : v === "outdoor" ? `☀️ ${t("ct.outdoor")}` : t("app.pref_any")}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button type="button" disabled={busy || (!!winEnd && !propTime)} className="cbtn cbtn-green w-full text-sm mt-2" style={{ opacity: busy || (!!winEnd && !propTime) ? 0.6 : 1 }}
+                    onClick={() => {
+                      let iso: string | undefined;
+                      if (winEnd) {
+                        const dd = new Date(sos.play_at);
+                        const [h, m] = propTime.split(":").map(Number);
+                        dd.setHours(h ?? 0, m ?? 0, 0, 0);
+                        if (dd.getTime() < new Date(sos.play_at).getTime() || dd.getTime() > winEnd.getTime()) { toast.error(t("app.time_outside")); return; }
+                        iso = dd.toISOString();
+                      }
+                      void sendApply(iso ?? null, ctAnyGame && prefCt !== "any" ? prefCt : null);
+                    }}>{t("app.send")}</button>
+                </div>
+              )}
+            </div>
+          );
+        })()
       ) : (
       <button
         className="cbtn cbtn-coral w-full"
