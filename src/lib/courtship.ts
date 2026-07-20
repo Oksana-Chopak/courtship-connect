@@ -80,7 +80,9 @@ export function toE164(raw: string, defaultPrefix = "+46"): string {
 }
 
 export const CITIES = ["Uppsala", "Stockholm", "Miami"] as const;
-export type City = (typeof CITIES)[number];
+// Data-driven since 2026-07-20: the canonical list lives in the `cities` table
+// (src/lib/cities.ts); CITIES above is only the offline/pre-migration fallback.
+export type City = string;
 
 // Sports (padel & badminton join tennis). Emoji + i18n label key.
 export const SPORTS = ["tennis", "padel", "badminton"] as const;

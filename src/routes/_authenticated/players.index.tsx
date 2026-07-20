@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BallHeart } from "@/components/RailKit";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, CITIES, type City, sportMeta } from "@/lib/courtship";
+import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, type City, sportMeta } from "@/lib/courtship";
+import { useCityNames } from "@/lib/cities";
 import { useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
 import { shareInvite } from "@/lib/share";
@@ -320,6 +321,7 @@ type SheetProps = {
 
 function FilterSheet({ level, setLevel, format, setFormat, time, setTime, city, setCity, buddiesOnly, setBuddiesOnly, count, onClear, onClose }: SheetProps) {
   const { t } = useI18n();
+  const cityNames = useCityNames();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(22,18,13,0.45)" }} role="dialog" aria-modal="true" onClick={onClose}>
       <div className="w-full sm:max-w-md p-5 pb-7 space-y-3" style={{ background: "var(--cream2)", border: "2.5px solid var(--ink)", borderRadius: "22px 22px 0 0", maxHeight: "82%", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
@@ -330,7 +332,7 @@ function FilterSheet({ level, setLevel, format, setFormat, time, setTime, city, 
         </div>
         <Group label={t("city.label")}>
           <Chip on={city == null} onClick={() => setCity(null)}>{t("city.any")}</Chip>
-          {CITIES.map((cy) => <Chip key={cy} on={city === cy} onClick={() => setCity(city === cy ? null : cy)}>📍 {cy}</Chip>)}
+          {cityNames.map((cy) => <Chip key={cy} on={city === cy} onClick={() => setCity(city === cy ? null : cy)}>📍 {cy}</Chip>)}
         </Group>
         <Group label={t("players.filter_level")}>
           <Chip on={level == null} onClick={() => setLevel(null)}>{t("common.all")}</Chip>
@@ -389,7 +391,7 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
         {hasPhoto ? (
           <img src={p.photo_url!} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 52, color: fg, opacity: 0.92 }}>{p.name[0]}</div>
+          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 52, color: fg, opacity: 0.92 }}>{(p.name || "?").charAt(0)}</div>
         )}
         {(p.rescues_count ?? 0) >= 5 && (
           <span className="absolute bottom-1.5 left-1.5 font-extrabold rounded-full" style={{ fontSize: 10, padding: "1px 6px", color: "#FFF6E8", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>

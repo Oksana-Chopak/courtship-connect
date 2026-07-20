@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { CITIES, type City, SOS_FORMATS, COURT_STATUSES } from "@/lib/courtship";
+import { type City, SOS_FORMATS, COURT_STATUSES } from "@/lib/courtship";
+import { useCityNames } from "@/lib/cities";
 import { CourtCombobox } from "@/components/CourtCombobox";
 import { rememberDraftGame } from "@/lib/draftGame";
 import { rememberNext } from "@/lib/share";
@@ -30,6 +31,7 @@ function PostGamePage() {
   const [levelMax, setLevelMax] = useState(4);
   const [courtStatus, setCourtStatus] = useState<string>("will_book");
   const [note, setNote] = useState("");
+  const cityNames = useCityNames();
 
   // Signed-in users get the full form with their profile defaults.
   useEffect(() => {
@@ -81,7 +83,7 @@ function PostGamePage() {
           <div>
             <div className="csection-label mb-1">📍 {t("sos.city") /* falls back to key if absent */}</div>
             <div className="flex gap-1.5 flex-wrap">
-              {CITIES.map((c) => (
+              {cityNames.map((c) => (
                 <button key={c} type="button" onClick={() => { setCity(c); setCourtId(""); }} className={`cchip ${city === c ? "cchip-on" : ""}`}>{c}</button>
               ))}
             </div>

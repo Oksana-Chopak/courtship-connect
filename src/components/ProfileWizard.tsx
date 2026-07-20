@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { toast } from "@/lib/toast";
 import {
-  CITIES,
   FORMATS,
   LEVELS,
   PLAY_TIMES,
@@ -15,6 +14,7 @@ import { CourtCombobox } from "@/components/CourtCombobox";
 import { uploadPhoto } from "@/lib/avatar";
 import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useCityNames } from "@/lib/cities";
 
 export type ProfileFormValues = {
   name: string;
@@ -118,6 +118,7 @@ export function ProfileWizard({
 }) {
   const [step, setStep] = useState(0);
   const { t } = useI18n();
+  const cityNames = useCityNames();
   const titles = [t("wiz.title_0"), t("wiz.title_1"), t("wiz.title_2"), t("wiz.title_3"), t("wiz.title_4")];
   const [v, setV] = useState<ProfileFormValues>(initial);
   const [uploading, setUploading] = useState(false);
@@ -455,7 +456,7 @@ export function ProfileWizard({
               <div className="csection-label mb-2">{t("wiz.home_courts")}</div>
               <div className="text-xs text-[var(--ink)] mb-2 -mt-1">{t("wiz.cities_hint")}</div>
               <div className="flex flex-wrap gap-2 mb-3">
-                {CITIES.map((cy) => {
+                {cityNames.map((cy) => {
                   const on = (v.home_cities ?? []).includes(cy);
                   return (
                     <button

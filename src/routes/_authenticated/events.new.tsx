@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { LEVELS, CITIES, DURATIONS, durationLabel, type City, sportMeta } from "@/lib/courtship";
+import { LEVELS, DURATIONS, durationLabel, type City, sportMeta } from "@/lib/courtship";
+import { useCityNames } from "@/lib/cities";
 import { createEventRequest, updateMyEvent, fetchEventSwish, fetchEventContact, type EventRow } from "@/lib/events";
 import { toast } from "@/lib/toast";
 import { fetchSwishNumber } from "@/lib/membership";
@@ -25,6 +26,7 @@ function pad(n: number) { return n.toString().padStart(2, "0"); }
 
 function NewEvent() {
   const { t } = useI18n();
+  const cityNames = useCityNames();
   const navigate = useNavigate();
   const { id: editId } = Route.useSearch();
   const editing = !!editId;
@@ -211,7 +213,7 @@ function NewEvent() {
 
       <Section label={t("sos.court")}>
         <div className="flex flex-wrap gap-2 mb-2">
-          {CITIES.map((cy) => (
+          {cityNames.map((cy) => (
             <Chip key={cy} on={city === cy} onClick={() => setCity(cy)}>📍 {cy}</Chip>
           ))}
         </div>

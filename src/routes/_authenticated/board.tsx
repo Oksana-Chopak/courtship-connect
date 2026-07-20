@@ -3,11 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, CITIES, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
+import { whenLabel, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
+import { useCityNames } from "@/lib/cities";
 import { EventCard } from "@/components/EventCard";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
@@ -59,6 +60,13 @@ function BoardPage() {
   const [rescuesCount, setRescuesCount] = useState(0);
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [myName, setMyName] = useState<string>("");
+  // Nudge queue (declutter rule): while the GetStarted card is the active
+  // onboarding nudge, hold back the install/notification banners — one thing
+  // at a time. Reads the same dismiss key GetStarted uses (board is ssr:false).
+  const [gsDismissed] = useState(() => {
+    try { return localStorage.getItem("courtship.getstarted.dismissed") === "1"; } catch { return true; }
+  });
+  const newbieNudge = gamesPlayed === null ? true : gamesPlayed === 0 && !gsDismissed;
 
   const load = useCallback(async () => {
     // getSession() reads the locally persisted session — no network race on PWA
@@ -254,8 +262,8 @@ function BoardPage() {
 
       <AnnouncementBanner />
 
-      <InstallBanner />
-      <StandaloneNotifPrompt />
+      {!newbieNudge && <InstallBanner />}
+      {!newbieNudge && <StandaloneNotifPrompt />}
 
       {!loading && urgentOthers.length > 0 && (
         <div
@@ -380,6 +388,7 @@ function BoardFilterSheet({ ctFilter, setCtFilter, fCity, setFCity, fLevel, setF
   count: number; onClear: () => void; onClose: () => void;
 }) {
   const { t, lang } = useI18n();
+  const cityNames = useCityNames();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(22,18,13,0.45)" }} role="dialog" aria-modal="true" onClick={onClose}>
       <div className="w-full sm:max-w-md p-5 pb-7 space-y-3"
@@ -405,7 +414,7 @@ function BoardFilterSheet({ ctFilter, setCtFilter, fCity, setFCity, fLevel, setF
         </BoardGroup>
         <BoardGroup label={t("city.label")}>
           <FilterChip on={fCity == null} onClick={() => setFCity(null)}>{t("city.any")}</FilterChip>
-          {CITIES.map((cy) => <FilterChip key={cy} on={fCity === cy} onClick={() => setFCity(fCity === cy ? null : cy)}>📍 {cy}</FilterChip>)}
+          {cityNames.map((cy) => <FilterChip key={cy} on={fCity === cy} onClick={() => setFCity(fCity === cy ? null : cy)}>📍 {cy}</FilterChip>)}
         </BoardGroup>
         <BoardGroup label={t("players.filter_level")}>
           <FilterChip on={fLevel == null} onClick={() => setFLevel(null)}>{t("common.all")}</FilterChip>

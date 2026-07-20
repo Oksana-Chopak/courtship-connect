@@ -167,7 +167,7 @@ function PlayerDetail() {
         <Row label={t("player.when")}>{p.play_times?.join(" · ") || "—"}</Row>
         <Row label={t("player.looking_for")}>{p.looking_for ? t((`lf.${p.looking_for}`) as any) : "—"}</Row>
         <Row label={t("player.home_courts")}>{p.home_courts || "—"}</Row>
-        <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : t((`optin.${p.buddy_optin}`) as any)}</Row>
+        <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : p.buddy_optin ? t((`optin.${p.buddy_optin}`) as any) : "—"}</Row>
         <Row label={t("player.rescues")}>🚑 {p.rescues_count ?? 0}</Row>
         {Array.isArray((p as any).sports) && ((p as any).sports as string[]).some((x) => x !== "tennis") && (
           <Row label={t("sport.label")}>{((p as any).sports as string[]).map((x) => `${sportMeta(x).emoji} ${t(sportMeta(x).key)}`).join(" · ")}</Row>

@@ -5,7 +5,8 @@ import { activeSosCount } from "@/lib/sos";
 import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, CITIES, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, SPORTS, sportMeta, type Sport } from "@/lib/courtship";
+import { useCityNames } from "@/lib/cities";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, SPORTS, sportMeta, type Sport } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -72,6 +73,7 @@ function NewSos() {
   const [myName, setMyName] = useState("");
   const [buddies, setBuddies] = useState<Array<{ id: string; name: string }>>([]);
   const [inviteIds, setInviteIds] = useState<string[]>([]);
+  const cityNames = useCityNames();
 
   useEffect(() => {
     (async () => {
@@ -398,7 +400,7 @@ function NewSos() {
 
       <Section label={t("sos.court")}>
         <div className="flex flex-wrap gap-2 mb-2">
-          {CITIES.map((cy) => (
+          {cityNames.map((cy) => (
             <Chip key={cy} on={city === cy} onClick={() => setCity(cy)}>
               📍 {cy}
             </Chip>
