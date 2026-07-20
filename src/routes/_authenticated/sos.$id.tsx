@@ -8,7 +8,7 @@ import { googleCalendarUrl } from "@/lib/calendar";
 import { notifyUsers } from "@/lib/push";
 import { myInviteLink, myGameShareLink, shareMessage } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
-import { whenLabel, levelMeta, vibeEmoji } from "@/lib/courtship";
+import { whenLabel, hourRange, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
@@ -309,7 +309,7 @@ function SosDetail() {
           const locale = lang === "sv" ? "sv-SE" : "en-GB";
           const day = d.toDateString() === now.toDateString() ? t("rail.today") : d.toDateString() === tmr.toDateString() ? t("rail.tmrw") : d.toLocaleDateString(locale, { weekday: "short" });
           const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
-          const railTime = winEnd ? `${d.getHours()}–${winEnd.getHours()}` : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+          const railTime = winEnd ? hourRange(d, winEnd) : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
           return (
             <RailShell>
               <TimeRail day={day} time={railTime} ct={full ? "🎾" : isOpen ? "🎾" : "🚨"} tone={tone} dateStr={dateStr} ctSub={(sos as any).court_type_any ? t("ct.sub_any") : sos.court_type === "indoor" ? t("ct.sub_in") : t("ct.sub_out")} />
@@ -409,12 +409,12 @@ function SosDetail() {
                     </div>
                   )}
                 </div>
-                <button className="cbtn cbtn-coral shrink-0" disabled={busy}
+                <button className="cbtn cbtn-green shrink-0" disabled={busy}
                   onClick={async () => {
                     setBusy(true);
                     const r = await pickApplicant(sos.id, a.id);
                     setBusy(false);
-                    if (!r.ok) { toast.error(r.reason); return; }
+                    if (!r.ok) { toast.error(r.reason === "no_application" ? t("app.gone") : r.reason); await load(); fetchApplicants(sos.id).then(setApplicants).catch(() => {}); return; }
                     toast.success(t("app.picked_toast", { name: a.name }));
                     await load();
                     fetchApplicants(sos.id).then(setApplicants).catch(() => {});
@@ -429,7 +429,22 @@ function SosDetail() {
         {!full && !isOpen && (sos.level_min > 1 || sos.level_max < 5) && (
           <button className="cbtn cbtn-coral w-full" disabled={busy} onClick={widenLevels}>🎯 {t("sos.widen")}</button>
         )}
-        {!full && (
+        {/* Private (invited) game the invitee never took → let the host open it to
+            the board instead of the cancel+repost dead end. */}
+        {!full && (sos as any).broadcast === false && (
+          <button className="cbtn cbtn-green w-full" disabled={busy} onClick={async () => {
+            setBusy(true);
+            const { data, error } = await (supabase as any).rpc("publish_my_game", { _sos_id: sos!.id });
+            setBusy(false);
+            const row = Array.isArray(data) ? data[0] : data;
+            if (error || !row?.ok) { oops(error ?? new Error(String(row?.reason ?? "publish_failed"))); return; }
+            toast.success(t("sos.published"));
+            load();
+          }}>📢 {t("sos.publish")}</button>
+        )}
+        {/* Share only makes sense for a public game — a private game's /g/<id>
+            preview is intentionally hidden, so sharing it would dead-end. */}
+        {!full && (sos as any).broadcast !== false && (
           <button className="cbtn cbtn-green w-full" onClick={shareSos}>{t("share.button")}</button>
         )}
         <button
@@ -440,13 +455,25 @@ function SosDetail() {
             setBusy(true);
             const { data, error } = await (supabase as any).rpc("cancel_game", { _sos_id: sos!.id });
             if (error) { setBusy(false); oops(error); return; }
-            const ids: string[] = ((data as any[])?.[0]?.claimer_ids) ?? [];
+            const row = (data as any[])?.[0] ?? {};
+            const ids: string[] = row.claimer_ids ?? [];
+            const appIds: string[] = row.applicant_ids ?? [];
             if (ids.length) {
               await notifyUsers(ids, {
                 title: t("cancel.push_title"),
                 body: t("cancel.push_body", { name: me!.name, when, court: courtName || "the court" }),
                 url: "/board",
                 tag: `cancel-${sos!.id}`,
+              });
+            }
+            // Pending candidates were waiting for a pick that will never come —
+            // tell them too, so it's not a dangling flow (2026-07-20 audit).
+            if (appIds.length) {
+              await notifyUsers(appIds, {
+                title: t("cancel.applicant_push_title"),
+                body: t("cancel.applicant_push_body", { court: courtName || "the court" }),
+                url: "/board",
+                tag: `cancel-app-${sos!.id}`,
               });
             }
             setBusy(false);

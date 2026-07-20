@@ -237,6 +237,24 @@ export function timeUntil(iso: string): string {
   return `in ${Math.floor(sec / 86400)}d`;
 }
 
+// IANA timezone for a city name — used to render share-preview (OG) times in
+// the game's local zone on the UTC server runtime instead of leaking UTC
+// (2026-07-20 audit). Falls back to Stockholm (the founding market).
+export function cityTimeZone(city: string | null | undefined): string {
+  switch ((city ?? "").trim()) {
+    case "Miami": return "America/New_York";
+    default: return "Europe/Stockholm";
+  }
+}
+
+// Compact window label for the time rail. Pads minutes only when non-zero, so
+// "14:00–19:00" stays "14–19" but "09:30–11:00" keeps the :30 that the bare
+// getHours() version silently dropped (2026-07-20 audit).
+export function hourRange(start: Date, end: Date): string {
+  const h = (d: Date) => (d.getMinutes() ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}` : `${d.getHours()}`);
+  return `${h(start)}–${h(end)}`;
+}
+
 export function whenLabel(iso: string): string {
   let lang = "en";
   try { lang = (typeof localStorage !== "undefined" && localStorage.getItem("courtship.lang")) || "en"; } catch { /* ignore */ }

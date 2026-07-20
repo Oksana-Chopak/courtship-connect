@@ -9,6 +9,7 @@ import { whatsappLink, levelMeta, monogramColors, sportMeta, vibeEmoji, waErrorK
 import { BallHeart, RF, clampLines } from "@/components/RailKit";
 import { PlayerDossierSheet } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
+import { shareInvite } from "@/lib/share";
 import { oops } from "@/lib/oops";
 
 type Card = {
@@ -168,7 +169,8 @@ function MatchDeck() {
         <div className="ccard p-6 text-center space-y-3">
           <div className="text-4xl">🎾</div>
           <div className="font-display text-xl">{t("match.empty")}</div>
-          <Link to="/me" className="cbtn cbtn-coral inline-flex">{t("empty.dir_new_cta")}</Link>
+          {/* "Invite a friend" must invite, not open /me (2026-07-20 audit). */}
+          <button type="button" className="cbtn cbtn-coral inline-flex" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>{t("empty.dir_new_cta")}</button>
           <div><Link to="/lucky" className="font-extrabold underline text-sm">🎰 {t("feat.lucky_spin")}</Link></div>
         </div>
       )}

@@ -7,6 +7,7 @@ import { useI18n, LangToggle } from "@/lib/i18n";
 import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { PushControls } from "@/components/PushControls";
 import { Collapsible } from "@/components/Collapsible";
+import { unsubscribeFromPush } from "@/lib/push";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Courtship" }] }),
@@ -122,6 +123,15 @@ function SettingsPage() {
               {/* Destructive/low-frequency = muted, never coral (accent rule) */}
               <button
                 onClick={async () => {
+                  // Detach this device's push subscription and wipe device-global
+                  // state, so the next account on a shared phone doesn't inherit
+                  // A's pushes, drafts, onboarding-dismissal or confetti baseline
+                  // (2026-07-20 audit — account-leak across sign-in).
+                  try { await unsubscribeFromPush(); } catch { /* best-effort */ }
+                  try {
+                    ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next"]
+                      .forEach((k) => localStorage.removeItem(k));
+                  } catch { /* ignore */ }
                   await supabase.auth.signOut();
                   toast.success(t("auth.signed_out"));
                   window.location.href = "/";

@@ -107,9 +107,11 @@ function LeadersPage() {
           <SkeletonRail lines={3} />
         </div>
       ) : !anyRows ? (
-        <div className="ccard p-6 text-center space-y-2">
+        <div className="ccard p-6 text-center space-y-3">
           <div className="text-4xl">🌱</div>
           <div className="font-display text-2xl leading-tight">{t("lb.empty")}</div>
+          {/* empty state = exactly one CTA (house rule) */}
+          <Link to="/board" className="cbtn cbtn-coral inline-flex">🎾 {t("lb.empty_cta")}</Link>
         </div>
       ) : (
         boards.map((b) =>

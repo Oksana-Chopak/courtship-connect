@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { rememberNext } from "@/lib/share";
 import { BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
-import { courtTypeMeta } from "@/lib/courtship";
+import { courtTypeMeta, hourRange, cityTimeZone } from "@/lib/courtship";
 import { formatLabel } from "@/lib/sos";
 import { Avatar } from "@/components/Avatar";
 
@@ -47,11 +47,13 @@ export const Route = createFileRoute("/g/$id")({
       const title = "A game is looking for you — Courtship 🎾";
       return { meta: [{ title }, { property: "og:title", content: title }, { name: "description", content: "Racquet games near you. Tap in, meet on court." }, ...base] };
     }
+    // This runs SERVER-SIDE for crawlers (UTC runtime) — pin the game's own
+    // timezone so the unfurled preview shows local time, not UTC (2026-07-20).
+    const tz = cityTimeZone(g.court_city);
     const d = new Date(g.play_at);
-    const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-    const time = g.play_until
-      ? `${d.getHours()}–${new Date(g.play_until).getHours()}`
-      : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz });
+    const hh = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+    const time = g.play_until ? `${hh(g.play_at)}–${hh(g.play_until)}` : hh(g.play_at);
     const title = `${g.kind === "sos" ? "🚨" : "🎾"} ${day} ${time} @ ${g.court_name} — Courtship`;
     const desc = `${g.host_name ?? "A player"} is looking for a partner · ${formatLabel(g.format)} · L${g.level_min}–${g.level_max} · ${g.court_city}. Tap to join.`;
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, ...base] };
@@ -116,7 +118,7 @@ function PublicGamePage() {
           const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
           const day = d.toDateString() === now.toDateString() ? t("rail.today") : d.toDateString() === tmr.toDateString() ? t("rail.tmrw") : d.toLocaleDateString(locale, { weekday: "short" });
           const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
-          const time = winEnd ? `${d.getHours()}–${winEnd.getHours()}` : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+          const time = winEnd ? hourRange(d, winEnd) : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
           const tone: RailTone = game.kind === "sos" ? "sos" : "plan";
           const ctMeta = courtTypeMeta(game.court_type, lang);
           const isRange = time.includes("–");

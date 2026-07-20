@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
+import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
@@ -293,7 +293,7 @@ function BoardPage() {
                 <div className="text-base text-[var(--ink)] font-semibold truncate">📍 {s.court_city ?? "—"}{s.caller_name ? ` · ${s.caller_name}` : ""}</div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <a href={googleCalendarUrl({ title: `\u{1F3BE} ${s.court_name ?? "Tennis"}`, startISO: s.play_at, durationMin: 120, location: [s.court_city, s.court_name].filter(Boolean).join(", ") })} target="_blank" rel="noopener noreferrer" title={t("cal.add")} aria-label={t("cal.add")}><CalIcon /></a>
+                <a href={googleCalendarUrl({ title: `\u{1F3BE} ${s.court_name ?? "Tennis"}`, startISO: s.play_at, durationMin: (s as any).duration_min ?? 60, location: [s.court_city, s.court_name].filter(Boolean).join(", ") })} target="_blank" rel="noopener noreferrer" title={t("cal.add")} aria-label={t("cal.add")}><CalIcon /></a>
                 <button type="button" onClick={() => onWithdraw(s)} title={t("home.cant_make_it")} aria-label={t("home.cant_make_it")}><DeleteIcon /></button>
               </div>
             </div>
@@ -477,7 +477,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
   const winEnd = (sos as any).play_until ? new Date((sos as any).play_until as string) : null;
   // Windowed game → compact hour range in the rail ("11–18"), exact otherwise
   const time = winEnd
-    ? `${d.getHours()}–${winEnd.getHours()}`
+    ? hourRange(d, winEnd)
     : timeStart;
   const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
   const ctMeta = courtTypeMeta(sos.court_type, lang);

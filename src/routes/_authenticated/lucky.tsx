@@ -9,6 +9,7 @@ import { whatsappLink, levelMeta, sportMeta, vibeEmoji, waErrorKey } from "@/lib
 import { RF } from "@/components/RailKit";
 import { PlayerDossierSheet, type DossierPlayer } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
+import { shareInvite } from "@/lib/share";
 import { oops } from "@/lib/oops";
 
 type LuckyPlayer = {
@@ -114,7 +115,9 @@ function Lucky() {
         <div className="ccard p-6 text-center space-y-3">
           <div className="text-4xl">🎾</div>
           <div className="font-display text-xl">{t("lucky.empty")}</div>
-          <button onClick={() => void spin()} className="cbtn cbtn-coral">{t("lucky.spin_again")}</button>
+          {/* City is empty — "Spin again" just re-hits the same void. The way out
+              is to invite players, matching the empty copy (2026-07-20 audit). */}
+          <button type="button" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))} className="cbtn cbtn-coral">🤗 {t("invite.friend_cta")}</button>
         </div>
       ) : null}
 

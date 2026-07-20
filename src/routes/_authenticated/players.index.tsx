@@ -205,7 +205,9 @@ function Players() {
           <div className="ccard p-6 text-center space-y-3">
             <div className="text-4xl">🌱</div>
             <div className="font-display text-2xl leading-tight">{t("empty.dir_new")}</div>
-            <Link to="/me" className="cbtn cbtn-coral inline-flex">{t("empty.dir_new_cta")}</Link>
+            {/* CTA is "Invite a friend" → it must actually invite, not open /me
+                (which has no invite action). 2026-07-20 audit dead-end fix. */}
+            <button type="button" className="cbtn cbtn-coral inline-flex" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>{t("empty.dir_new_cta")}</button>
           </div>
         )
       ) : (

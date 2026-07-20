@@ -12,6 +12,9 @@ import { peekDraftGame, publishDraftGame } from "@/lib/draftGame";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 
+// Once we've seen this session's user has a profile, don't re-query on every nav.
+let profileConfirmed = false;
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
@@ -28,6 +31,15 @@ export const Route = createFileRoute("/_authenticated")({
     }
     if (!data.user.email_confirmed_at) {
       throw redirect({ to: "/check-email", search: { email: data.user.email ?? "" } });
+    }
+    // A confirmed user WITHOUT a profile (abandoned onboarding, then a deep-link
+    // or push tap) would land on pages with a blank identity and could act with
+    // no name. Send them to finish onboarding. Cached so it costs one query per
+    // session, not one per navigation (a profile never un-exists).
+    if (!profileConfirmed) {
+      const { data: prof } = await supabase.from("profiles" as any).select("id").eq("id", data.user.id).maybeSingle();
+      if (!prof) throw redirect({ to: "/onboarding" });
+      profileConfirmed = true;
     }
     return { user: data.user };
   },
