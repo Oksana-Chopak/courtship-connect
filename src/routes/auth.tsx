@@ -53,11 +53,20 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [invite, setInvite] = useState((code ?? "").toUpperCase());
   const [busy, setBusy] = useState(false);
+  // Password recovery: the email link lands back here with a #type=recovery
+  // hash — show a set-new-password form instead of bouncing to /board.
+  const [recovery, setRecovery] = useState(false);
+  const [newPw, setNewPw] = useState("");
 
   useEffect(() => {
     rememberNext(next);
+    const isRecovery = typeof window !== "undefined" && window.location.hash.includes("type=recovery");
+    if (isRecovery) setRecovery(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+    });
     supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) {
+      if (data.session && !isRecovery) {
         if (!data.session.user.email_confirmed_at) {
           navigate({ to: "/check-email", search: { email: data.session.user.email ?? "" } });
           return;
@@ -67,6 +76,7 @@ function AuthPage() {
         else navigate({ to: "/onboarding" });
       }
     });
+    return () => { sub.subscription.unsubscribe(); };
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
@@ -118,6 +128,40 @@ function AuthPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (recovery) {
+    return (
+      <div className="terry-bg min-h-screen flex items-center justify-center px-6 py-10 font-body text-[var(--ink)]">
+        <div className="ccard w-full max-w-md p-7 space-y-5">
+          <h1 className="font-display text-4xl">{t("auth.new_pw_title")}</h1>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setBusy(true);
+              try {
+                const { error } = await supabase.auth.updateUser({ password: newPw });
+                if (error) throw error;
+                toast.success(t("auth.pw_updated"));
+                setRecovery(false);
+                navigate({ to: "/board" });
+              } catch (err: any) {
+                toast.error(err?.message ?? "Something went wrong");
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="space-y-3"
+          >
+            <div>
+              <label className="csection-label block mb-1">{t("auth.password_label")}</label>
+              <input type="password" className="cinput" placeholder="••••••••" minLength={6} value={newPw} onChange={(e) => setNewPw(e.target.value)} required />
+            </div>
+            <button disabled={busy} className="cbtn cbtn-coral w-full">{busy ? "..." : t("auth.new_pw_cta")}</button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -177,6 +221,31 @@ function AuthPage() {
             {busy ? "..." : mode === "signup" ? t("auth.create_account") : t("auth.sign_in")}
           </button>
         </form>
+
+        {mode === "login" && (
+          <button
+            type="button"
+            className="w-full text-center text-sm font-extrabold underline"
+            style={{ opacity: 0.75 }}
+            onClick={async () => {
+              if (!email.trim()) { toast.error(t("auth.reset_need_email")); return; }
+              setBusy(true);
+              try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                  redirectTo: `${window.location.origin}/auth?mode=login`,
+                });
+                if (error) throw error;
+                toast.success(t("auth.reset_sent"));
+              } catch (err: any) {
+                toast.error(err?.message ?? "Something went wrong");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {t("auth.forgot")}
+          </button>
+        )}
 
         <div className="text-center text-sm">
           {mode === "signup" ? (

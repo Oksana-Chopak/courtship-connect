@@ -119,13 +119,15 @@ function SettingsPage() {
             <div className="text-base font-semibold text-[var(--ink)]">{t("auth.signout_confirm_body")}</div>
             <div className="flex gap-2">
               <button onClick={() => setConfirmSignout(false)} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
+              {/* Destructive/low-frequency = muted, never coral (accent rule) */}
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
                   toast.success(t("auth.signed_out"));
                   window.location.href = "/";
                 }}
-                className="cbtn cbtn-coral flex-1"
+                className="cbtn cbtn-ghost flex-1"
+                style={{ color: "var(--coral)" }}
               >
                 {t("auth.signout")}
               </button>

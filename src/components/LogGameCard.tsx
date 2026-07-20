@@ -152,7 +152,7 @@ export function LogGameCard({ defaultOpen = false }: { defaultOpen?: boolean } =
 
       <div>
         <div className="csection-label">{t("log.score")}</div>
-        <input className="cinput" placeholder="6–4 6–3" value={score} onChange={(e) => setScore(e.target.value)} />
+        <input className="cinput" placeholder={t("score.placeholder")} value={score} onChange={(e) => setScore(e.target.value)} />
       </div>
 
       {otherId && (

@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.sos-notify]
 verify_jwt = true
+
+[functions.email-notify]
+verify_jwt = true
+
+[functions.email-broadcast]
+verify_jwt = true

@@ -15,6 +15,22 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:hello@courtship.app";
+const NOTIFY_SECRET = Deno.env.get("NOTIFY_SECRET") ?? "";
+
+/** verify_jwt accepts ANY valid JWT — including the public anon key. When
+ * NOTIFY_SECRET is configured, anon-role callers must present the matching
+ * x-notify-secret header (the DB's _push_users sends it from Vault); signed-in
+ * members keep working as before. Unset secret = unchanged behavior
+ * (2026-07-20 audit hardening). */
+function callerRole(req: Request): string {
+  try {
+    const tok = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const payload = JSON.parse(atob(tok.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload?.role ?? "");
+  } catch {
+    return "";
+  }
+}
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -25,8 +41,11 @@ Deno.serve(async (req) => {
     if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
       return new Response(JSON.stringify({ ok: false, error: "VAPID keys not configured" }), { status: 500 });
     }
+    if (NOTIFY_SECRET && callerRole(req) === "anon" && req.headers.get("x-notify-secret") !== NOTIFY_SECRET) {
+      return new Response(JSON.stringify({ ok: false, error: "forbidden" }), { status: 401 });
+    }
     const { user_ids, title, body, url, tag } = await req.json().catch(() => ({}));
-    const ids: string[] = Array.isArray(user_ids) ? [...new Set(user_ids.filter(Boolean))] : [];
+    const ids: string[] = Array.isArray(user_ids) ? [...new Set(user_ids.filter(Boolean))].slice(0, 200) : [];
     if (!ids.length || !title) {
       return new Response(JSON.stringify({ ok: true, skipped: "no_targets" }), { status: 200 });
     }

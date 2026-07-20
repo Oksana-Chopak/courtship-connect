@@ -158,7 +158,8 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
               <div className="text-sm font-extrabold text-[var(--ink)]">{t("ev.delete_confirm")}</div>
               <div className="grid grid-cols-2 gap-2">
                 <button className="cbtn cbtn-ghost text-sm" disabled={busy} onClick={() => setConfirming(false)}>{t("ev.delete_keep")}</button>
-                <button className="cbtn text-sm" style={{ background: "var(--coral)", color: "#FFF6E8", border: "2px solid var(--ink)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
+                {/* Destructive = muted, never coral (accent-budget rule) */}
+                <button className="cbtn cbtn-ghost text-sm" style={{ color: "var(--coral)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
               </div>
             </div>
           ) : (

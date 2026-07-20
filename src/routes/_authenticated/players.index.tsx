@@ -285,7 +285,9 @@ function InviteAccent() {
   }
 
   return (
-    <div className="ccard p-4 space-y-2" style={{ background: "var(--green-pop)" }}>
+    // Quiet card: the coral hero below is THE loud invite on this screen — this
+    // one just carries the personal code + referral count (accent-budget rule).
+    <div className="ccard p-4 space-y-2">
       <div className="font-display text-xl leading-tight">{t("players.invite_first_title")}</div>
       <div className="text-sm font-semibold text-[var(--ink)]">{t("players.invite_first_sub")}</div>
       {referrals > 0 && <div className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>🎁 {t("invite.referrals", { n: referrals })}</div>}
@@ -302,7 +304,7 @@ function InviteAccent() {
           <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => { setDraft(code); setEditing(true); }} aria-label={t("invite.edit")} title={t("invite.edit")}>✏️</button>
         </div>
       ))}
-      <button onClick={share} className="cbtn cbtn-coral w-full">🔗 {t("invite.cta")}</button>
+      <button onClick={share} className="cbtn cbtn-ghost w-full">🔗 {t("invite.cta")}</button>
     </div>
   );
 }

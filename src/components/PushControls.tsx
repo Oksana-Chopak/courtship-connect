@@ -164,7 +164,8 @@ export function PushControls({ bare = false }: { bare?: boolean }) {
       {/* Wake me at night */}
       <Toggle on={wakeMe} onClick={() => setWakeMe((v) => !v)} label={t("push.wake")} sub={t("push.wake_sub")} />
 
-      <button onClick={save} disabled={busy} className="cbtn cbtn-coral w-full">{t("push.save")}</button>
+      {/* Enable (coral, above) is the one accent here; saving prefs is secondary. */}
+      <button onClick={save} disabled={busy} className="cbtn cbtn-green w-full">{t("push.save")}</button>
     </div>
   );
 }
