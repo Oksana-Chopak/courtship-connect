@@ -30,6 +30,10 @@ export async function fetchPublicBoard(): Promise<EligibleSosRow[]> {
       caller_name: r.caller_name,
       caller_photo_url: r.caller_photo ?? null,
       sport: r.sport ?? "tennis",
+      // Sell the game as it really is: guests see the time window and the
+      // 🏟️ Any badge too (public_board returns both since the 07-19 batch).
+      play_until: r.play_until ?? null,
+      court_type_any: r.court_type_any ?? false,
       note: null,
       is_buddy: false,
       claimed_by: null,

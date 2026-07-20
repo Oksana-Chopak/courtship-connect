@@ -81,11 +81,19 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
     catch (e: any) { oops(e); }
   }
   async function fireFlare(sosId: string) {
-    const { error } = await (supabase as any)
-      .from("sos_requests")
-      .update({ kind: "sos", flared_at: new Date().toISOString() })
-      .eq("id", sosId);
-    if (error) { oops(error); return; }
+    // Direct UPDATE on sos_requests was revoked in the June-19 hardening — this
+    // broke the manual flare silently (2026-07-20 audit). Go through the RPC,
+    // keep the old direct update only as a pre-SQL fallback.
+    let { data, error } = await (supabase as any).rpc("flare_my_game", { _sos_id: sosId });
+    if (error && /does not exist|schema cache|PGRST202/i.test(error.message ?? "")) {
+      ({ error } = await (supabase as any)
+        .from("sos_requests")
+        .update({ kind: "sos", flared_at: new Date().toISOString() })
+        .eq("id", sosId));
+      data = error ? null : [{ ok: true }];
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.ok) { oops(error ?? new Error(String(row?.reason ?? "flare_failed"))); return; }
     void notifySos(sosId);
     toast.success(t("post.flare_fired"));
     setFlarePrompts((p) => p.filter((x) => x.id !== sosId));
@@ -115,7 +123,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
               <div className="font-display text-2xl mt-1 leading-tight">{t("home.pending_q", { court })}</div>
             </div>
             <input
-              value={scores[g.id] ?? ""}
+              value={scores[g.id] ?? (g as any).score ?? ""}
               onChange={(e) => setScores((p) => ({ ...p, [g.id]: e.target.value }))}
               placeholder={t("score.placeholder")}
               className="cinput w-full"
@@ -142,7 +150,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
               </div>
             </div>
             <div className="space-y-2">
-              <button onClick={() => onConfirm(g, scores[g.id])} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
+              <button onClick={() => onConfirm(g, scores[g.id] ?? (g as any).score ?? undefined)} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
               <button onClick={() => onArchive(g)} className="cbtn cbtn-ghost w-full">{t("home.didnt_happen")}</button>
               <button onClick={() => onNoshow(g)} className="cbtn cbtn-ghost w-full">{t("home.player_noshow", { name: otherName })}</button>
             </div>

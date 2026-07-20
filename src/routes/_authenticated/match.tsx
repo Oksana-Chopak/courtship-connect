@@ -39,15 +39,25 @@ function MatchDeck() {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [details, setDetails] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await (supabase as any).rpc("swipe_deck");
-      setDeck((data as Card[]) ?? []);
-      setLoading(false);
-    })();
-  }, []);
+  async function loadDeck() {
+    setLoading(true);
+    const { data } = await (supabase as any).rpc("swipe_deck");
+    setDeck((data as Card[]) ?? []);
+    setI(0);
+    setLoading(false);
+  }
+  useEffect(() => { void loadDeck(); }, []);
 
   const card = deck[i];
+
+  // Deck exhausted this session → automatically pull the next 20. The server's
+  // recycle tiers (fresh → other cities → second-chance passes) mean the deck
+  // should rarely run dry; the empty state is reserved for a truly empty fetch.
+  useEffect(() => {
+    if (loading || card || deck.length === 0) return;
+    void loadDeck();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, card, deck.length]);
 
   useEffect(() => { setPhotoIdx(0); setDetails(false); }, [i]);
 

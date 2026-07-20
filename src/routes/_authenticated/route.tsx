@@ -22,7 +22,9 @@ export const Route = createFileRoute("/_authenticated")({
       const path = location.pathname.replace(/\/+$/, "") || "/";
       const GUEST_PATHS = new Set(["/board", "/players", "/leaders", "/me"]);
       if (FLAGS.guestPeek && GUEST_PATHS.has(path)) return { user: null };
-      throw redirect({ to: "/auth", search: { mode: "login" } });
+      // Keep the destination: a push tap on a signed-out device (or any deep
+      // link) should land back on that game after login, not on /board.
+      throw redirect({ to: "/auth", search: { mode: "login", next: location.href } });
     }
     if (!data.user.email_confirmed_at) {
       throw redirect({ to: "/check-email", search: { email: data.user.email ?? "" } });

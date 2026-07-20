@@ -554,7 +554,9 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
             ) : (
               <button type="button" disabled={busy} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}
                 onClick={async () => {
-                  if (guest) { navigate({ to: "/auth", search: joinSearch("/board") }); return; }
+                  // Guest taps "I'm interested" on a SPECIFIC game — carry that
+                  // game (with the apply intent) through signup, not just /board.
+                  if (guest) { navigate({ to: "/auth", search: joinSearch(`/sos/${sos.id}?apply=1`) }); return; }
                   const ctAnyGame = !!(sos as any).court_type_any;
                   if ((winEnd || ctAnyGame) && !proposing) { setProposing(true); return; }
                   setBusy(true);

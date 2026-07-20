@@ -63,10 +63,15 @@ export async function logGame(
   if (winner) params._winner = winner; // only send when set — resilient if the RPC isn't upgraded yet
   if (courtId) params._court_id = courtId;
   let { error } = await (supabase as any).rpc("log_game", params);
-  // Graceful path if the 5-arg RPC (court) isn't applied yet: retry without the
-  // court so the game itself is never lost, and tell the caller.
+  // Graceful path if the 5-arg RPC (court/winner) isn't applied yet: strip the
+  // newer args one by one so the game itself is never lost, and tell the caller.
   if (error && courtId && /(_court_id|does not exist|PGRST202|schema cache)/i.test(error.message ?? "")) {
     delete params._court_id;
+    ({ error } = await (supabase as any).rpc("log_game", params));
+    if (!error) return { courtSaved: false };
+  }
+  if (error && params._winner && /(_winner|does not exist|PGRST202|schema cache)/i.test(error.message ?? "")) {
+    delete params._winner;
     ({ error } = await (supabase as any).rpc("log_game", params));
     if (!error) return { courtSaved: false };
   }
@@ -75,10 +80,10 @@ export async function logGame(
 }
 
 export async function confirmGame(gameId: string, score?: string, winner?: string | null) {
-  const params: Record<string, any> = {
-    _game_id: gameId,
-    _score: score && score.trim() ? score.trim() : null,
-  };
+  const params: Record<string, any> = { _game_id: gameId };
+  // Mirror the _winner guard: only send a real score. (The SQL already keeps the
+  // stored score on NULL/blank, but not sending it at all is belt & braces.)
+  if (score && score.trim()) params._score = score.trim();
   if (winner) params._winner = winner; // only send when set — resilient if the RPC isn't upgraded yet
   const { error } = await (supabase as any).rpc("confirm_game", params);
   if (error) throw new Error(error.message);
