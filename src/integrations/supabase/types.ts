@@ -1389,6 +1389,28 @@ export type Database = {
           spots_needed: number
         }[]
       }
+      public_game: {
+        Args: { _id: string }
+        Returns: {
+          court_city: string
+          court_name: string
+          court_status: string
+          court_type: string
+          court_type_any: boolean
+          format: string
+          host_name: string
+          host_photo: string
+          id: string
+          kind: string
+          level_max: number
+          level_min: number
+          play_at: string
+          play_until: string
+          spots_filled: number
+          spots_needed: number
+          status: string
+        }[]
+      }
       public_players: {
         Args: { _limit?: number }
         Returns: {
