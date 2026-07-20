@@ -178,7 +178,7 @@ function SosDetail() {
   const spotsFilled = sos.spots_filled ?? 0;
   const remaining = Math.max(0, spotsNeeded - spotsFilled);
   const multi = spotsNeeded > 1;
-  const canPlay = new Date(sos.play_at).getTime() > Date.now();
+  const canPlay = new Date(((sos as any).play_until as string) ?? sos.play_at).getTime() > Date.now();
   const calUrl = googleCalendarUrl({
     title: `\u{1F3BE} Tennis · ${courtName || "court"}`,
     startISO: sos.play_at,

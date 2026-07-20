@@ -227,7 +227,8 @@ export async function fetchMyUpcomingClaims(uid: string): Promise<EligibleSosRow
     .select("*")
     .in("id", sosIds)
     .in("status", ["active", "claimed"])
-    .gt("play_at", nowIso)
+    // windowed games live until play_until, not play_at (2026-07-20 hotfix)
+    .or(`play_until.gt.${nowIso},and(play_until.is.null,play_at.gt.${nowIso})`)
     .order("play_at", { ascending: true });
   const rows = (data as any[]) ?? [];
   if (!rows.length) return [];
@@ -253,12 +254,16 @@ export async function fetchMyActiveGames(): Promise<EligibleSosRow[]> {
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
   if (!uid) return [];
+  const nowIso = new Date().toISOString();
   const { data } = await (supabase as any)
     .from("sos_requests")
     .select("*")
     .eq("caller_id", uid)
     .in("status", ["active", "claimed"])
-    .gt("play_at", new Date().toISOString())
+    // A host's OWN windowed game (e.g. 14-19) must stay on their board for the
+    // WHOLE window - filtering by play_at made it vanish at the start hour
+    // while candidates were still applying (2026-07-20 live bug).
+    .or(`play_until.gt.${nowIso},and(play_until.is.null,play_at.gt.${nowIso})`)
     .order("play_at", { ascending: true });
   const rows = (data as any[]) ?? [];
   if (!rows.length) return [];
