@@ -1175,6 +1175,13 @@ export type Database = {
         }[]
       }
       expire_old_sos: { Args: never; Returns: undefined }
+      flare_my_game: {
+        Args: { _sos_id: string }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       founders_wall: {
         Args: never
         Returns: {
@@ -1304,6 +1311,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_invite_uses: { Args: never; Returns: number }
       my_open_coach_request: {
         Args: never
         Returns: {
@@ -1566,6 +1574,13 @@ export type Database = {
         Returns: undefined
       }
       weekly_recap_push: { Args: never; Returns: number }
+      widen_my_game: {
+        Args: { _sos_id: string }
+        Returns: {
+          ok: boolean
+          reason: string
+        }[]
+      }
       withdraw_application: { Args: { _sos_id: string }; Returns: boolean }
       withdraw_claim: {
         Args: { _sos_id: string }
