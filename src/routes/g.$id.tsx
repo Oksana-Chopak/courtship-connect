@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { rememberNext } from "@/lib/share";
-import { BallHeart, RF, clampLines, SkeletonRail, type RailTone } from "@/components/RailKit";
+import { BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { courtTypeMeta } from "@/lib/courtship";
 import { formatLabel } from "@/lib/sos";
 import { Avatar } from "@/components/Avatar";
@@ -16,8 +16,46 @@ type PublicGame = {
   host_name: string | null; host_photo: string | null;
 };
 
+const SITE = "https://court-ship.com";
+
 export const Route = createFileRoute("/g/$id")({
-  head: () => ({ meta: [{ title: "A game is looking for you — Courtship 🎾" }] }),
+  // Server-side loader → crawlers (WhatsApp/Telegram/FB) get real game meta
+  // in the HTML without running JS. Runs isomorphically on client nav too.
+  loader: async ({ params }) => {
+    try {
+      const { data } = await (supabase as any).rpc("public_game", { _id: params.id });
+      const row = Array.isArray(data) ? data[0] : data;
+      return { game: (row ?? null) as PublicGame | null };
+    } catch {
+      return { game: null as PublicGame | null };
+    }
+  },
+  head: ({ loaderData, params }) => {
+    const g = loaderData?.game;
+    const url = `${SITE}/g/${params.id}`;
+    const img = `${SITE}/og-game.png`;
+    const base = [
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: url },
+      { property: "og:image", content: img },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: img },
+    ];
+    if (!g) {
+      const title = "A game is looking for you — Courtship 🎾";
+      return { meta: [{ title }, { property: "og:title", content: title }, { name: "description", content: "Racquet games near you. Tap in, meet on court." }, ...base] };
+    }
+    const d = new Date(g.play_at);
+    const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    const time = g.play_until
+      ? `${d.getHours()}–${new Date(g.play_until).getHours()}`
+      : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    const title = `${g.kind === "sos" ? "🚨" : "🎾"} ${day} ${time} @ ${g.court_name} — Courtship`;
+    const desc = `${g.host_name ?? "A player"} is looking for a partner · ${formatLabel(g.format)} · L${g.level_min}–${g.level_max} · ${g.court_city}. Tap to join.`;
+    return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, ...base] };
+  },
   validateSearch: (s: Record<string, unknown>): { code?: string } => ({
     code: typeof s.code === "string" && s.code ? s.code : undefined,
   }),
@@ -32,19 +70,14 @@ function PublicGamePage() {
   const { id } = Route.useParams();
   const { code } = Route.useSearch();
   const navigate = useNavigate();
-  const [game, setGame] = useState<PublicGame | null>(null);
-  const [state, setState] = useState<"loading" | "ok" | "gone">("loading");
+  const { game } = Route.useLoaderData();
+  const state: "ok" | "gone" = game ? "ok" : "gone";
 
   useEffect(() => {
     void (async () => {
       // already signed in → the real game page is strictly better
       const { data: sess } = await supabase.auth.getSession();
-      if (sess.session) { navigate({ to: "/sos/$id", params: { id }, replace: true }); return; }
-      const { data, error } = await (supabase as any).rpc("public_game", { _id: id });
-      const row = Array.isArray(data) ? data[0] : data;
-      if (error || !row) { setState("gone"); return; }
-      setGame(row as PublicGame);
-      setState("ok");
+      if (sess.session) navigate({ to: "/sos/$id", params: { id }, replace: true });
     })();
   }, [id]);
 
@@ -66,8 +99,6 @@ function PublicGamePage() {
         <Link to="/" className="font-display text-2xl flex items-center gap-2 justify-center">
           <BallHeart size={26} /> Courtship
         </Link>
-
-        {state === "loading" && <SkeletonRail lines={3} />}
 
         {state === "gone" && (
           <div className="ccard p-6 text-center space-y-3">
