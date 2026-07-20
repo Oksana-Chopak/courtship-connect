@@ -23,8 +23,10 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+const APP = "https://court-ship.com";
+
 /** Minimal branded HTML wrapper (cream/ink, Courtship tone). */
-function html(bodyText: string): string {
+function html(bodyText: string, unsubUrl: string): string {
   const paragraphs = bodyText
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 14px;line-height:1.55;">${esc(p).replace(/\n/g, "<br>")}</p>`)
@@ -38,8 +40,42 @@ function html(bodyText: string): string {
     <p style="font-size:12px;color:#8C5A33;margin-top:16px;font-family:Arial,Helvetica,sans-serif;">
       You're getting this because you have a Courtship account.
       Reply to this email to reach Oksana directly.
+      <a href="${unsubUrl}" style="color:#8C5A33">Unsubscribe</a> or manage emails in
+      <a href="${APP}/settings" style="color:#8C5A33">Settings</a>.
     </p>
   </div></body></html>`;
+}
+
+/** ePrivacy/CAN-SPAM: skip addresses on the suppression list. */
+async function dropSuppressed(sb: any, emails: string[]): Promise<string[]> {
+  if (!emails.length) return emails;
+  const bad = new Set<string>();
+  for (let i = 0; i < emails.length; i += 500) {
+    const { data } = await sb.from("suppressed_emails").select("email").in("email", emails.slice(i, i + 500));
+    for (const r of data ?? []) bad.add(r.email);
+  }
+  return emails.filter((e) => !bad.has(e));
+}
+
+/** Get-or-create a one-click unsubscribe token per address (works logged out). */
+async function unsubTokens(sb: any, emails: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  for (let i = 0; i < emails.length; i += 500) {
+    const chunk = emails.slice(i, i + 500);
+    const { data } = await sb.from("email_unsubscribe_tokens").select("email,token").in("email", chunk);
+    for (const r of data ?? []) map.set(r.email, r.token);
+    const missing = chunk.filter((e) => !map.has(e));
+    if (missing.length) {
+      const rows = missing.map((e) => ({
+        email: e,
+        token: crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", ""),
+      }));
+      await sb.from("email_unsubscribe_tokens").upsert(rows, { onConflict: "email", ignoreDuplicates: true });
+      const { data: again } = await sb.from("email_unsubscribe_tokens").select("email,token").in("email", missing);
+      for (const r of again ?? []) map.set(r.email, r.token);
+    }
+  }
+  return map;
 }
 
 Deno.serve(async (req) => {
@@ -62,24 +98,35 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: false, error: "subject and body required" }), { status: 400 });
     }
 
-    // Recipients: every auth user (test → only the calling admin).
+    // Recipients: every auth user who hasn't opted out (test → only the
+    // calling admin). Legal pack 2026-07-20: the blast now honors
+    // profiles.email_notifs AND the suppression list, and every email carries
+    // a one-click unsubscribe link (ePrivacy soft opt-in requires a working
+    // opt-out on EVERY message, not just a settings page behind a login).
     let emails: string[] = [];
     if (test) {
       emails = [caller!.user!.email!].filter(Boolean) as string[];
     } else {
+      const optedOut = new Set<string>();
+      try {
+        const { data: profs } = await sb.from("profiles").select("id,email_notifs");
+        for (const p of profs ?? []) if (p.email_notifs === false) optedOut.add(p.id);
+      } catch (_) { /* column may not exist pre-SQL → treat all as opted-in */ }
       let page = 1;
       while (true) {
         const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
         if (error) return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
-        emails.push(...(data.users ?? []).map((u) => u.email).filter(Boolean) as string[]);
+        emails.push(...(data.users ?? [])
+          .filter((u) => !optedOut.has(u.id))
+          .map((u) => u.email).filter(Boolean) as string[]);
         if (!data.users || data.users.length < 1000) break;
         page += 1;
       }
-      emails = [...new Set(emails)];
+      emails = await dropSuppressed(sb, [...new Set(emails)]);
     }
     if (!emails.length) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
 
-    const htmlBody = html(String(body));
+    const tokens = await unsubTokens(sb, emails);
     let sent = 0;
     const failures: string[] = [];
     // Individual emails, batched 100 per Resend batch call.
@@ -88,7 +135,7 @@ Deno.serve(async (req) => {
         from: FROM,
         to: [to],
         subject: String(subject),
-        html: htmlBody,
+        html: html(String(body), `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`),
       }));
       const r = await fetch("https://api.resend.com/emails/batch", {
         method: "POST",
