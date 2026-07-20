@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { notifyUsers } from "@/lib/push";
-import { myInviteLink, shareMessage } from "@/lib/share";
+import { myInviteLink, myGameShareLink, shareMessage } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
 import { whenLabel, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
@@ -20,9 +20,10 @@ import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>): { claim?: string; join?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { claim?: string; join?: string; apply?: string } => ({
     claim: typeof s.claim === "string" && s.claim ? s.claim : undefined,
     join: typeof s.join === "string" && s.join ? s.join : undefined,
+    apply: typeof s.apply === "string" && s.apply ? s.apply : undefined,
   }),
   component: SosDetail,
 });
@@ -96,10 +97,28 @@ function SosDetail() {
   // 👻 Handover: arriving with ?claim=<token> (from the invite link the admin
   // sent) transfers this ghost game to the freshly signed-up owner — so the
   // first thing they see after onboarding is their own game with candidates.
-  const { claim, join } = Route.useSearch();
+  const { claim, join, apply } = Route.useSearch();
   const navigate2 = useNavigate();
   useEffect(() => {
-    if ((!claim && !join) || !me || !sos) return;
+    if ((!claim && !join && !apply) || !me || !sos) return;
+    if (apply && !claim && !join) {
+      // "I'm in" intent carried through signup: apply (open) or claim (SOS) once
+      void (async () => {
+        if (sos.caller_id !== me.id && sos.status === "active") {
+          if (sos.kind === "open") {
+            const r = await applyToGame(sos.id);
+            if (r.ok) toast.success(t("app.sent"));
+            else if (r.reason === "already_applied") toast.info(t("app.already"));
+          } else {
+            const r = await claimSos(sos.id);
+            if (r.ok) toast.success(t("sos.claimed_toast"));
+          }
+        }
+        navigate2({ to: "/sos/$id", params: { id: sos.id }, search: {}, replace: true });
+        await load();
+      })();
+      return;
+    }
     void (async () => {
       const fn = claim ? "claim_ghost_game" : "join_game_by_token";
       const { data, error } = await (supabase as any).rpc(fn, { _sos_id: sos.id, _token: claim ?? join });
@@ -109,7 +128,7 @@ function SosDetail() {
       await load();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [claim, join, me?.id, sos?.id]);
+  }, [claim, join, apply, me?.id, sos?.id]);
 
   useEffect(() => {
     if (!sos || !me || isCaller || sos.kind !== "open") { setMyApplied(false); return; }
@@ -202,7 +221,7 @@ function SosDetail() {
   }
 
   async function shareSos() {
-    const link = await myInviteLink("/sos/" + sos!.id);
+    const link = await myGameShareLink(sos!.id);
     const msg = t(sos!.kind === "open" ? "share.game_msg" : "share.sos_msg", {
       when,
       court: courtName || courtCity || "the court",

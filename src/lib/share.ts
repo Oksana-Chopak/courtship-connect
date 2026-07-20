@@ -85,3 +85,15 @@ export async function shareMessage(message: string, copiedNote: string): Promise
     /* ignore */
   }
 }
+
+/** Share link for a GAME: lands on the public preview (/g/<id>), value first —
+ *  signup is asked only when the guest taps "I'm in". Carries my invite code. */
+export async function myGameShareLink(gameId: string): Promise<string> {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  let code: string | null = null;
+  try {
+    const { data } = await (supabase as any).rpc("ensure_my_invite_code");
+    code = (data as string | null) ?? null;
+  } catch { /* fine — page still works, invite gate will ask */ }
+  return `${origin}/g/${gameId}${code ? `?code=${encodeURIComponent(code)}` : ""}`;
+}
