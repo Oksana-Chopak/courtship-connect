@@ -68,7 +68,7 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
           {tab.badge ? (
             <span
               className="absolute top-1 right-2 rounded-full px-1.5 flex items-center justify-center border-2"
-              style={{ background: "var(--coral)", color: "#FFF6E8", borderColor: "var(--ink)", minWidth: 22, height: 22, fontSize: "0.875rem", fontWeight: 800 }}
+              style={{ background: "var(--coral)", color: "var(--ink)", borderColor: "var(--ink)", minWidth: 22, height: 22, fontSize: "0.875rem", fontWeight: 800 }}
             >
               {tab.badge > 99 ? "99+" : tab.badge}
             </span>
@@ -94,7 +94,7 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
               <div className="csection-label">{t("plus.title")}</div>
               <Link to="/sos/new" search={{ planned: undefined }} onClick={() => setPlusOpen(false)}
                 className="flex items-center gap-3 rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
-                style={{ background: "var(--coral)", color: "#FFF6E8" }}>
+                style={{ background: "var(--coral)", color: "var(--ink)" }}>
                 <span className="text-2xl" aria-hidden="true">🚨</span>
                 <span className="min-w-0">
                   <span className="block font-display text-lg leading-tight">{t("plus.post")}</span>
@@ -148,7 +148,7 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
               className="flex items-center justify-center rounded-full font-extrabold"
               style={{
                 width: 58, height: 58, transform: "translateY(-14px)",
-                background: "var(--coral)", color: "#FFF6E8",
+                background: "var(--coral)", color: "var(--ink)",
                 border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
                 fontSize: 32, lineHeight: 1,
               }}

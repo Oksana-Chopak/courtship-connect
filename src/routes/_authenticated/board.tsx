@@ -216,7 +216,7 @@ function BoardPage() {
       {/* Hero — Save my set (SOS), with Plan-a-game / Host under-links */}
       <div>
         <p className="text-center font-display leading-tight px-2" style={{ fontSize: 18, marginBottom: 12 }}>{t("tonight.encourage")}</p>
-        <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
+        <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
           <BallHeart size={26} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("tonight.sos")}</div>
@@ -278,7 +278,7 @@ function BoardPage() {
       {!loading && urgentOthers.length > 0 && (
         <div
           className="rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
-          style={{ background: "var(--coral)", color: "#FFF6E8", boxShadow: "4px 4px 0 var(--ink)" }}
+          style={{ background: "var(--coral)", color: "var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
           role="status"
         >
           <div className="font-display text-lg leading-tight">
@@ -507,7 +507,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, flexWrap: "wrap" }}>
             {sos.is_buddy && !mine && (
-              <span style={{ fontWeight: 800, fontSize: RF.tag, color: "#FFF6E8", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
+              <span style={{ fontWeight: 800, fontSize: RF.tag, color: "var(--ink)", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
             )}
             {isUrgent && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
@@ -567,7 +567,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         ) : isUrgent ? (
           <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
             <Rackets n={nRackets} size={22} />
-            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: softCoral, color: "#FFF6E8", border: "none", borderRadius: 10, padding: "12px", fontWeight: 800, fontSize: 14 }}>🚨 {t("sos.save_this")}</Link>
+            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: softCoral, color: "var(--ink)", border: "none", borderRadius: 10, padding: "12px", fontWeight: 800, fontSize: 14 }}>🚨 {t("sos.save_this")}</Link>
             {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
           </div>
         ) : (

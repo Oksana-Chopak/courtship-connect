@@ -325,7 +325,7 @@ function AdminPage() {
       )}
 
       {/* Hero fill rate */}
-      <div className="ccard p-5 text-center" style={{ background: "var(--coral)", color: "#FFF6E8" }}>
+      <div className="ccard p-5 text-center" style={{ background: "var(--coral)", color: "var(--ink)" }}>
         <div className="csection-label" style={{ color: "#FFF6E8" }}>{t("admin.fill_rate")}</div>
         <div className="font-display text-7xl leading-none mt-1">{dash?.fill_rate_pct ?? 0}%</div>
         <div className="text-base font-semibold mt-1 opacity-90">{t("admin.fill_target")}</div>
@@ -494,7 +494,7 @@ function AdminPage() {
               <div className="flex items-center justify-between gap-2">
                 <span className="font-extrabold truncate">{r.name}{r.last_name ? " " + r.last_name : ""} · L{r.level}</span>
                 <span className="text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0"
-                  style={{ background: r.status === "new" ? "var(--coral)" : r.status === "matched" ? "var(--green-pop)" : "var(--cream2)", color: r.status === "new" ? "#FFF6E8" : "var(--ink)", border: "1.5px solid var(--ink)" }}>
+                  style={{ background: r.status === "new" ? "var(--coral)" : r.status === "matched" ? "var(--green-pop)" : "var(--cream2)", color: "var(--ink)", border: "1.5px solid var(--ink)" }}>
                   {r.status}
                 </span>
               </div>

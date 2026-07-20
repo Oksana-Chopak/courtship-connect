@@ -91,7 +91,7 @@ function MatchDeck() {
     const lm = levelMeta(matched.level);
     return (
       <div className="space-y-5">
-        <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "#FFF6E8", borderColor: "var(--ink)" }}>
+        <div className="ccard p-6 text-center space-y-3" style={{ background: "var(--coral)", color: "var(--ink)", borderColor: "var(--ink)" }}>
           <div className="flex justify-center"><BallHeart size={72} /></div>
           <h1 className="font-display text-4xl">{t("match.its_a_match")}</h1>
           <div className="font-extrabold">{t("match.match_sub", { name: matched.name })}</div>

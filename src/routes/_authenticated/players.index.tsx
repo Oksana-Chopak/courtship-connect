@@ -140,7 +140,7 @@ function Players() {
       {/* Hero — invite friends (mirrors the board hero composition; ONE loud thing) */}
       <div>
         <button type="button" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}
-          className="w-full text-left" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px" }}>
+          className="w-full text-left" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px" }}>
           <span style={{ fontSize: 24 }}>🤗</span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("players.hero_title")}</span>
@@ -186,7 +186,7 @@ function Players() {
           className="inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm"
           style={{ background: "var(--ink)", color: "#FFF6E8" }}>
           ⚙ {t("players.filters")}
-          {activeCount > 0 && <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "#FFF6E8" }}>{activeCount}</span>}
+          {activeCount > 0 && <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "var(--ink)" }}>{activeCount}</span>}
         </button>
         {hasFilters && <button type="button" onClick={clearFilters} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>{t("players.filters_clear")}</button>}
         <span className="ml-auto text-sm font-semibold" style={{ color: "rgba(43,33,24,0.7)" }}>{t("players.count", { n: filtered.length })}</span>
@@ -396,7 +396,7 @@ function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string
           <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 52, color: fg, opacity: 0.92 }}>{(p.name || "?").charAt(0)}</div>
         )}
         {(p.rescues_count ?? 0) >= 5 && (
-          <span className="absolute bottom-1.5 left-1.5 font-extrabold rounded-full" style={{ fontSize: 10, padding: "1px 6px", color: "#FFF6E8", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
+          <span className="absolute bottom-1.5 left-1.5 font-extrabold rounded-full" style={{ fontSize: 10, padding: "1px 6px", color: "var(--ink)", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
         )}
       </div>
       <div className="flex-1 min-w-0 py-2.5 pr-3 flex flex-col justify-center">

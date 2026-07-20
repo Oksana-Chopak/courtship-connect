@@ -225,7 +225,7 @@
   &:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
-@utility cbtn-coral { background: var(--coral); color: #FFF6E8; }
+@utility cbtn-coral { background: var(--coral); color: var(--ink); }
 @utility cbtn-green { background: var(--green-pop); color: var(--ink); }
 @utility cbtn-ghost { background: var(--cream2); color: var(--ink); }
 
