@@ -107,6 +107,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cities: {
+        Row: {
+          active: boolean
+          country: string
+          granularity_min: number
+          name: string
+          sort: number
+          timezone: string
+        }
+        Insert: {
+          active?: boolean
+          country?: string
+          granularity_min?: number
+          name: string
+          sort?: number
+          timezone?: string
+        }
+        Update: {
+          active?: boolean
+          country?: string
+          granularity_min?: number
+          name?: string
+          sort?: number
+          timezone?: string
+        }
+        Relationships: []
+      }
       coach_requests: {
         Row: {
           admin_note: string | null
