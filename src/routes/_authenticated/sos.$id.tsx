@@ -195,7 +195,7 @@ function SosDetail() {
       let phone: string;
       try {
         ({ phone } = await getPhone({ data: { targetId } }));
-      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
+      } catch (e: any) { if (w) w.close(); toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappClaimLink(phone, me!.name, when, courtName || "the court");
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;

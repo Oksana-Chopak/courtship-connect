@@ -80,7 +80,7 @@ function MatchDeck() {
       let phone: string, name: string;
       try {
         ({ phone, name } = await getProfilePhone({ data: { targetId: p.id } }));
-      } catch (e: any) { toast.info(t(waErrorKey(e?.message))); return; }
+      } catch (e: any) { if (w) w.close(); toast.info(t(waErrorKey(e?.message))); return; }
       const url = whatsappLink(phone, name);
       if (w) w.location.href = url;
       else if (typeof window !== "undefined") window.location.href = url;
