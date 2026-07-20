@@ -107,12 +107,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Young+Serif&family=Karla:wght@400;600;700;800&display=swap",
-      },
+      // Legal pack 2026-07-20: fonts are self-hosted (public/fonts.css + woff2
+      // from @fontsource). Loading from fonts.googleapis.com sent every
+      // visitor's IP to Google pre-consent (LG München I, 3 O 17493/20).
+      { rel: "stylesheet", href: "/fonts.css" },
     ],
   }),
   shellComponent: RootShell,

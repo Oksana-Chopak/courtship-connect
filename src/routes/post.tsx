@@ -167,6 +167,11 @@ function PostGamePage() {
         <p className="text-center text-sm font-extrabold">
           <Link to="/auth" search={{ mode: "login" }} className="underline">{t("post_pub.have_account")}</Link>
         </p>
+        <p className="text-center text-xs font-bold" style={{ opacity: 0.55 }}>
+          <Link to="/privacy" className="underline">{t("legal.footer_privacy")}</Link>
+          {" · "}
+          <Link to="/terms" className="underline">{t("legal.footer_terms")}</Link>
+        </p>
       </div>
     </div>
   );

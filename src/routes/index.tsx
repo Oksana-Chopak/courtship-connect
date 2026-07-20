@@ -96,6 +96,11 @@ function Index() {
             {t("index.cta_have_account")}
           </Link>
         </div>
+        <div className="text-xs font-bold" style={{ opacity: 0.55 }}>
+          <Link to="/privacy" className="underline">{t("legal.footer_privacy")}</Link>
+          {" · "}
+          <Link to="/terms" className="underline">{t("legal.footer_terms")}</Link>
+        </div>
       </div>
     </div>
   );
