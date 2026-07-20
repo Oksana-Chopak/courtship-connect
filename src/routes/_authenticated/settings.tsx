@@ -8,6 +8,7 @@ import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } fro
 import { PushControls } from "@/components/PushControls";
 import { Collapsible } from "@/components/Collapsible";
 import { unsubscribeFromPush } from "@/lib/push";
+import { downloadMyData } from "@/lib/legal";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Courtship" }] }),
@@ -94,6 +95,10 @@ function SettingsPage() {
         <PushControls bare />
       </Collapsible>
 
+      <Collapsible title={`🔐 ${t("privacyc.title")}`}>
+        <PrivacyDataSection />
+      </Collapsible>
+
       {isAdmin && (
         <Link to="/admin" className="ccard p-4 flex items-center justify-between">
           <div>
@@ -140,6 +145,120 @@ function SettingsPage() {
                 style={{ color: "var(--coral)" }}
               >
                 {t("auth.signout")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Legal pack: public-preview opt-out (GDPR art. 21 objection made usable),
+ *  legal-doc links, data export (art. 15/20) and account deletion (art. 17).
+ *  Destructive action = muted styling, typed confirmation (accent rule). */
+function PrivacyDataSection() {
+  const { t } = useI18n();
+  const [preview, setPreview] = useState<boolean | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const { data: au } = await supabase.auth.getUser();
+      if (!au.user) return;
+      const { data } = await (supabase as any).from("profiles").select("public_preview").eq("id", au.user.id).maybeSingle();
+      setPreview(data?.public_preview !== false);
+    })();
+  }, []);
+
+  async function togglePreview() {
+    const next = !(preview ?? true);
+    setPreview(next);
+    const { data: au } = await supabase.auth.getUser();
+    if (!au.user) return;
+    const { error } = await (supabase as any).from("profiles").update({ public_preview: next }).eq("id", au.user.id);
+    if (error) { setPreview(!next); toast.error(t("privacyc.save_err")); }
+    else toast.success(next ? t("privacyc.preview_on") : t("privacyc.preview_off"));
+  }
+
+  async function exportData() {
+    setExporting(true);
+    const ok = await downloadMyData();
+    setExporting(false);
+    if (!ok) toast.error(t("privacyc.export_err"));
+  }
+
+  async function deleteAccount() {
+    setDeleting(true);
+    const { error } = await (supabase as any).rpc("delete_my_account");
+    if (error) {
+      setDeleting(false);
+      toast.error(t("privacyc.delete_err"));
+      return;
+    }
+    try { await unsubscribeFromPush(); } catch { /* device may already be gone server-side */ }
+    try {
+      ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next"]
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* ignore */ }
+    await supabase.auth.signOut();
+    toast.success(t("privacyc.deleted"));
+    window.location.href = "/";
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("privacyc.preview_sub")}</p>
+        <button type="button" onClick={togglePreview} disabled={preview === null}
+          className="w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+          style={{ borderColor: "var(--ink)", background: preview ? "var(--green-pop)" : "var(--cream2)", opacity: preview === null ? 0.6 : 1 }}>
+          {preview ? "✅ " : "⬜ "}{t("privacyc.preview_label")}
+        </button>
+      </div>
+
+      <div className="text-sm font-extrabold space-x-1">
+        <a href="/privacy" target="_blank" rel="noreferrer" className="underline">{t("privacyc.policy")}</a>
+        <span>·</span>
+        <a href="/terms" target="_blank" rel="noreferrer" className="underline">{t("privacyc.terms")}</a>
+        <span>·</span>
+        <a href="/withdraw" target="_blank" rel="noreferrer" className="underline">{t("privacyc.withdraw")}</a>
+      </div>
+
+      <button type="button" onClick={exportData} disabled={exporting} className="cbtn cbtn-ghost w-full">
+        {exporting ? "..." : t("privacyc.export")}
+      </button>
+
+      <button type="button" onClick={() => setConfirmDelete(true)} className="w-full text-sm font-extrabold underline text-left" style={{ opacity: 0.65 }}>
+        {t("privacyc.delete")}
+      </button>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: "rgba(43,33,24,0.5)" }} onClick={() => !deleting && setConfirmDelete(false)}>
+          <div className="ccard p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream2)" }}>
+            <div className="font-display text-2xl">{t("privacyc.delete_title")}</div>
+            <div className="text-base font-semibold text-[var(--ink)]">{t("privacyc.delete_body")}</div>
+            <input
+              className="cinput"
+              placeholder={t("privacyc.delete_confirm_ph")}
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              autoCapitalize="characters"
+            />
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
+              {/* Destructive = muted ghost, never coral (accent rule) */}
+              <button
+                onClick={deleteAccount}
+                disabled={deleteText.trim().toUpperCase() !== "DELETE" || deleting}
+                className="cbtn cbtn-ghost flex-1"
+                style={{ color: "var(--coral)", opacity: deleteText.trim().toUpperCase() === "DELETE" ? 1 : 0.5 }}
+              >
+                {deleting ? "..." : t("privacyc.delete_cta")}
               </button>
             </div>
           </div>

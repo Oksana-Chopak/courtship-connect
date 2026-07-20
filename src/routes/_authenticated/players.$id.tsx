@@ -9,6 +9,7 @@ import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, whatsappLink, sportMeta } fro
 import { RescuerBadge } from "@/components/RescuerBadge";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { Avatar } from "@/components/Avatar";
+import { ReportPlayerButton } from "@/components/ReportPlayerButton";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -203,6 +204,10 @@ function PlayerDetail() {
             ))}
           </div>
         </div>
+      )}
+
+      {meId && meId !== p.id && (
+        <ReportPlayerButton targetId={p.id} targetName={p.name ?? "player"} />
       )}
     </div>
   );

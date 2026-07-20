@@ -538,7 +538,104 @@ function AdminPage() {
           <button type="button" className="cbtn cbtn-green w-full" onClick={saveSupportSwish}>{t("admin.support_save")}</button>
         </div>
       </Collapsible>
+
+      <LegalQueues />
     </div>
+  );
+}
+
+/** Legal pack (2026-07-20): DSA report queue + consumer withdrawal queue.
+ *  Admin-only surface — plain English on purpose (admin i18n is deferred).
+ *  DSA art. 17 reminder: when you action a report, tell the affected member
+ *  what you did and why (email/WhatsApp) — the note field is your record. */
+function LegalQueues() {
+  const [reports, setReports] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+
+  async function loadLegal() {
+    try {
+      const [{ data: r }, { data: w }] = await Promise.all([
+        (supabase as any).rpc("admin_list_reports"),
+        (supabase as any).rpc("admin_list_withdrawals"),
+      ]);
+      setReports(r ?? []);
+      setWithdrawals(w ?? []);
+    } catch { /* pre-SQL */ }
+  }
+  useEffect(() => { void loadLegal(); }, []);
+
+  async function resolveReport(id: string, status: string) {
+    const note = status === "actioned" ? window.prompt("What did you do? (kept as the art. 17 record; tell the member too)") : null;
+    const { error } = await (supabase as any).rpc("admin_resolve_report", { _id: id, _status: status, _note: note });
+    if (error) toast.error(error.message);
+    else { toast.success("Saved"); void loadLegal(); }
+  }
+
+  async function resolveWithdrawal(id: string, status: string) {
+    const { error } = await (supabase as any).rpc("admin_resolve_withdrawal", { _id: id, _status: status });
+    if (error) toast.error(error.message);
+    else { toast.success("Saved"); void loadLegal(); }
+  }
+
+  const newReports = reports.filter((r) => r.status === "new").length;
+  const newWithdrawals = withdrawals.filter((w) => w.status === "new").length;
+
+  return (
+    <>
+      <Collapsible title={`🚩 Reports (${newReports})`}>
+        <div className="space-y-3">
+          {reports.length === 0 && <div className="text-sm text-[var(--ink)]/60">No reports. Quiet courts, happy community.</div>}
+          {reports.map((r) => (
+            <div key={r.id} className="rounded-2xl border-2 border-[var(--ink)] p-3 space-y-1.5" style={{ background: "var(--cream)" }}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold truncate">→ {r.target_name || "?"}</span>
+                <span className="text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0"
+                  style={{ background: r.status === "new" ? "var(--coral)" : "var(--cream2)", color: r.status === "new" ? "#FFF6E8" : "var(--ink)", border: "1.5px solid var(--ink)" }}>
+                  {r.status}
+                </span>
+              </div>
+              <div className="text-sm font-semibold">{r.reason} · from {r.reporter_name || "(deleted account)"} · {new Date(r.created_at).toLocaleDateString()}</div>
+              {r.details && <div className="text-xs italic text-[var(--ink)]/70">"{r.details}"</div>}
+              {r.resolution_note && <div className="text-xs font-bold text-[var(--ink)]/60">Action: {r.resolution_note}</div>}
+              {r.status === "new" && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button className="cchip" onClick={() => resolveReport(r.id, "actioned")}>✅ Actioned</button>
+                  <button className="cchip" onClick={() => resolveReport(r.id, "reviewed")}>👀 Reviewed</button>
+                  <button className="cchip" onClick={() => resolveReport(r.id, "dismissed")}>🗄 Dismiss</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Collapsible>
+
+      <Collapsible title={`↩️ Withdrawals — ångerrätt (${newWithdrawals})`}>
+        <div className="space-y-3">
+          <div className="text-sm text-[var(--ink)]/60">14-day right: refund via Swish/Stripe within 14 days of the request, then mark it here.</div>
+          {withdrawals.length === 0 && <div className="text-sm text-[var(--ink)]/60">No withdrawal requests.</div>}
+          {withdrawals.map((w) => (
+            <div key={w.id} className="rounded-2xl border-2 border-[var(--ink)] p-3 space-y-1.5" style={{ background: "var(--cream)" }}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold truncate">{w.name} · {w.email}</span>
+                <span className="text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0"
+                  style={{ background: w.status === "new" ? "var(--coral)" : "var(--cream2)", color: w.status === "new" ? "#FFF6E8" : "var(--ink)", border: "1.5px solid var(--ink)" }}>
+                  {w.status}
+                </span>
+              </div>
+              <div className="text-sm font-semibold">{w.purchase} · ref {String(w.id).slice(0, 8)} · {new Date(w.created_at).toLocaleDateString()}</div>
+              {w.note && <div className="text-xs italic text-[var(--ink)]/70">"{w.note}"</div>}
+              {w.status === "new" && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button className="cchip" onClick={() => resolveWithdrawal(w.id, "refunded")}>💸 Refunded</button>
+                  <button className="cchip" onClick={() => resolveWithdrawal(w.id, "rejected")}>🚫 Rejected</button>
+                  <button className="cchip" onClick={() => resolveWithdrawal(w.id, "invalid")}>🗄 Invalid</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Collapsible>
+    </>
   );
 }
 
