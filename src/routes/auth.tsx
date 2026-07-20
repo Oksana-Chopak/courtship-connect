@@ -53,6 +53,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [invite, setInvite] = useState((code ?? "").toUpperCase());
   const [busy, setBusy] = useState(false);
+  // Legal pack: sign-up requires an 18+ attestation and Terms/Privacy consent
+  // (recorded server-side via accept_terms at the end of onboarding).
+  const [legalAge, setLegalAge] = useState(false);
+  const [legalTerms, setLegalTerms] = useState(false);
+  const legalOk = mode !== "signup" || (legalAge && legalTerms);
   // Password recovery: the email link lands back here with a #type=recovery
   // hash — show a set-new-password form instead of bouncing to /board.
   const [recovery, setRecovery] = useState(false);
@@ -217,7 +222,24 @@ function AuthPage() {
               required
             />
           </div>
-          <button disabled={busy} className="cbtn cbtn-coral w-full">
+          {mode === "signup" && (
+            <div className="space-y-2 pt-1">
+              <label className="flex items-start gap-2 font-bold text-sm cursor-pointer">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={legalAge} onChange={(e) => setLegalAge(e.target.checked)} />
+                <span>{t("auth.legal_age")}</span>
+              </label>
+              <label className="flex items-start gap-2 font-bold text-sm cursor-pointer">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={legalTerms} onChange={(e) => setLegalTerms(e.target.checked)} />
+                <span>
+                  {t("auth.legal_terms_pre")}{" "}
+                  <a href="/terms" target="_blank" rel="noreferrer" className="underline">{t("auth.legal_terms_link")}</a>{" "}
+                  {t("auth.legal_and")}{" "}
+                  <a href="/privacy" target="_blank" rel="noreferrer" className="underline">{t("auth.legal_privacy_link")}</a>
+                </span>
+              </label>
+            </div>
+          )}
+          <button disabled={busy || !legalOk} className="cbtn cbtn-coral w-full" style={{ opacity: legalOk ? 1 : 0.5 }}>
             {busy ? "..." : mode === "signup" ? t("auth.create_account") : t("auth.sign_in")}
           </button>
         </form>
@@ -253,6 +275,12 @@ function AuthPage() {
           ) : (
             <>{t("auth.no_account")} <Link to="/auth" search={{ mode: "signup" }} className="underline font-extrabold">{t("auth.go_signup")}</Link></>
           )}
+        </div>
+
+        <div className="text-center text-xs font-bold" style={{ opacity: 0.6 }}>
+          <Link to="/privacy" className="underline">{t("legal.footer_privacy")}</Link>
+          {" · "}
+          <Link to="/terms" className="underline">{t("legal.footer_terms")}</Link>
         </div>
       </div>
     </div>

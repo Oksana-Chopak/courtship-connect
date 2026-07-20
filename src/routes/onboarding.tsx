@@ -7,6 +7,7 @@ import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } fro
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
+import { acceptTerms } from "@/lib/legal";
 
 const SIGNUP_CODE_KEY = "courtship.signup_code";
 
@@ -45,6 +46,10 @@ function Onboarding() {
 
   async function finishSuccess() {
     try { localStorage.removeItem(SIGNUP_CODE_KEY); } catch {}
+    // Legal pack: persist the Terms/Privacy acceptance + 18+ attestation the
+    // user gave at sign-up, now that the profile row exists. Best-effort —
+    // the ConsentGate in the authed shell catches any miss.
+    try { await acceptTerms(); } catch { /* gate will catch */ }
     toast.success(t("onboarding.welcome_in"));
     try {
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {

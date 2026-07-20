@@ -3,6 +3,7 @@ import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import { ConsentGate } from "@/components/ConsentGate";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { ensurePushSubscribed } from "@/lib/push";
 import { FLAGS } from "@/lib/flags";
@@ -101,6 +102,9 @@ function AuthedShell() {
           </RouteErrorBoundary>
         </div>
       </main>
+      {/* Legal pack: members who haven't accepted the current Terms/Privacy
+          version confirm once here (existing accounts + future version bumps). */}
+      {!guest && <ConsentGate />}
       <BottomTabBar guest={guest} />
     </div>
   );
