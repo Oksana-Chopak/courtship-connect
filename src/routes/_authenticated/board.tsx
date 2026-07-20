@@ -230,8 +230,11 @@ function BoardPage() {
         </div>
       </div>
 
-      {/* Mini progress + streak (tap → season) */}
-      {(() => {
+      {/* Mini progress + streak (tap → season). A zero streak is demotivating
+          to advertise, so we hide the 🔥 segment until it's ≥1, and hide the
+          whole pill for brand-new users (GetStarted already welcomes them)
+          instead of showing a row of zeros (2026-07-20 design pass). */}
+      {((gamesPlayed ?? 0) > 0 || streakWeeks > 0) && (() => {
         const rt = rescuerTier(rescuesCount);
         const dow = new Date().getDay(); // 5=Fri 6=Sat 0=Sun
         const atRisk = streakWeeks > 0 && !playedThisWeek && (dow === 5 || dow === 6 || dow === 0);
@@ -240,8 +243,12 @@ function BoardPage() {
           : rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
         return (
           <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: atRisk ? "1.5px solid #F0705B" : "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: atRisk ? "#FCE9E4" : "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><span style={{ fontSize: 17 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
-            <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
+            {streakWeeks > 0 && (
+              <>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><span style={{ fontSize: 17 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
+                <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
+              </>
+            )}
             <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, color: atRisk ? "#F0705B" : undefined, ...clampLines(1) }}>{rescueLine}</span>
             <span style={{ fontSize: 16, color: "rgba(43,33,24,0.3)" }}>›</span>
           </Link>
@@ -287,14 +294,19 @@ function BoardPage() {
         <div className="space-y-3">
           <div className="csection-label">✅ {t("home.my_upcoming")}</div>
           {myClaims.map((s) => (
-            <div key={s.id} className="ccard p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-display text-lg truncate">{whenLabel(s.play_at)} · {s.court_name ?? "—"}</div>
-                <div className="text-base text-[var(--ink)] font-semibold truncate">📍 {s.court_city ?? "—"}{s.caller_name ? ` · ${s.caller_name}` : ""}</div>
+            <div key={s.id} className="ccard p-4 flex items-center justify-between gap-2">
+              {/* When on its own line; the COURT (where you actually go) on the
+                  next line with the pin — it used to be jammed after the date and
+                  truncated away (2026-07-20 design pass). */}
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-lg truncate">{whenLabel(s.play_at)}</div>
+                <div className="text-base text-[var(--ink)] font-semibold truncate">📍 {s.court_name ?? s.court_city ?? "—"}{s.court_name && s.court_city ? ` · ${s.court_city}` : ""}</div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <a href={googleCalendarUrl({ title: `\u{1F3BE} ${s.court_name ?? "Tennis"}`, startISO: s.play_at, durationMin: (s as any).duration_min ?? 60, location: [s.court_city, s.court_name].filter(Boolean).join(", ") })} target="_blank" rel="noopener noreferrer" title={t("cal.add")} aria-label={t("cal.add")}><CalIcon /></a>
-                <button type="button" onClick={() => onWithdraw(s)} title={t("home.cant_make_it")} aria-label={t("home.cant_make_it")}><DeleteIcon /></button>
+              {/* Padded to ≥44px tap targets; withdraw (destructive) is muted and
+                  spaced so it can't be mis-tapped for the calendar. */}
+              <div className="flex items-center shrink-0">
+                <a className="p-2" href={googleCalendarUrl({ title: `\u{1F3BE} ${s.court_name ?? "Tennis"}`, startISO: s.play_at, durationMin: (s as any).duration_min ?? 60, location: [s.court_city, s.court_name].filter(Boolean).join(", ") })} target="_blank" rel="noopener noreferrer" title={t("cal.add")} aria-label={t("cal.add")}><CalIcon /></a>
+                <button type="button" className="p-2" style={{ opacity: 0.5 }} onClick={() => onWithdraw(s)} title={t("home.cant_make_it")} aria-label={t("home.cant_make_it")}><DeleteIcon /></button>
               </div>
             </div>
           ))}
