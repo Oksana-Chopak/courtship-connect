@@ -1074,6 +1074,7 @@ export type Database = {
       cancel_game: {
         Args: { _sos_id: string }
         Returns: {
+          applicant_ids: string[]
           claimer_ids: string[]
         }[]
       }
@@ -1472,6 +1473,13 @@ export type Database = {
           photo_url: string
           rescues_count: number
           vibe: string
+        }[]
+      }
+      publish_my_game: {
+        Args: { _sos_id: string }
+        Returns: {
+          ok: boolean
+          reason: string
         }[]
       }
       random_player_for_me: {
