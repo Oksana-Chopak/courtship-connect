@@ -66,7 +66,10 @@ function BoardPage() {
   const [gsDismissed] = useState(() => {
     try { return localStorage.getItem("courtship.getstarted.dismissed") === "1"; } catch { return true; }
   });
-  const newbieNudge = gamesPlayed === null ? true : gamesPlayed === 0 && !gsDismissed;
+  // Guests never get GetStarted (no profile → gamesPlayed stays null), so the
+  // queue must not eat their install banner; members: suppress until the
+  // profile has loaded (null) to avoid a banner flash before GetStarted mounts.
+  const newbieNudge = meId ? (gamesPlayed === null ? true : gamesPlayed === 0 && !gsDismissed) : false;
 
   const load = useCallback(async () => {
     // getSession() reads the locally persisted session — no network race on PWA
