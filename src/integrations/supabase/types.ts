@@ -1561,6 +1561,7 @@ export type Database = {
           court_name: string
           court_status: string
           court_type: string
+          court_type_any: boolean
           created_at: string
           format: string
           id: string
@@ -1568,6 +1569,7 @@ export type Database = {
           level_max: number
           level_min: number
           play_at: string
+          play_until: string
           sport: string
           spots_filled: number
           spots_needed: number
