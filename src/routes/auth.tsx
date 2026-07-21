@@ -257,15 +257,21 @@ function AuthPage() {
           onClick={async () => {
             setBusy(true);
             try {
-              // Invite-only parity: the email path gates sign-up on a valid invite
-              // code and stamps it for attribution. OAuth must not be an open
-              // backdoor around that gate — validate the code and persist it so
-              // onboarding records signup_code just like the email flow does.
+              // Invite-only parity, without breaking returning users. The email
+              // path validates the invite up front; OAuth should too — but only
+              // to catch a WRONG code before the round-trip. An empty field is
+              // allowed: guests who tap "Join" land on the signup screen too, and
+              // Google can't tell a new user from a returning one up front. Truly
+              // new users are still gated server-side by save_my_profile (onboarding
+              // shows the recoverable invite prompt); a valid code entered here is
+              // stored so onboarding stamps signup_code, matching the email flow.
               if (mode === "signup") {
                 const code = invite.trim().toUpperCase();
-                const ok = await checkInvite(code);
-                if (!ok) { toast.error(t("auth.invite_bad")); setBusy(false); return; }
-                try { localStorage.setItem("courtship.signup_code", code); } catch {}
+                if (code) {
+                  const ok = await checkInvite(code);
+                  if (!ok) { toast.error(t("auth.invite_bad")); setBusy(false); return; }
+                  try { localStorage.setItem("courtship.signup_code", code); } catch {}
+                }
               }
               const result = await lovable.auth.signInWithOAuth("google", {
                 redirect_uri: window.location.origin,
