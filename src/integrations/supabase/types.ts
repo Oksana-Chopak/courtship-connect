@@ -550,10 +550,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepted_terms_at: string | null
+          accepted_terms_version: string | null
           bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
           buddy_sos_optin: boolean
+          confirmed_adult: boolean
           created_at: string
           email_notifs: boolean
           events_optin: boolean
@@ -580,6 +583,7 @@ export type Database = {
           photo_url: string | null
           photos: string[]
           play_times: string[]
+          public_preview: boolean
           push_max_per_week: number
           push_wake_me: boolean
           referrals_count: number
@@ -589,10 +593,13 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_t"]
         }
         Insert: {
+          accepted_terms_at?: string | null
+          accepted_terms_version?: string | null
           bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
+          confirmed_adult?: boolean
           created_at?: string
           email_notifs?: boolean
           events_optin?: boolean
@@ -619,6 +626,7 @@ export type Database = {
           photo_url?: string | null
           photos?: string[]
           play_times?: string[]
+          public_preview?: boolean
           push_max_per_week?: number
           push_wake_me?: boolean
           referrals_count?: number
@@ -628,10 +636,13 @@ export type Database = {
           vibe?: Database["public"]["Enums"]["vibe_t"]
         }
         Update: {
+          accepted_terms_at?: string | null
+          accepted_terms_version?: string | null
           bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
           buddy_sos_optin?: boolean
+          confirmed_adult?: boolean
           created_at?: string
           email_notifs?: boolean
           events_optin?: boolean
@@ -658,6 +669,7 @@ export type Database = {
           photo_url?: string | null
           photos?: string[]
           play_times?: string[]
+          public_preview?: boolean
           push_max_per_week?: number
           push_wake_me?: boolean
           referrals_count?: number
@@ -927,6 +939,78 @@ export type Database = {
         }
         Relationships: []
       }
+      user_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          status: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          note: string | null
+          purchase: string
+          resolved_at: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          note?: string | null
+          purchase: string
+          resolved_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          note?: string | null
+          purchase?: string
+          resolved_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -946,6 +1030,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      accept_terms: { Args: { _version: string }; Returns: undefined }
       active_sos_count: { Args: { _uid: string }; Returns: number }
       admin_courts_list: {
         Args: never
@@ -996,6 +1081,41 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_reports: {
+        Args: never
+        Returns: {
+          created_at: string
+          details: string
+          id: string
+          reason: string
+          reporter_name: string
+          resolution_note: string
+          resolved_at: string
+          status: string
+          target_id: string
+          target_name: string
+        }[]
+      }
+      admin_list_withdrawals: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          note: string | null
+          purchase: string
+          resolved_at: string | null
+          status: string
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "withdrawal_requests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_players_list: {
         Args: never
         Returns: {
@@ -1023,6 +1143,14 @@ export type Database = {
           signup_code: string
           vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
+      }
+      admin_resolve_report: {
+        Args: { _id: string; _note?: string; _status: string }
+        Returns: undefined
+      }
+      admin_resolve_withdrawal: {
+        Args: { _id: string; _status: string }
+        Returns: undefined
       }
       admin_set_coach_request: {
         Args: { _admin_note?: string; _id: string; _status: string }
@@ -1115,6 +1243,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      delete_my_account: { Args: never; Returns: undefined }
       delete_my_event: { Args: { _id: string }; Returns: undefined }
       delete_push_subscription: {
         Args: { _endpoint: string }
@@ -1218,6 +1347,7 @@ export type Database = {
         }[]
       }
       expire_old_sos: { Args: never; Returns: undefined }
+      export_my_data: { Args: never; Returns: Json }
       flare_my_game: {
         Args: { _sos_id: string }
         Returns: {
@@ -1255,10 +1385,13 @@ export type Database = {
       get_my_full_profile: {
         Args: never
         Returns: {
+          accepted_terms_at: string | null
+          accepted_terms_version: string | null
           bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
           buddy_sos_optin: boolean
+          confirmed_adult: boolean
           created_at: string
           email_notifs: boolean
           events_optin: boolean
@@ -1285,6 +1418,7 @@ export type Database = {
           photo_url: string | null
           photos: string[]
           play_times: string[]
+          public_preview: boolean
           push_max_per_week: number
           push_wake_me: boolean
           referrals_count: number
@@ -1427,7 +1561,6 @@ export type Database = {
           court_name: string
           court_status: string
           court_type: string
-          court_type_any: boolean
           created_at: string
           format: string
           id: string
@@ -1435,7 +1568,7 @@ export type Database = {
           level_max: number
           level_min: number
           play_at: string
-          play_until: string
+          sport: string
           spots_filled: number
           spots_needed: number
         }[]
@@ -1482,6 +1615,7 @@ export type Database = {
           reason: string
         }[]
       }
+      purge_old_logs: { Args: never; Returns: undefined }
       random_player_for_me: {
         Args: never
         Returns: {
@@ -1517,6 +1651,10 @@ export type Database = {
       }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
+      report_user: {
+        Args: { _details?: string; _reason: string; _target: string }
+        Returns: undefined
+      }
       request_buddy: { Args: { _other: string }; Returns: undefined }
       request_coach: {
         Args: {
@@ -1570,6 +1708,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      submit_withdrawal: {
+        Args: {
+          _email: string
+          _name: string
+          _note?: string
+          _purchase: string
+        }
+        Returns: string
+      }
       swipe_deck: {
         Args: never
         Returns: {
@@ -1619,6 +1766,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      unsubscribe_email: { Args: { _token: string }; Returns: boolean }
       update_my_event: {
         Args: { _data: Json; _id: string }
         Returns: undefined
