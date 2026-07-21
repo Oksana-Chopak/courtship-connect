@@ -603,9 +603,34 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         {proposing && (winEnd || (sos as any).court_type_any) && !applied && (
           <div style={{ marginTop: 8 }}>
             {winEnd && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", flexShrink: 0 }}>{t("app.i_can_at")}</span>
-                <input type="time" className="cinput" style={{ flex: 1, padding: "7px 10px" }} value={propTime} onChange={(e) => setPropTime(e.target.value)} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", marginBottom: 6 }}>{t("app.i_can_at")}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(() => {
+                    // Discrete hourly slots across the host's window [play_at .. play_until],
+                    // styled like the court-pref chips below. Every slot is in-window by
+                    // construction, so a pick can never hit the "time outside" error — no
+                    // dead end, and no janky native time wheel on mobile.
+                    const slots: Date[] = [];
+                    const cur = new Date(sos.play_at);
+                    let guard = 0;
+                    while (cur.getTime() <= winEnd.getTime() && guard < 48) {
+                      slots.push(new Date(cur));
+                      cur.setHours(cur.getHours() + 1);
+                      guard++;
+                    }
+                    return slots.map((sl) => {
+                      const val = `${String(sl.getHours()).padStart(2, "0")}:${String(sl.getMinutes()).padStart(2, "0")}`;
+                      const label = sl.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+                      return (
+                        <button key={val} type="button" onClick={() => setPropTime(val)}
+                          className={`cchip ${propTime === val ? "cchip-on" : ""}`} style={{ fontSize: 13, padding: "4px 11px" }}>
+                          {label}
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
             )}
             {(sos as any).court_type_any && (
