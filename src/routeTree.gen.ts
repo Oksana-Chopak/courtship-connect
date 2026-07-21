@@ -43,6 +43,8 @@ import { Route as AuthenticatedSosIdRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedPlayersIdRouteImport } from './routes/_authenticated/players.$id'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
 const WithdrawRoute = WithdrawRouteImport.update({
   id: '/withdraw',
@@ -215,6 +217,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -249,6 +261,8 @@ export interface FileRoutesByFullPath {
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
   '/players/': typeof AuthenticatedPlayersIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
@@ -283,6 +297,8 @@ export interface FileRoutesByTo {
   '/sos/$id': typeof AuthenticatedSosIdRoute
   '/sos/new': typeof AuthenticatedSosNewRoute
   '/players': typeof AuthenticatedPlayersIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
@@ -320,6 +336,8 @@ export interface FileRoutesById {
   '/_authenticated/sos/$id': typeof AuthenticatedSosIdRoute
   '/_authenticated/sos/new': typeof AuthenticatedSosNewRoute
   '/_authenticated/players/': typeof AuthenticatedPlayersIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
@@ -357,6 +375,8 @@ export interface FileRouteTypes {
     | '/sos/$id'
     | '/sos/new'
     | '/players/'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -391,6 +411,8 @@ export interface FileRouteTypes {
     | '/sos/$id'
     | '/sos/new'
     | '/players'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   id:
     | '__root__'
@@ -427,6 +449,8 @@ export interface FileRouteTypes {
     | '/_authenticated/sos/$id'
     | '/_authenticated/sos/new'
     | '/_authenticated/players/'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
@@ -442,6 +466,8 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   WithdrawRoute: typeof WithdrawRoute
   GIdRoute: typeof GIdRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -685,6 +711,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -762,6 +802,8 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   WithdrawRoute: WithdrawRoute,
   GIdRoute: GIdRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
