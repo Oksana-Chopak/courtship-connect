@@ -14,7 +14,7 @@ function TermsPage() {
     <LegalDoc title="Terms of Service" updated="Version 1.0 — effective 20 July 2026">
       <LP>
         These terms are an agreement between you and <b>Oksana Chopak, Sweden</b> ("Courtship", "we"),
-        the operator of the Courtship app at court-ship.com. Contact: <b>hello@court-ship.com</b>. By
+        the operator of the Courtship app at court-ship.com. Contact: <b>oksana.chopak@gmail.com</b>. By
         creating an account you accept these terms and confirm you have read the{" "}
         <Link to="/privacy" className="underline font-bold">Privacy Policy</Link>.
       </LP>
@@ -50,7 +50,7 @@ function TermsPage() {
       <LH>4. Reporting problems (notice &amp; action)</LH>
       <LP>
         Anyone can report a profile or content they believe is illegal or against these terms — use the
-        <b> Report</b> button on a profile, or email hello@court-ship.com with a link and why. We review
+        <b> Report</b> button on a profile, or email oksana.chopak@gmail.com with a link and why. We review
         reports promptly and act proportionately: removing content, warning, restricting, flagging,
         suspending or banning. If we moderate you, we'll tell you what we did and why (unless the law
         prevents it), and you can object by replying within 6 months — a human reviews it. EU users can
@@ -95,7 +95,7 @@ function TermsPage() {
       <LH>9. Law and disputes</LH>
       <LP>
         Swedish law applies, without limiting mandatory consumer protections where you live. Talk to us
-        first: hello@court-ship.com. Swedish consumers can turn to the National Board for Consumer
+        first: oksana.chopak@gmail.com. Swedish consumers can turn to the National Board for Consumer
         Disputes (ARN, arn.se, Box 174, 101 23 Stockholm) — we participate in ARN proceedings. You can
         also use your local EU consumer ADR body or the courts.
       </LP>
@@ -103,7 +103,7 @@ function TermsPage() {
       <LP>
         <i>
           Provider information (e-handelslagen / DSA contact point): Courtship is operated by Oksana
-          Chopak, Sweden. Single point of contact for users and authorities: hello@court-ship.com
+          Chopak, Sweden. Single point of contact for users and authorities: oksana.chopak@gmail.com
           (English, Swedish or Ukrainian). Business registration details will be added upon registration.
         </i>
       </LP>

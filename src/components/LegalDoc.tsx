@@ -25,7 +25,7 @@ export function LegalDoc({ title, updated, children }: { title: string; updated:
           <Link to="/privacy" className="underline">{t("legal.footer_privacy")}</Link>
           {" · "}
           <Link to="/terms" className="underline">{t("legal.footer_terms")}</Link>
-          {" · hello@court-ship.com"}
+          {" · oksana.chopak@gmail.com"}
         </p>
       </div>
     </div>

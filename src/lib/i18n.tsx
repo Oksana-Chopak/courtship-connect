@@ -1139,7 +1139,7 @@ const en: Dict = {
   "privacyc.delete_confirm_ph": "Type DELETE to confirm",
   "privacyc.delete_cta": "Delete forever",
   "privacyc.deleted": "Account deleted. Take care! 👋",
-  "privacyc.delete_err": "Couldn't delete — email hello@court-ship.com",
+  "privacyc.delete_err": "Couldn't delete — email oksana.chopak@gmail.com",
   "report.btn": "🚩 Report",
   "report.title": "Report {name}",
   "report.sub": "Tell us what's wrong — a human reviews every report.",
@@ -1167,7 +1167,7 @@ const en: Dict = {
   "withdraw.send": "Send withdrawal request",
   "withdraw.sent_title": "Request received ✅",
   "withdraw.sent_body": "Your withdrawal is logged (ref {id}). We'll confirm by email and refund within 14 days.",
-  "withdraw.err": "Couldn't send — please email hello@court-ship.com instead",
+  "withdraw.err": "Couldn't send — please email oksana.chopak@gmail.com instead",
 };
 
 const sv: Dict = {
@@ -2282,7 +2282,7 @@ const sv: Dict = {
   "privacyc.delete_confirm_ph": "Skriv DELETE för att bekräfta",
   "privacyc.delete_cta": "Radera för alltid",
   "privacyc.deleted": "Kontot raderat. Sköt om dig! 👋",
-  "privacyc.delete_err": "Kunde inte radera — mejla hello@court-ship.com",
+  "privacyc.delete_err": "Kunde inte radera — mejla oksana.chopak@gmail.com",
   "report.btn": "🚩 Rapportera",
   "report.title": "Rapportera {name}",
   "report.sub": "Berätta vad som är fel — en människa granskar varje rapport.",
@@ -2310,7 +2310,7 @@ const sv: Dict = {
   "withdraw.send": "Skicka ångerbegäran",
   "withdraw.sent_title": "Begäran mottagen ✅",
   "withdraw.sent_body": "Din ångerbegäran är loggad (ref {id}). Vi bekräftar via mejl och återbetalar inom 14 dagar.",
-  "withdraw.err": "Kunde inte skicka — mejla hello@court-ship.com istället",
+  "withdraw.err": "Kunde inte skicka — mejla oksana.chopak@gmail.com istället",
 };
 
 const DICTS: Record<Lang, Dict> = { en, sv };

@@ -19,7 +19,7 @@ function PrivacyPage() {
       </LP>
       <LP>
         <b>Data controller:</b> Oksana Chopak, Sweden (sole operator of Courtship). <b>Contact:</b>{" "}
-        hello@court-ship.com. <b>Supervisory authority:</b> Integritetsskyddsmyndigheten (IMY), imy.se.
+        oksana.chopak@gmail.com. <b>Supervisory authority:</b> Integritetsskyddsmyndigheten (IMY), imy.se.
         Courtship is for adults — you must be <b>18 or older</b>.
       </LP>
 
@@ -77,7 +77,7 @@ function PrivacyPage() {
         You can access and export your data (<b>Download my data</b> in Settings), correct it (edit your
         profile), delete it (Settings, or email us), object to legitimate-interest processing (e.g. switch
         off the public preview or emails), restrict processing, and take your data elsewhere. Anything you
-        can't do in the app: hello@court-ship.com — we answer within a month. You can complain to IMY
+        can't do in the app: oksana.chopak@gmail.com — we answer within a month. You can complain to IMY
         (imy.se) or your local EU data protection authority.
       </LP>
 
