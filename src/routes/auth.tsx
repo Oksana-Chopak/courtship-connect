@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { toast } from "@/lib/toast";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { rememberNext, consumeNext } from "@/lib/share";
