@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BallHeart } from "@/components/RailKit";
+import { Rackets } from "@/components/RailKit";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, type City, sportMeta } from "@/lib/courtship";
 import { useCityNames } from "@/lib/cities";
 import { useI18n } from "@/lib/i18n";
-import { FLAGS } from "@/lib/flags";
 import { shareInvite } from "@/lib/share";
 import { fetchBuddyIds, fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "@/lib/toast";
@@ -116,15 +115,31 @@ function Players() {
   const friends = others.filter((p) => buddyIds.has(p.id));
   const rest = others.filter((p) => !buddyIds.has(p.id));
   const restOrdered = selfRow && !hasFilters ? [selfRow, ...rest] : (selfRow ? [selfRow, ...rest.filter((p) => p.id !== selfRow.id)] : rest);
+  // One-line summary of the active filters for the quiet bar; falls back to a
+  // neutral "all" label when nothing is set.
+  const filterSummary = (() => {
+    const parts: string[] = [];
+    if (level != null) parts.push(`L${level}`);
+    if (format) parts.push(format);
+    if (time) parts.push(time);
+    if (city) parts.push(city);
+    if (buddiesOnly) parts.push("⚡");
+    return parts.length ? parts.join(" · ") : t("players.filter_bar_all");
+  })();
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-4xl">{t("players.title")}</h1>
-        <p className="text-[var(--ink)] font-semibold">{t("players.sub")}</p>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-4xl leading-none">{t("players.title")}</h1>
+          <p className="text-[var(--ink)] font-semibold mt-1">{t("players.sub")}</p>
+        </div>
+        {/* Leaders now lives behind this badge — its bottom-nav slot went to Court Crush. */}
+        <Link to="/leaders" className="shrink-0 inline-flex items-center gap-1.5 font-extrabold rounded-full"
+          style={{ fontSize: 13, border: "1.5px solid rgba(43,33,24,0.28)", background: "rgba(253,249,238,0.6)", color: "var(--ink)", padding: "7px 12px" }}>
+          🏆 {t("tabs.leaders")}
+        </Link>
       </div>
-
-      {meId && <InviteAccent />}
 
       {mySports.length > 1 && (
         <div className="flex gap-1.5 flex-wrap">
@@ -136,33 +151,6 @@ function Players() {
           ))}
         </div>
       )}
-
-      {/* Hero — invite friends (mirrors the board hero composition; ONE loud thing) */}
-      <div>
-        <button type="button" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}
-          className="w-full text-left" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px" }}>
-          <span style={{ fontSize: 24 }}>🤗</span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("players.hero_title")}</span>
-            <span style={{ display: "block", fontWeight: 800, fontSize: 13.5, opacity: 0.95, marginTop: 2 }}>{t("players.hero_sub")}</span>
-          </span>
-          <span style={{ fontSize: 20 }}>→</span>
-        </button>
-        {(FLAGS.swipeDeck || FLAGS.luckyServe) && (
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            {FLAGS.swipeDeck && (
-              <Link to="/match" className="flex items-center gap-2 justify-center" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 8px", fontWeight: 800, fontSize: 14 }}>
-                <BallHeart size={18} /> {t("feat.crush")}
-              </Link>
-            )}
-            {FLAGS.luckyServe && (
-              <Link to="/lucky" className="flex items-center gap-2 justify-center" style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "10px 8px", fontWeight: 800, fontSize: 14 }}>
-                🎰 {t("soon.lucky")}
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* buddy requests — act on them right here */}
       {reqs.length > 0 && (
@@ -180,16 +168,21 @@ function Players() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Quiet filter bar — a one-row summary that opens the full filter sheet;
+          the sheet still carries every prod filter (city / level / format / time / buddies). */}
+      <div>
         <button type="button" onClick={() => setFiltersOpen(true)}
-          className="inline-flex items-center gap-2 font-extrabold rounded-full px-4 py-2 text-sm"
-          style={{ background: "var(--ink)", color: "#FFF6E8" }}>
-          ⚙ {t("players.filters")}
-          {activeCount > 0 && <span className="rounded-full px-2 text-xs font-extrabold" style={{ background: "var(--coral)", color: "var(--ink)" }}>{activeCount}</span>}
+          className="w-full flex items-center gap-2"
+          style={{ padding: "10px 13px", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 10, background: "rgba(253,249,238,0.6)" }}>
+          <span style={{ fontSize: 15 }}>⚙︎</span>
+          <span className="flex-1 text-left font-extrabold" style={{ fontSize: 13, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{filterSummary}</span>
+          {activeCount > 0 && <span className="rounded-full px-2 text-xs font-extrabold shrink-0" style={{ background: "var(--coral)", color: "var(--ink)" }}>{activeCount}</span>}
+          <span className="font-extrabold shrink-0" style={{ fontSize: 12, color: "rgba(43,33,24,0.6)" }}>{t("players.filters")} ▾</span>
         </button>
-        {hasFilters && <button type="button" onClick={clearFilters} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>{t("players.filters_clear")}</button>}
-        <span className="ml-auto text-sm font-semibold" style={{ color: "rgba(43,33,24,0.7)" }}>{t("players.count", { n: filtered.length })}</span>
+        <div className="flex items-center gap-3 mt-1.5 px-1">
+          {hasFilters && <button type="button" onClick={clearFilters} className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>{t("players.filters_clear")}</button>}
+          <span className="ml-auto text-sm font-semibold" style={{ color: "rgba(43,33,24,0.7)" }}>{t("players.count", { n: filtered.length })}</span>
+        </div>
       </div>
 
       {loading ? (
@@ -211,25 +204,29 @@ function Players() {
           </div>
         )
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {friends.length > 0 && (
             <div>
-              <div className="csection-label mb-2">🤝 {t("players.friends")}</div>
-              <div className="grid grid-cols-1 gap-3">
-                {friends.map((p) => <DirCard key={p.id} p={p} isBuddy badge={undefined} />)}
+              <div className="csection-label mb-1">🤝 {t("players.friends")}</div>
+              <div>
+                {friends.map((p) => <PlayerRow key={p.id} p={p} isBuddy badge={undefined} />)}
               </div>
             </div>
           )}
           <div>
-            {friends.length > 0 && <div className="csection-label mb-2">{t("players.everyone")}</div>}
-            <div className="grid grid-cols-1 gap-3">
+            {friends.length > 0 && <div className="csection-label mb-1">{t("players.everyone")}</div>}
+            <div>
               {restOrdered.map((p) => (
-                <DirCard key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
+                <PlayerRow key={p.id} p={p} isBuddy={buddyIds.has(p.id)} badge={p.id === meId ? (isAdmin ? t("players.founder") : t("players.you")) : undefined} />
               ))}
             </div>
           </div>
         </div>
       )}
+
+      {/* Invite — kept as a quiet card (personal code + referrals + share). The
+          loud coral hero was dropped per the redesign; the function stays. */}
+      {meId && <InviteAccent />}
 
       {filtersOpen && (
         <FilterSheet
@@ -374,57 +371,54 @@ function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => void; c
   return <button type="button" onClick={onClick} className={`cchip ${on ? "cchip-on" : ""}`}>{children}</button>;
 }
 
-// Directory card. Friends render identically to everyone else, plus a quiet
-// "Buddy" tag. min-height keeps cards visually even regardless of bio/name length.
-function DirCard({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string }) {
+// Directory row — Board-style list line (no boxes-in-boxes). Carries the same
+// signals the old card did: photo/monogram, name, member 🏆, last-minute ⚡,
+// home city, level, format (rackets), vibe, rescuer 🚑, buddy 🤝 and the self
+// badge. Bio + play times live on the player-detail page (/players/$id).
+function PlayerRow({ p, isBuddy, badge }: { p: P; isBuddy: boolean; badge?: string }) {
   const { t } = useI18n();
   const lm = levelMeta(p.level);
   const [bg, fg] = monogramColors(p.id);
   const hasPhoto = !!p.photo_url;
-  const times = (p.play_times ?? []).map((x) => x.replace(/Weekday |Weekend /, "")).filter(Boolean);
+  const isDoubles = (p.formats ?? []).includes("doubles");
+  const lastMinute = p.buddy_optin === "yes";
+  const rescues = p.rescues_count ?? 0;
   return (
     <Link
       to="/players/$id"
       params={{ id: p.id }}
-      className="flex gap-3 overflow-hidden hover:translate-y-[-2px] transition-transform"
-      style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", minHeight: 128 }}
+      className="flex items-center gap-3"
+      style={{ padding: "11px 0", borderBottom: "1px solid rgba(43,33,24,0.12)" }}
     >
-      <div className="relative shrink-0 self-stretch" style={{ width: 104, background: bg, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 11px)" }}>
+      <div className="shrink-0" style={{ width: 54, height: 54, borderRadius: 27, overflow: "hidden", border: "1.5px solid rgba(43,33,24,0.28)", background: bg }}>
         {hasPhoto ? (
-          <img src={p.photo_url!} alt={p.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={p.photo_url!} alt={p.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center font-display" style={{ fontSize: 52, color: fg, opacity: 0.92 }}>{(p.name || "?").charAt(0)}</div>
-        )}
-        {(p.rescues_count ?? 0) >= 5 && (
-          <span className="absolute bottom-1.5 left-1.5 font-extrabold rounded-full" style={{ fontSize: 10, padding: "1px 6px", color: "var(--ink)", background: "var(--coral)", border: "1.5px solid var(--ink)" }}>🚑 {p.rescues_count}</span>
+          <div className="flex items-center justify-center font-display" style={{ width: "100%", height: "100%", fontSize: 26, color: fg }}>{(p.name || "?").charAt(0)}</div>
         )}
       </div>
-      <div className="flex-1 min-w-0 py-2.5 pr-3 flex flex-col justify-center">
-        <div className="flex items-start justify-between gap-2">
-          <span className="font-display leading-tight" style={{ fontSize: 20 }}>{p.name}{p.last_name ? " " + p.last_name : ""}{p.member_tier ? <span title="Member" style={{ marginLeft: 4 }}>🏆</span> : null}</span>
-          <span className="inline-flex gap-0.5 shrink-0 mt-1.5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className="rounded-full" style={{ width: 7, height: 7, background: i <= p.level ? lm.color : "transparent", border: `1.5px solid ${i <= p.level ? lm.color : "var(--ink)"}`, opacity: i <= p.level ? 1 : 0.3, boxSizing: "border-box" }} />
-            ))}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="font-display" style={{ fontSize: 17, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}{p.last_name ? " " + p.last_name : ""}</span>
+          {p.member_tier && <span title="Member" style={{ fontSize: 12, flexShrink: 0 }}>🏆</span>}
+          {lastMinute && <span title={t("players.will_rescue")} style={{ fontSize: 12, flexShrink: 0 }}>⚡</span>}
+        </div>
+        {p.home_city && (
+          <div className="font-extrabold" style={{ fontSize: 12.5, color: "#8C5A33", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>📍 {p.home_city}</div>
+        )}
+        <div className="flex items-center gap-2.5" style={{ marginTop: 5, flexWrap: "wrap" }}>
+          <span className="inline-flex items-center gap-1">
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: lm.color }} />
+            <span style={{ fontWeight: 700, fontSize: 12, color: "rgba(43,33,24,0.6)" }}>L{p.level}</span>
           </span>
+          <Rackets n={isDoubles ? 4 : 2} size={15} />
+          {p.vibe && <span style={{ fontSize: 13 }}>{vibeEmoji(p.vibe)}</span>}
+          {rescues >= 5 && <span style={{ fontWeight: 800, fontSize: 12, color: "#8C5A33" }}>🚑 {rescues}</span>}
+          {isBuddy && <span title={t("buddy.badge")} style={{ fontSize: 12 }}>🤝</span>}
+          {badge && <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "rgba(43,33,24,0.45)" }}>{badge}</span>}
         </div>
-        <div className="text-[13px] font-bold mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: "rgba(43,33,24,0.7)" }}>
-          <span>{vibeEmoji(p.vibe)}</span>
-          {p.home_city && <span>📍 {p.home_city}</span>}
-          {isBuddy && (
-            <span className="inline-flex items-center rounded-full font-extrabold" style={{ fontSize: 10, padding: "1px 7px", background: "var(--cream)", border: "1.5px solid rgba(43,33,24,0.35)", color: "rgba(43,33,24,0.6)" }}>🤝 {t("buddy.badge")}</span>
-          )}
-        </div>
-        {times.length > 0 && (
-          <div className="text-[12px] font-semibold mt-1" style={{ color: "rgba(43,33,24,0.6)" }}>🎾 {times.slice(0, 3).join(" · ")}</div>
-        )}
-        {p.bio && (
-          <div className="text-[13px] italic mt-1 leading-snug" style={{ color: "rgba(43,33,24,0.85)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-            "{p.bio}"
-          </div>
-        )}
-        {badge && <div className="text-[11px] font-bold uppercase tracking-wide mt-1.5" style={{ color: "rgba(43,33,24,0.45)" }}>{badge}</div>}
       </div>
+      <span style={{ fontSize: 20, color: "rgba(43,33,24,0.3)", flexShrink: 0 }}>›</span>
     </Link>
   );
 }

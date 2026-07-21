@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { BallHeart } from "@/components/RailKit";
 
 type Tab = {
   to: string;
-  icon: string;
+  icon: ReactNode;
   label: string;
   match: (path: string) => boolean;
   badge?: number;
@@ -48,7 +49,10 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
     { to: "/players", icon: "👥", label: t("tabs.players"), match: (p) => p.startsWith("/players") },
   ];
   const right: Tab[] = [
-    { to: "/leaders", icon: "🏆", label: t("tabs.leaders"), match: (p) => p.startsWith("/leaders") },
+    // Court Crush (the "Tinder for tennis" swipe deck) takes the slot the
+    // Leaderboard used to hold; Leaders now lives behind the badge on /players.
+    // /lucky (Lucky Serve) is a child of Crush, so it keeps this tab lit.
+    { to: "/match", icon: <BallHeart size={24} />, label: t("tabs.crush"), match: (p) => p.startsWith("/match") || p.startsWith("/lucky") },
     { to: "/me", icon: "🙂", label: t("tabs.profile"), match: (p) => p === "/me" || p.startsWith("/admin") || p.startsWith("/progress") || p.startsWith("/matches") || p.startsWith("/people") || p.startsWith("/settings") || p.startsWith("/help"), badge: profileBadge },
   ];
 

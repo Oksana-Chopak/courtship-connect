@@ -65,7 +65,7 @@ function Lucky() {
 
   return (
     <div className="space-y-5">
-      <Link to="/players" className="text-sm font-extrabold underline">{t("players.back")}</Link>
+      <Link to="/match" className="text-sm font-extrabold underline">← {t("match.title")}</Link>
       <div className="text-center">
         <h1 className="font-display text-4xl">{t("lucky.title")}</h1>
         <p className="text-[var(--ink)] font-semibold" style={{ fontSize: 16.5 }}>{t("lucky.sub")}</p>

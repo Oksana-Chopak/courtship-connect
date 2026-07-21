@@ -110,7 +110,9 @@ function MatchDeck() {
 
   return (
     <div className="space-y-5">
-      <Link to="/players" className="text-sm font-extrabold underline">{t("players.back")}</Link>
+      {/* Court Crush is a top-level tab now; this shortcut keeps Lucky Serve
+          reachable (it used to sit next to Crush on the Players page). */}
+      <Link to="/lucky" className="text-sm font-extrabold underline">{t("lucky.title")}</Link>
       <div className="text-center">
         <h1 className="font-display text-4xl inline-flex items-center gap-2 justify-center"><BallHeart size={34} /> {t("match.title")}</h1>
         <p className="text-[var(--ink)] font-semibold" style={{ fontSize: 16.5 }}>{t("match.sub")}</p>
