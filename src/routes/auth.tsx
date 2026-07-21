@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { toast } from "@/lib/toast";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { rememberNext, consumeNext } from "@/lib/share";
@@ -243,6 +244,39 @@ function AuthPage() {
             {busy ? "..." : mode === "signup" ? t("auth.create_account") : t("auth.sign_in")}
           </button>
         </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--ink)]/15" />
+          <span className="text-xs font-extrabold uppercase tracking-widest opacity-60">or</span>
+          <div className="h-px flex-1 bg-[var(--ink)]/15" />
+        </div>
+
+        <button
+          type="button"
+          disabled={busy || !legalOk}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const result = await lovable.auth.signInWithOAuth("google", {
+                redirect_uri: window.location.origin,
+              });
+              if (result.error) throw result.error;
+            } catch (err: any) {
+              toast.error(err?.message ?? "Something went wrong");
+              setBusy(false);
+            }
+          }}
+          className="cbtn w-full bg-white flex items-center justify-center gap-2"
+          style={{ opacity: legalOk ? 1 : 0.5 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.1 17.7 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.5 3-2.2 5.5-4.6 7.2l7.4 5.7c4.3-4 6.9-9.9 6.9-17.2z"/>
+            <path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.6 2.6 10.7l7.8-6z"/>
+            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.3-8.5 2.3-6.3 0-11.7-3.6-13.6-9.1l-7.8 6C6.5 42.6 14.6 48 24 48z"/>
+          </svg>
+          <span className="font-extrabold">{mode === "signup" ? "Sign up with Google" : "Sign in with Google"}</span>
+        </button>
 
         {mode === "login" && (
           <button
