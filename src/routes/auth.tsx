@@ -257,6 +257,16 @@ function AuthPage() {
           onClick={async () => {
             setBusy(true);
             try {
+              // Invite-only parity: the email path gates sign-up on a valid invite
+              // code and stamps it for attribution. OAuth must not be an open
+              // backdoor around that gate — validate the code and persist it so
+              // onboarding records signup_code just like the email flow does.
+              if (mode === "signup") {
+                const code = invite.trim().toUpperCase();
+                const ok = await checkInvite(code);
+                if (!ok) { toast.error(t("auth.invite_bad")); setBusy(false); return; }
+                try { localStorage.setItem("courtship.signup_code", code); } catch {}
+              }
               const result = await lovable.auth.signInWithOAuth("google", {
                 redirect_uri: window.location.origin,
               });
