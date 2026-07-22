@@ -503,20 +503,33 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
     <RailShell>
       <TimeRail day={day} time={time} ct={(sos as any).court_type_any ? "🏟️" : ctMeta.emoji} tone={tone} dateStr={dateStr} ctSub={(sos as any).court_type_any ? t("ct.sub_any") : sos.court_type === "indoor" ? t("ct.sub_in") : t("ct.sub_out")} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
-        {/* tags row — only when there's a tag, so the name never floats below empty space */}
-        {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis")) && (
+        {/* tags row — also carries the city, top-right, quiet (frees the club line
+            from truncation on mobile; tester request 2026-07-22) */}
+        {((sos.is_buddy && !mine) || isUrgent || mine || (!!sos.sport && sos.sport !== "tennis") || !!sos.court_city) && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8, flexWrap: "wrap" }}>
             {sos.is_buddy && !mine && (
-              <span style={{ fontWeight: 800, fontSize: RF.tag, color: "var(--ink)", background: softCoral, borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
+              // Buddy is a quiet fact, not an accent — no coral (accent budget).
+              <span style={{ fontWeight: 700, fontSize: RF.tag, color: "rgba(43,33,24,0.55)", background: "var(--cream2)", border: "1px solid rgba(43,33,24,0.22)", borderRadius: 6, padding: "1px 7px" }}>🤝 {t("buddy.tag")}</span>
             )}
             {isUrgent && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.06em", textTransform: "uppercase", color: softCoral }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: softCoral }} />SOS</span>
             )}
-            {mine && (
-              <span style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.04em", textTransform: "uppercase", color: claimed ? "#3A4A12" : "#8C5A33" }}>{claimed ? `✅ ${t("board.game_claimed")}` : t("board.you_host")}</span>
+            {mine && claimed && (
+              <span style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.04em", textTransform: "uppercase", color: "#3A4A12" }}>✅ {t("board.game_claimed")}</span>
+            )}
+            {mine && !claimed && !(sos as any).ghost_name && (
+              <span style={{ fontWeight: 800, fontSize: RF.tag, letterSpacing: "0.04em", textTransform: "uppercase", color: "#8C5A33" }}>{t("board.you_host")}</span>
+            )}
+            {mine && !!(sos as any).ghost_name && (
+              // Barely-there note: the headline shows the person's name; this only
+              // reminds the admin it was posted on their behalf.
+              <span style={{ fontWeight: 700, fontSize: RF.tag - 1, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(43,33,24,0.4)" }}>👻 {t("sos.ghost_tag")}</span>
             )}
             {!!sos.sport && sos.sport !== "tennis" && (
               <span style={{ fontWeight: 800, fontSize: RF.tag, padding: "1px 8px", borderRadius: 999, background: "var(--green-pop)", border: "1.5px solid var(--ink)" }}>{sportMeta(sos.sport).emoji} {t(sportMeta(sos.sport).key)}</span>
+            )}
+            {!!sos.court_city && (
+              <span style={{ marginLeft: "auto", fontWeight: 600, fontSize: RF.tag, color: "rgba(43,33,24,0.45)", whiteSpace: "nowrap", flexShrink: 0 }}>{sos.court_city}</span>
             )}
           </div>
         )}
@@ -533,9 +546,9 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
             )}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>
-                {(sos as any).ghost_name ? t("sos.ghost_for", { name: String((sos as any).ghost_name) }) : t("board.youre_hosting")}
+                {(sos as any).ghost_name ? String((sos as any).ghost_name) : t("board.youre_hosting")}
               </div>
-              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_name ?? t("board.court")}</div>
             </div>
           </div>
         ) : sos.caller_name ? (
@@ -543,12 +556,12 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
             <RailPhoto src={sos.caller_photo_url ?? null} name={sos.caller_name} seed={sos.caller_id} size={52} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>{sos.caller_name}{sos.caller_last_name ? " " + sos.caller_last_name : ""}</div>
-              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_name ?? t("board.court")}</div>
             </div>
           </div>
         ) : (
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.1, ...clampLines(2) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.1, ...clampLines(2) }}>📍 {sos.court_name ?? t("board.court")}</div>
           </div>
         )}
 
