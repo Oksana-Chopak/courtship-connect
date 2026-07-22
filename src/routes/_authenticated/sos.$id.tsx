@@ -50,6 +50,9 @@ function SosDetail() {
   const [proposing, setProposing] = useState(false);
   const [propTime, setPropTime] = useState("");
   const [prefCt, setPrefCt] = useState<"any" | "indoor" | "outdoor">("any");
+  // Booking link (Matchi): host attaches it once the court is actually booked;
+  // picked players get a button on their game screen (2026-07-22 request).
+  const [bookingDraft, setBookingDraft] = useState("");
   const getPhone = useServerFn(getProfilePhone);
 
   async function load() {
@@ -61,6 +64,7 @@ function SosDetail() {
     ]);
     const data = (sosRes as any)?.data;
     setSos(data ?? null);
+    setBookingDraft(((data as any)?.booking_link as string | null) ?? "");
     // RLS: the host sees all (host = player_a); a joiner sees their own.
     setGamePlayerBs((((gamesRes as any)?.data as any[]) ?? []).map((r) => r.player_b));
     if (data?.court_id) {
@@ -152,7 +156,9 @@ function SosDetail() {
   useEffect(() => {
     if (!sos || !me) return;
     if (isCaller) {
-      if (sos.kind === "open" && sos.status === "active") {
+      // 'claimed' included: the group may be formed while people are still
+      // raising hands — the host can keep picking or release them (2026-07-22).
+      if (sos.kind === "open" && (sos.status === "active" || sos.status === "claimed")) {
         fetchApplicants(sos.id).then(setApplicants).catch(() => setApplicants([]));
       } else setApplicants([]);
       if (!gamePlayerBs.length) { setClaimers([]); return; }
@@ -284,6 +290,11 @@ function SosDetail() {
             <button className="cbtn cbtn-green w-full" onClick={() => messageWa(other.id)}>{t("sos.message_wa")}</button>
           </div>
         )}
+        {/* Court already booked? The host attached the Matchi link — one tap. */}
+        {(sos as any).booking_link && (
+          <a href={(sos as any).booking_link as string} target="_blank" rel="noopener noreferrer"
+            className="cbtn cbtn-ghost w-full text-center block">🔗 {t("sos.booking_open")}</a>
+        )}
         {canPlay && (
           <a href={calUrl} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-ghost w-full text-center block">{t("cal.add")}</a>
         )}
@@ -347,6 +358,31 @@ function SosDetail() {
           </div>
         )}
 
+        {/* Booking link (Matchi) — the host drops it in once the court is booked;
+            everyone who's picked sees the button on their game screen. */}
+        <div className="ccard p-4 space-y-2">
+          <div className="csection-label">🔗 {t("sos.booking_label")}</div>
+          <p className="text-sm font-semibold" style={{ opacity: 0.65 }}>{t("sos.booking_hint")}</p>
+          <div className="flex gap-2">
+            <input className="cinput flex-1" placeholder="https://www.matchi.se/…" value={bookingDraft}
+              onChange={(e) => setBookingDraft(e.target.value)} inputMode="url" />
+            <button className="cbtn cbtn-green shrink-0" disabled={busy || bookingDraft.trim() === (((sos as any).booking_link as string | null) ?? "")}
+              onClick={async () => {
+                setBusy(true);
+                const { error } = await (supabase as any).rpc("set_booking_link", { _sos_id: sos!.id, _url: bookingDraft.trim() || null });
+                setBusy(false);
+                if (error) {
+                  const m = String(error.message || "");
+                  if (/link_not_http/.test(m)) { toast.error(t("sos.booking_bad")); return; }
+                  oops(error);
+                  return;
+                }
+                toast.success(t("sos.booking_saved"));
+                load();
+              }}>✓</button>
+          </div>
+        </div>
+
         {/* Token cards live OUTSIDE the open-game block: invited (🎟) games are
             always kind='sos' and ghost handover stays useful even after claim —
             gating these on isOpen made both links unreachable (2026-07-20 audit). */}
@@ -380,9 +416,14 @@ function SosDetail() {
             )}
           </div>
         )}
-        {isOpen && !full && (
+        {isOpen && (!full || applicants.length > 0) && (
           <div className="ccard p-4 space-y-3">
             <div className="csection-label">🙋 {t("app.candidates")}</div>
+            {/* Group already formed but people are still raising hands — the host
+                decides: pick more (no cap) or release the rest (2026-07-22). */}
+            {full && applicants.length > 0 && (
+              <p className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("app.full_more_hint")}</p>
+            )}
             {applicants.length === 0 ? (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-[var(--ink)]/70">{t("app.none_hint")}</div>
@@ -423,6 +464,19 @@ function SosDetail() {
                 </button>
               </div>
             ))}
+            {full && applicants.length > 0 && (
+              <button className="cbtn cbtn-ghost w-full" disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  const { data, error } = await (supabase as any).rpc("release_applicants", { _sos_id: sos!.id });
+                  setBusy(false);
+                  if (error) { oops(error); return; }
+                  toast.success(t("app.released", { n: Number(data ?? 0) }));
+                  fetchApplicants(sos!.id).then(setApplicants).catch(() => {});
+                }}>
+                💔 {t("app.release_rest")}
+              </button>
+            )}
           </div>
         )}
 

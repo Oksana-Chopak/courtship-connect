@@ -6,7 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { whatsappLink, levelMeta, monogramColors, sportMeta, vibeEmoji, waErrorKey } from "@/lib/courtship";
-import { BallHeart, RF, clampLines } from "@/components/RailKit";
+import { BallHeart, Rackets, RF, clampLines } from "@/components/RailKit";
 import { PlayerDossierSheet } from "@/components/PlayerDossierSheet";
 import { useI18n } from "@/lib/i18n";
 import { shareInvite } from "@/lib/share";
@@ -149,8 +149,12 @@ function MatchDeck() {
       ) : card ? (
         <>
           <div className="relative flex justify-center" style={{ minHeight: 480, touchAction: "pan-y" }}>
+            {/* deck peek — two cards behind, slightly rotated (CourtCrush redesign) */}
+            {deck[i + 2] && (
+              <div className="absolute" style={{ top: 18, width: "min(316px, 88%)", height: "90%", borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(2deg) scale(0.96)" }} />
+            )}
             {deck[i + 1] && (
-              <div className="absolute" style={{ top: 10, width: 286, height: 460, borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(3deg)" }} />
+              <div className="absolute" style={{ top: 9, width: "min(326px, 93%)", height: "94%", borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(-1.2deg) scale(0.98)" }} />
             )}
             <div
               style={{ transform: `translateX(${drag}px) rotate(${drag / 14}deg)`, transition: dragging ? "none" : "transform 0.25s ease", position: "relative" }}
@@ -176,22 +180,22 @@ function MatchDeck() {
               }}
               onPointerCancel={() => { setDragging(false); setDrag(0); }}
             >
-              <SwipeCard card={card} photoIdx={photoIdx} />
-              {/* drag verdict badges */}
-              <div style={{ position: "absolute", top: 22, left: 18, transform: "rotate(-12deg)", opacity: Math.min(1, Math.max(0, drag / 70)), pointerEvents: "none" }}>
-                <span className="font-display" style={{ fontSize: 30, color: "var(--green-pop)", border: "3px solid var(--green-pop)", borderRadius: 10, padding: "2px 12px", background: "rgba(22,18,13,0.45)" }}>{t("match.like")} 🎾</span>
+              <SwipeCard card={card} photoIdx={photoIdx} onOpenDetails={() => setDetails(true)} />
+              {/* drag verdict stamps — GAME ON / NET (CourtCrush redesign) */}
+              <div style={{ position: "absolute", top: 24, left: 18, transform: "rotate(-14deg)", opacity: Math.min(1, Math.max(0, drag / 70)), pointerEvents: "none" }}>
+                <span className="font-display" style={{ fontSize: 26, color: "var(--green-pop)", border: "3px solid var(--green-pop)", borderRadius: 8, padding: "2px 10px", background: "rgba(20,15,10,0.35)" }}>{t("match.stamp_like")}</span>
               </div>
-              <div style={{ position: "absolute", top: 22, right: 18, transform: "rotate(12deg)", opacity: Math.min(1, Math.max(0, -drag / 70)), pointerEvents: "none" }}>
-                <span className="font-display" style={{ fontSize: 30, color: "#FFF6E8", border: "3px solid #FFF6E8", borderRadius: 10, padding: "2px 12px", background: "rgba(240,112,91,0.75)" }}>{t("match.pass")}</span>
+              <div style={{ position: "absolute", top: 24, right: 18, transform: "rotate(12deg)", opacity: Math.min(1, Math.max(0, -drag / 70)), pointerEvents: "none" }}>
+                <span className="font-display" style={{ fontSize: 26, color: "#FFF6E8", border: "3px solid #FFF6E8", borderRadius: 8, padding: "2px 10px", background: "rgba(240,112,91,0.75)" }}>{t("match.stamp_pass")}</span>
               </div>
             </div>
+            {/* actions live ON the photo (overlay siblings — they don't rotate with the drag) */}
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 16, display: "flex", justifyContent: "center", gap: 44, pointerEvents: "none", zIndex: 5 }}>
+              <button onClick={() => swipe(false)} disabled={busy} aria-label={t("match.pass")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ pointerEvents: "auto", width: 60, height: 60, background: "#FDF9EE", border: "2px solid var(--ink)", boxShadow: "2px 3px 0 var(--ink)", fontSize: 24 }}>✕</button>
+              <button onClick={() => swipe(true)} disabled={busy} aria-label={t("match.like")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ pointerEvents: "auto", width: 60, height: 60, background: "var(--green-pop)", border: "2px solid var(--ink)", boxShadow: "2px 3px 0 var(--ink)", fontSize: 24 }}>🎾</button>
+            </div>
           </div>
-          <div className="flex justify-center gap-6">
-            <button onClick={() => swipe(false)} disabled={busy} aria-label={t("match.pass")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--cream2)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>✕</button>
-            <button onClick={() => swipe(true)} disabled={busy} aria-label={t("match.like")} className="flex items-center justify-center rounded-full disabled:opacity-50" style={{ width: 64, height: 64, background: "var(--green-pop)", border: "2.5px solid var(--ink)", boxShadow: "3px 3px 0 var(--ink)", fontSize: 26 }}>🎾</button>
-          </div>
-          <div className="text-center text-xs font-bold" style={{ color: "rgba(43,33,24,0.5)" }}>{t("match.pass")} · {t("match.like")}</div>
-          {details && card && <PlayerDossierSheet card={card} onClose={() => setDetails(false)} />}
+          {details && card && <PlayerDossierSheet card={card} onClose={() => setDetails(false)} onLike={() => { setDetails(false); void swipe(true); }} />}
         </>
       ) : (
         <div className="ccard p-6 text-center space-y-3">
@@ -213,18 +217,15 @@ function photosOf(c: Card | undefined): string[] {
   return c.photo_url ? [c.photo_url] : [];
 }
 
-function SwipeCard({ card, photoIdx = 0 }: { card: Card; photoIdx?: number }) {
-  const { t } = useI18n();
+function SwipeCard({ card, photoIdx = 0, onOpenDetails }: { card: Card; photoIdx?: number; onOpenDetails?: () => void }) {
   const lm = levelMeta(card.level);
   const [bg, fg] = monogramColors(card.id);
   const ph = photosOf(card);
   const src = ph[Math.min(photoIdx, Math.max(0, ph.length - 1))] ?? null;
   const sports = (card.sports?.length ? card.sports : ["tennis"]) as string[];
-  const progress: string[] = [];
-  if ((card.games_played ?? 0) > 0) progress.push(`🎾 ${card.games_played}`);
-  if ((card.rescues_count ?? 0) > 0) progress.push(`🚑 ${card.rescues_count}`);
+  const isDoubles = (card.formats ?? []).includes("doubles");
   return (
-    <div className="relative overflow-hidden mx-auto" style={{ width: 300, maxWidth: "100%", aspectRatio: "300 / 468", borderRadius: 22, border: "2.5px solid var(--ink)", boxShadow: "5px 5px 0 rgba(43,33,24,0.18)", background: bg }}>
+    <div className="relative overflow-hidden mx-auto" style={{ width: "min(340px, 100%)", aspectRatio: "300 / 468", borderRadius: 22, border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.18)", background: bg }}>
       {src ? (
         <img src={src} alt={card.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
       ) : (
@@ -241,32 +242,39 @@ function SwipeCard({ card, photoIdx = 0 }: { card: Card; photoIdx?: number }) {
           ))}
         </div>
       )}
-      <div className="absolute" style={{ top: 18, right: 14 }}>
-        <span className="font-extrabold rounded-full" style={{ fontSize: 13, padding: "3px 10px", color: "#FFF6E8", background: "rgba(22,18,13,0.5)", border: `1.5px solid ${lm.color}` }}>L{card.level}</span>
-      </div>
-      <div className="absolute left-0 right-0 bottom-0" style={{ padding: "52px 16px 14px", background: "linear-gradient(to top, rgba(22,18,13,0.94), rgba(22,18,13,0.6) 55%, transparent)" }}>
-        <div className="flex items-baseline gap-2">
+      {/* identity block — gradient bottom; padding clears the on-photo actions */}
+      <div className="absolute left-0 right-0 bottom-0" style={{ padding: "64px 16px 88px", background: "linear-gradient(180deg, transparent, rgba(20,15,10,0.9))" }}>
+        <div className="flex items-center gap-2">
           <span className="font-display" style={{ fontSize: 30, color: "#FFF6E8", ...clampLines(1) }}>{card.name}</span>
-          <span className="ml-auto inline-flex gap-1 shrink-0">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <span key={n} className="rounded-full" style={{ width: 8, height: 8, background: n <= card.level ? lm.color : "transparent", border: `1.5px solid ${n <= card.level ? lm.color : "rgba(236,230,216,0.5)"}`, boxSizing: "border-box" }} />
-            ))}
-          </span>
+          {/* ⌃ tab — the explicit door to the full dossier (middle-tap still works) */}
+          <button
+            type="button"
+            aria-label="More"
+            onClick={onOpenDetails}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            className="ml-auto shrink-0 flex items-center justify-center rounded-full"
+            style={{ width: 40, height: 40, background: "rgba(43,33,24,0.55)", border: "1.5px solid rgba(255,255,255,0.7)", color: "#FFF6E8", fontSize: 18, backdropFilter: "blur(3px)" }}
+          >⌃</button>
         </div>
-        <div className="font-bold mt-1 flex items-center gap-2 flex-wrap" style={{ fontSize: 14.5, color: "rgba(236,230,216,0.9)" }}>
-          <span>{sports.map((sp) => sportMeta(sp).emoji).join(" ")}</span>
-          {card.vibe && <span>{vibeEmoji(card.vibe)}</span>}
-          {/* Areas beat the city when we have them — "Huddinge", not "Stockholm" */}
+        <div className="font-extrabold mt-1.5 flex items-center gap-2 flex-wrap" style={{ fontSize: 13.5, color: "rgba(255,246,232,0.94)" }}>
+          {sports.some((sp) => sp !== "tennis") && <span>{sports.map((sp) => sportMeta(sp).emoji).join(" ")}</span>}
           {card.areas?.length ? (
             <span>📍 {card.areas.slice(0, 2).join(" · ")}</span>
           ) : card.home_city ? (
             <span>📍 {card.home_city}</span>
           ) : null}
-          {progress.length > 0 && <span>{progress.join(" · ")}</span>}
+          <span className="inline-flex items-center gap-1"><Rackets n={isDoubles ? 4 : 2} size={15} /></span>
+          <span className="inline-flex items-center gap-1">
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: lm.color, display: "inline-block" }} />L{card.level}
+          </span>
+          {card.vibe && <span>{vibeEmoji(card.vibe)}</span>}
         </div>
-        {card.fav_shot && <div className="mt-1.5" style={{ fontSize: 14, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
-        {card.bio && <div className="font-display italic mt-1.5" style={{ fontSize: 16, color: "#FFF6E8", lineHeight: 1.3, ...clampLines(2) }}>"{card.bio}"</div>}
-        <div className="mt-2 font-extrabold" style={{ fontSize: 12, color: "rgba(236,230,216,0.65)", letterSpacing: "0.05em" }}>ⓘ {t("crush.tap_more")}</div>
+        {card.bio ? (
+          <div className="font-display mt-2" style={{ fontSize: 16, color: "#FFF6E8", lineHeight: 1.3, ...clampLines(2) }}>“{card.bio}”</div>
+        ) : card.fav_shot ? (
+          <div className="mt-2" style={{ fontSize: 14, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>
+        ) : null}
       </div>
     </div>
   );
