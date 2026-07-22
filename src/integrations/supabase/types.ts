@@ -134,6 +134,24 @@ export type Database = {
         }
         Relationships: []
       }
+      city_areas: {
+        Row: {
+          area: string
+          city: string
+          sort: number
+        }
+        Insert: {
+          area: string
+          city: string
+          sort?: number
+        }
+        Update: {
+          area?: string
+          city?: string
+          sort?: number
+        }
+        Relationships: []
+      }
       coach_requests: {
         Row: {
           admin_note: string | null
@@ -552,6 +570,7 @@ export type Database = {
         Row: {
           accepted_terms_at: string | null
           accepted_terms_version: string | null
+          areas: string[]
           bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
@@ -595,6 +614,7 @@ export type Database = {
         Insert: {
           accepted_terms_at?: string | null
           accepted_terms_version?: string | null
+          areas?: string[]
           bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
@@ -638,6 +658,7 @@ export type Database = {
         Update: {
           accepted_terms_at?: string | null
           accepted_terms_version?: string | null
+          areas?: string[]
           bio?: string | null
           buddy_optin?: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km?: number
@@ -1387,6 +1408,7 @@ export type Database = {
         Returns: {
           accepted_terms_at: string | null
           accepted_terms_version: string | null
+          areas: string[]
           bio: string | null
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
@@ -1523,14 +1545,17 @@ export type Database = {
       players_directory: {
         Args: { _ids?: string[] }
         Returns: {
+          areas: string[]
           bio: string
           buddy_optin: Database["public"]["Enums"]["buddy_optin_t"]
           buddy_radius_km: number
           created_at: string
+          experience: string
           fav_shot: string
           formats: string[]
           games_played: number
           ghost_badge: boolean
+          goals: string[]
           home_cities: string[]
           home_city: string
           home_courts: string
@@ -1722,6 +1747,7 @@ export type Database = {
       swipe_deck: {
         Args: never
         Returns: {
+          areas: string[]
           bio: string
           experience: string
           fav_shot: string
