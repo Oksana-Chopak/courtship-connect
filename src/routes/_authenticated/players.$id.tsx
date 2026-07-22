@@ -164,6 +164,9 @@ function PlayerDetail() {
         )}
 
         <Row label={t("city.label")}>📍 {p.home_city ?? "—"}</Row>
+        {Array.isArray((p as any).areas) && ((p as any).areas as string[]).length > 0 && (
+          <Row label={t("prof.areas")}>{((p as any).areas as string[]).join(" · ")}</Row>
+        )}
         <Row label={t("player.formats")}>{p.formats?.join(" · ") || "—"}</Row>
         <Row label={t("player.when")}>{p.play_times?.join(" · ") || "—"}</Row>
         <Row label={t("player.looking_for")}>{p.looking_for ? t((`lf.${p.looking_for}`) as any) : "—"}</Row>

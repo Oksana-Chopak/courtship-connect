@@ -8,7 +8,8 @@ import {
   levelMeta,
   toE164,
   type City,
-  SPORTS, GOALS, EXPERIENCES, sportMeta } from "@/lib/courtship";
+  SPORTS, GOALS, EXPERIENCES, MATCHI_BY_LEVEL, sportMeta } from "@/lib/courtship";
+import { useCityAreas } from "@/lib/areas";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { CourtCombobox } from "@/components/CourtCombobox";
 import { uploadPhoto } from "@/lib/avatar";
@@ -38,6 +39,7 @@ export type ProfileFormValues = {
   sports: string[];
   experience: string;
   goals: string[];
+  areas: string[];
 };
 
 export const emptyProfile: ProfileFormValues = {
@@ -62,6 +64,7 @@ export const emptyProfile: ProfileFormValues = {
   sports: ["tennis"],
   experience: "",
   goals: [],
+  areas: [],
 };
 
 function toggle<T>(arr: T[], v: T) {
@@ -93,6 +96,7 @@ export function rowToProfile(d: any): ProfileFormValues {
     sports: ((d.sports as string[] | null) ?? ["tennis"]),
     experience: ((d.experience as string | null) ?? ""),
     goals: ((d.goals as string[] | null) ?? []),
+    areas: ((d.areas as string[] | null) ?? []),
     buddy_sos_optin: d.buddy_sos_optin ?? true,
   };
 }
@@ -119,6 +123,7 @@ export function ProfileWizard({
   const [step, setStep] = useState(0);
   const { t } = useI18n();
   const cityNames = useCityNames();
+  const cityAreas = useCityAreas();
   const titles = [t("wiz.title_0"), t("wiz.title_1"), t("wiz.title_2"), t("wiz.title_3"), t("wiz.title_4")];
   const [v, setV] = useState<ProfileFormValues>(initial);
   const [uploading, setUploading] = useState(false);
@@ -306,6 +311,10 @@ export function ProfileWizard({
               <div className="font-bold text-sm text-[var(--ink)] mt-1">
                 {t(`wiz.level_desc_${v.level}`)}
               </div>
+              {/* Swedes speak Matchi ("I'm 5–6") — translate our scale for them */}
+              <div className="font-bold text-xs mt-1" style={{ opacity: 0.55 }}>
+                {t("wiz.matchi_hint", { m: MATCHI_BY_LEVEL[v.level] ?? "—" })}
+              </div>
             </div>
           </div>
         )}
@@ -476,6 +485,37 @@ export function ProfileWizard({
                   );
                 })}
               </div>
+              {/* Areas — "Stockholm is big": people search partners by district
+                  (Lidingö / Huddinge / Kärrtorp…), so we capture WHERE in the
+                  city they actually play. Feeds the Court Crush match score. */}
+              {(() => {
+                const areaCities = (v.home_cities?.length ? v.home_cities : [v.home_city]).filter((cy) => (cityAreas[cy] ?? []).length > 0);
+                if (!areaCities.length) return null;
+                return (
+                  <div className="mb-3">
+                    <div className="csection-label mb-1">{t("wiz.areas_label")}</div>
+                    <div className="text-xs text-[var(--ink)] mb-2">{t("wiz.areas_hint")}</div>
+                    {areaCities.map((cy) => (
+                      <div key={cy} className="mb-2">
+                        {areaCities.length > 1 && (
+                          <div className="text-xs font-extrabold mb-1" style={{ opacity: 0.6 }}>📍 {cy}</div>
+                        )}
+                        <div className="flex flex-wrap gap-1.5">
+                          {(cityAreas[cy] ?? []).map((a) => {
+                            const on = (v.areas ?? []).includes(a);
+                            return (
+                              <button key={a} type="button" className={`cchip ${on ? "cchip-on" : ""}`}
+                                onClick={() => set("areas", toggle(v.areas ?? [], a))}>
+                                {a}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               <CourtCombobox
                 cities={v.home_cities ?? [v.home_city]}
                 valueId={picker}

@@ -88,8 +88,13 @@ export type City = string;
 export const SPORTS = ["tennis", "padel", "badminton"] as const;
 export type Sport = (typeof SPORTS)[number];
 // Onboarding: goals + experience (English canonical values; labels via i18n)
-export const GOALS = ["partners", "fitness", "improve", "compete", "social"] as const;
+// events/coach added 2026-07-22: real group posts map onto our events & coach
+// offering — capture the intent and route to it.
+export const GOALS = ["partners", "fitness", "improve", "compete", "social", "events", "coach"] as const;
 export const EXPERIENCES = ["new", "1_3", "3_10", "10_plus"] as const;
+// Swedish players speak the Matchi scale ("I'm 5–6 on Matchi") — show the
+// equivalence next to our L1–L5 so the level picker talks their language.
+export const MATCHI_BY_LEVEL: Record<number, string> = { 1: "1–2", 2: "3–4", 3: "5–6", 4: "7–8", 5: "9–10" };
 
 export function sportMeta(sport?: string | null): { emoji: string; key: string } {
   if (sport === "padel") return { emoji: "🏓", key: "sport.padel" };

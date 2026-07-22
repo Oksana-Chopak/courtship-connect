@@ -67,9 +67,14 @@ function SettingsPage() {
               try {
                 const { data: u2 } = await supabase.auth.getUser();
                 if (u2.user) {
-                  await (supabase as any).from("profiles")
-                    .update({ sports: v.sports, experience: v.experience || null, goals: v.goals })
-                    .eq("id", u2.user.id);
+                  // areas may not be migrated yet — retry without it so
+                  // sports/goals never get lost with it.
+                  const extra: any = { sports: v.sports, experience: v.experience || null, goals: v.goals, areas: v.areas };
+                  const r = await (supabase as any).from("profiles").update(extra).eq("id", u2.user.id);
+                  if (r.error && /areas/i.test(r.error.message ?? "")) {
+                    delete extra.areas;
+                    await (supabase as any).from("profiles").update(extra).eq("id", u2.user.id);
+                  }
                 }
               } catch { /* pre-SQL */ }
             }

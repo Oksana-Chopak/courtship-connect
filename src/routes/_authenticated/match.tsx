@@ -18,6 +18,7 @@ type Card = {
   sports?: string[] | null; vibe?: string | null; formats?: string[] | null; play_times?: string[] | null;
   looking_for?: string | null; experience?: string | null; goals?: string[] | null;
   games_played?: number | null; rescues_count?: number | null; member_since?: string | null;
+  areas?: string[] | null;
 };
 
 export const Route = createFileRoute("/_authenticated/match")({
@@ -48,6 +49,23 @@ function MatchDeck() {
     setLoading(false);
   }
   useEffect(() => { void loadDeck(); }, []);
+
+  // Nudge: with no areas/goals the deck can't aim. One quiet card, not a wall.
+  // Pre-SQL (areas column missing) the select errors → no nudge, no noise.
+  const [nudge, setNudge] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        if (!u.user) return;
+        const { data, error } = await (supabase as any).from("profiles").select("areas,goals").eq("id", u.user.id).maybeSingle();
+        if (error || !data) return;
+        const a = (data.areas as string[] | null) ?? [];
+        const g = (data.goals as string[] | null) ?? [];
+        setNudge(!a.length || !g.length);
+      } catch { /* ignore */ }
+    })();
+  }, []);
 
   const card = deck[i];
 
@@ -117,6 +135,14 @@ function MatchDeck() {
         <h1 className="font-display text-4xl inline-flex items-center gap-2 justify-center"><BallHeart size={34} /> {t("match.title")}</h1>
         <p className="text-[var(--ink)] font-semibold" style={{ fontSize: 16.5 }}>{t("match.sub")}</p>
       </div>
+
+      {nudge && (
+        <Link to="/settings" className="block"
+          style={{ border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: "rgba(253,249,238,0.6)", padding: "11px 13px" }}>
+          <span className="font-extrabold" style={{ fontSize: 14 }}>🎯 {t("crush.nudge_title")}</span>
+          <span className="block text-sm font-semibold" style={{ opacity: 0.65, marginTop: 2 }}>{t("crush.nudge_sub")}</span>
+        </Link>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-[var(--ink)]">{t("common.loading")}</div>
@@ -230,7 +256,12 @@ function SwipeCard({ card, photoIdx = 0 }: { card: Card; photoIdx?: number }) {
         <div className="font-bold mt-1 flex items-center gap-2 flex-wrap" style={{ fontSize: 14.5, color: "rgba(236,230,216,0.9)" }}>
           <span>{sports.map((sp) => sportMeta(sp).emoji).join(" ")}</span>
           {card.vibe && <span>{vibeEmoji(card.vibe)}</span>}
-          {card.home_city && <span>📍 {card.home_city}</span>}
+          {/* Areas beat the city when we have them — "Huddinge", not "Stockholm" */}
+          {card.areas?.length ? (
+            <span>📍 {card.areas.slice(0, 2).join(" · ")}</span>
+          ) : card.home_city ? (
+            <span>📍 {card.home_city}</span>
+          ) : null}
           {progress.length > 0 && <span>{progress.join(" · ")}</span>}
         </div>
         {card.fav_shot && <div className="mt-1.5" style={{ fontSize: 14, color: "rgba(236,230,216,0.85)" }}>🎾 {card.fav_shot}</div>}
