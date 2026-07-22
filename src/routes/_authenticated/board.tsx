@@ -524,9 +524,17 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         {/* photo + name + club (games) OR court headline (mine) */}
         {mine ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <RailPhoto src={mePhoto ?? null} name={meName || "You"} seed={sos.caller_id} size={52} />
+            {/* A ghost game isn't "you hosting" — show the ghost identity so the
+                admin recognizes their on-behalf posts on the board. */}
+            {(sos as any).ghost_name ? (
+              <RailPhoto src={null} name={String((sos as any).ghost_name)} seed={sos.id} size={52} />
+            ) : (
+              <RailPhoto src={mePhoto ?? null} name={meName || "You"} seed={sos.caller_id} size={52} />
+            )}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>{t("board.youre_hosting")}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: RF.name, lineHeight: 1.05, ...clampLines(1) }}>
+                {(sos as any).ghost_name ? t("sos.ghost_for", { name: String((sos as any).ghost_name) }) : t("board.youre_hosting")}
+              </div>
               <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2, ...clampLines(1) }}>📍 {sos.court_city ?? "—"} · {sos.court_name ?? t("board.court")}</div>
             </div>
           </div>

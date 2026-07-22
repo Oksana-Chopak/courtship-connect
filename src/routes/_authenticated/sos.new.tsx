@@ -310,7 +310,18 @@ function NewSos() {
     }
     const { data, error } = res;
     setBusy(false);
-    if (error) { oops(error); return; }
+    if (error) {
+      // A ghost post rejected by RLS means THIS account isn't admin in the DB —
+      // say so plainly and loudly instead of the cryptic "row-level security"
+      // toast, because the game silently not existing looks like a board bug
+      // (2026-07-22 tester report: ghost game "vanished").
+      if (/row-level security/i.test(error.message ?? "") && ghostName.trim()) {
+        toast.error(t("sos.ghost_rls"), { duration: 12000 });
+        return;
+      }
+      oops(error);
+      return;
+    }
     if (inviteIds.length) {
       const court = courts.find((c) => c.id === courtId);
       void notifyUsers(inviteIds, {
