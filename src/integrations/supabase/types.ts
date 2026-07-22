@@ -817,6 +817,7 @@ export type Database = {
       sos_requests: {
         Row: {
           auto_flare: boolean
+          booking_link: string | null
           broadcast: boolean
           caller_id: string
           cancel_nudged_at: string | null
@@ -846,6 +847,7 @@ export type Database = {
         }
         Insert: {
           auto_flare?: boolean
+          booking_link?: string | null
           broadcast?: boolean
           caller_id: string
           cancel_nudged_at?: string | null
@@ -875,6 +877,7 @@ export type Database = {
         }
         Update: {
           auto_flare?: boolean
+          booking_link?: string | null
           broadcast?: boolean
           caller_id?: string
           cancel_nudged_at?: string | null
@@ -1676,6 +1679,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      release_applicants: { Args: { _sos_id: string }; Returns: number }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       report_user: {
@@ -1718,6 +1722,10 @@ export type Database = {
           _p256dh: string
           _ua?: string
         }
+        Returns: undefined
+      }
+      set_booking_link: {
+        Args: { _sos_id: string; _url: string }
         Returns: undefined
       }
       set_member_config: {
