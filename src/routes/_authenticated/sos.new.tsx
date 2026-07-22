@@ -35,6 +35,7 @@ function NewSos() {
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
+  const [myHomeCity, setMyHomeCity] = useState<City | null>(null);
 
   // Default date = Today; NO time preselected (user must pick a slot — prevents accidental instant send).
   const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
@@ -91,6 +92,7 @@ function NewSos() {
       const hc = ((p as any)?.home_city ?? "Uppsala") as City;
       setMyLevel(lv);
       setCity(hc);
+      setMyHomeCity(hc);
       setMyName((p as any)?.name ?? "");
       try {
         const bids = await fetchBuddyIds(u.user!.id);
@@ -417,6 +419,14 @@ function NewSos() {
             </Chip>
           ))}
         </div>
+        {/* The board is city-scoped: a game at a Stockholm court is invisible to
+            Uppsala players. Posting outside your home city is fine — but say it
+            out loud, so the game doesn't feel like it vanished (2026-07-22). */}
+        {myHomeCity && city !== myHomeCity && (
+          <p className="text-sm font-semibold mb-2" style={{ opacity: 0.65 }}>
+            ℹ️ {t("sos.city_visibility_hint", { city })}
+          </p>
+        )}
         <CourtCombobox city={city} valueId={courtId} onChange={(id, c) => { setCourtId(id); if (c) setCourts((p) => p.some((x) => x.id === c.id) ? p : [...p, c]); }} />
         <div className="mt-3">
           <div className="csection-label mb-1">{t("ct.label")}</div>
