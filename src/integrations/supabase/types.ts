@@ -577,6 +577,8 @@ export type Database = {
           buddy_sos_optin: boolean
           confirmed_adult: boolean
           created_at: string
+          email_digest: boolean
+          email_level: string
           email_notifs: boolean
           events_optin: boolean
           experience: string | null
@@ -621,6 +623,8 @@ export type Database = {
           buddy_sos_optin?: boolean
           confirmed_adult?: boolean
           created_at?: string
+          email_digest?: boolean
+          email_level?: string
           email_notifs?: boolean
           events_optin?: boolean
           experience?: string | null
@@ -665,6 +669,8 @@ export type Database = {
           buddy_sos_optin?: boolean
           confirmed_adult?: boolean
           created_at?: string
+          email_digest?: boolean
+          email_level?: string
           email_notifs?: boolean
           events_optin?: boolean
           experience?: string | null
@@ -1048,6 +1054,7 @@ export type Database = {
         Args: {
           _body: string
           _ids: string[]
+          _kind?: string
           _tag: string
           _title: string
           _url: string
@@ -1228,6 +1235,7 @@ export type Database = {
         Returns: {
           applicant_ids: string[]
           claimer_ids: string[]
+          notified: boolean
         }[]
       }
       cancel_sos: { Args: { _sos_id: string }; Returns: undefined }
@@ -1418,6 +1426,8 @@ export type Database = {
           buddy_sos_optin: boolean
           confirmed_adult: boolean
           created_at: string
+          email_digest: boolean
+          email_level: string
           email_notifs: boolean
           events_optin: boolean
           experience: string | null
