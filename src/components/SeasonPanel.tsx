@@ -5,6 +5,7 @@ import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak,
 import { useI18n } from "@/lib/i18n";
 import { RF, clampLines, SkeletonRail, railTone } from "@/components/RailKit";
 import { toast } from "@/lib/toast";
+import { copyText } from "@/lib/share";
 
 type Tier = { level: number; name: string; emoji: string; at: number; next: number | null; nextName: string | null } | null;
 
@@ -106,7 +107,7 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
     const text = `${bits.join(" · ")} — ${t("prog.share_tag")}`;
     try {
       if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(text); toast.success(t("prog.copied")); }
+      else { await copyText(text, t("prog.copied")); }
     } catch { /* cancelled */ }
   }
 

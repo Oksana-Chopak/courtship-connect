@@ -69,6 +69,44 @@ export async function shareTo(next: string, messageTemplate: string, copiedNote:
   await shareMessage(msg, copiedNote);
 }
 
+/** Legacy textarea+execCommand copy — works where the async Clipboard API is
+ *  denied (e.g. the cross-origin Lovable preview iframe). Deprecated but the
+ *  most reliable fallback under a user gesture. */
+function legacyCopy(text: string): boolean {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Copy with the full fallback chain; NEVER fails silently (a dead button is
+ *  indistinguishable from a broken app — 2026-07-25 tester report from the
+ *  preview iframe, where navigator.clipboard is permission-blocked). */
+export async function copyText(text: string, copiedNote: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(copiedNote);
+    return;
+  } catch { /* clipboard API denied — try legacy */ }
+  if (legacyCopy(text)) {
+    toast.success(copiedNote);
+    return;
+  }
+  // Last resort: show the text so it can be copied by hand.
+  try { window.prompt(copiedNote, text); } catch { toast.error(text); }
+}
+
 export async function shareMessage(message: string, copiedNote: string): Promise<void> {
   if (typeof navigator !== "undefined" && (navigator as any).share) {
     try {
@@ -78,12 +116,7 @@ export async function shareMessage(message: string, copiedNote: string): Promise
       return; // user dismissed the sheet
     }
   }
-  try {
-    await navigator.clipboard.writeText(message);
-    toast.success(copiedNote);
-  } catch {
-    /* ignore */
-  }
+  await copyText(message, copiedNote);
 }
 
 /** Share link for a GAME: lands on the public preview (/g/<id>), value first —

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LEVELS, PLAY_TIMES, levelMeta, vibeEmoji, monogramColors, type City, sportMeta } from "@/lib/courtship";
 import { useCityNames } from "@/lib/cities";
 import { useI18n } from "@/lib/i18n";
-import { shareInvite } from "@/lib/share";
+import { shareInvite, copyText } from "@/lib/share";
 import { fetchBuddyIds, fetchPendingRequestsTo, respondBuddyRequest, type BuddyRequest } from "@/lib/buddies";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
@@ -266,11 +266,11 @@ function InviteAccent() {
     const link = `${window.location.origin}/auth?code=${code}`;
     const msg = t("invite.message").replace("{link}", link).replace("{code}", code);
     if (navigator.share) { try { await navigator.share({ text: msg }); return; } catch { /* cancelled */ } }
-    try { await navigator.clipboard.writeText(msg); toast.success(t("invite.copied")); } catch { /* ignore */ }
+    await copyText(msg, t("invite.copied"));
   }
   function copyCode() {
     if (!code) return;
-    navigator.clipboard?.writeText(code).then(() => toast.success(t("invite.copied"))).catch(() => {});
+    void copyText(code, t("invite.copied"));
   }
   async function saveCode() {
     const c = draft.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");

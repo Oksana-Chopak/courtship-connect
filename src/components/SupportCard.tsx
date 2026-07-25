@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import { useI18n } from "@/lib/i18n";
+import { copyText } from "@/lib/share";
 
 // Friendly, no-pressure "chip in via Swish" card. The Swish number lives in the DB
 // (app_config row, served via the get_support_swish RPC) — never in the public repo.
@@ -29,7 +30,7 @@ export function SupportCard() {
   if (!number) return null;
 
   function copy() {
-    navigator.clipboard?.writeText(number).then(() => toast.success(t("support.copied"))).catch(() => {});
+    void copyText(number, t("support.copied"));
   }
 
   return (

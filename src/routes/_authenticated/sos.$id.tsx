@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { notifyUsers } from "@/lib/push";
-import { myInviteLink, myGameShareLink, shareMessage } from "@/lib/share";
+import { myInviteLink, myGameShareLink, shareMessage, copyText } from "@/lib/share";
 import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
 import { whenLabel, hourRange, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
@@ -395,7 +395,7 @@ function SosDetail() {
                   <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.invite_card_title")}</div>
                   <button type="button" className="cbtn cbtn-green w-full mt-2" onClick={async () => {
                     const url = await myInviteLink(`/sos/${sos.id}?join=${(sos as any).invite_join_token}`);
-                    try { await navigator.clipboard.writeText(url); toast.success(t("sos.handover_copied")); } catch { toast.error(url); }
+                    await copyText(url, t("sos.handover_copied"));
                   }}>🔗 {t("sos.invite_copy")}</button>
                   <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.invite_hint2")}</p>
                 </div>
@@ -408,7 +408,7 @@ function SosDetail() {
                   <div className="font-extrabold" style={{ fontSize: 15 }}>{t("sos.ghost_for", { name: (sos as any).ghost_name ?? "" })}</div>
                   <button type="button" className="cbtn cbtn-green w-full mt-2" onClick={async () => {
                     const url = await myInviteLink(`/sos/${sos.id}?claim=${(sos as any).ghost_claim_token}`);
-                    try { await navigator.clipboard.writeText(url); toast.success(t("sos.handover_copied")); } catch { toast.error(url); }
+                    await copyText(url, t("sos.handover_copied"));
                   }}>🔗 {t("sos.handover_copy")}</button>
                   <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.handover_hint")}</p>
                 </div>

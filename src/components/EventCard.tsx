@@ -15,7 +15,7 @@ import {
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { shareTo } from "@/lib/share";
+import { shareTo, copyText } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, ShareIcon, Rackets, EditIcon, DeleteIcon, RF, clampLines } from "@/components/RailKit";
 
@@ -200,7 +200,7 @@ function SwishBox({ e }: { e: EventRow }) {
   }, [e.id]);
   function copy(text: string) {
     if (!text) return;
-    navigator.clipboard?.writeText(text).then(() => toast.success(t("ev.copied"))).catch(() => {});
+    void copyText(text, t("ev.copied"));
   }
   return (
     <div className="ccard p-3 space-y-1" style={{ background: "var(--cream2)" }}>
