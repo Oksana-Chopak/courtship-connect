@@ -268,7 +268,7 @@ function NewSos() {
       play_until: flexible && playUntil ? playUntil.toISOString() : null,
       ...(isAdmin && ghostName.trim() ? { ghost_name: ghostName.trim(), ghost_claim_token: crypto.randomUUID() } : {}),
       court_type_any: effCtAny,
-      ...(urgent && invitedMode ? { broadcast: false, invite_join_token: crypto.randomUUID() } : {}),
+      ...(invitedMode ? { broadcast: false, invite_join_token: crypto.randomUUID() } : {}),
       court_id: courtId,
       format,
       level_min: anyone ? 1 : levelMin,
@@ -277,7 +277,8 @@ function NewSos() {
       note: note.trim() || null,
       status: "active",
       kind: urgent ? "sos" : "open",
-      auto_flare: urgent ? false : autoFlare,
+      // A private game must never self-broadcast: no auto-flare for invited mode.
+      auto_flare: urgent || invitedMode ? false : autoFlare,
       flared_at: urgent ? new Date().toISOString() : null,
       court_type: courtType,
       duration_min: duration,
@@ -334,7 +335,7 @@ function NewSos() {
       });
     }
     if (urgent) {
-      if (!(urgent && invitedMode)) void notifySos(data.id);
+      if (!invitedMode) void notifySos(data.id);
       if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
       else toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });
@@ -401,7 +402,10 @@ function NewSos() {
             <span><b style={{ color: urgent ? "#F0705B" : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
           </div>
         )}
-        {urgent && !editing && (
+        {/* Private mode for ANY kind (was urgent-only): don't publish to the
+            board — get a join link to send a friend, even one not in the app
+            yet (link carries the signup code + lands them in this game). */}
+        {!editing && (
           <button type="button" onClick={() => setInvitedMode(!invitedMode)}
             className="mt-2 w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
             style={{ borderColor: "var(--ink)", background: invitedMode ? "var(--green-pop)" : "var(--cream2)" }}>
@@ -526,7 +530,7 @@ function NewSos() {
         </Section>
       )}
 
-      {!urgent && !editing && (
+      {!urgent && !editing && !invitedMode && (
         <Section label={t("post.auto_flare_label")}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-base text-[var(--ink)] font-semibold flex-1">

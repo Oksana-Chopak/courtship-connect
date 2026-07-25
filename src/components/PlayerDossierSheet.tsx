@@ -35,11 +35,13 @@ export function PlayerDossierSheet({ card, onClose, onLike }: { card: DossierPla
   const chip = (v: React.ReactNode, key: string) => (
     <span key={key} className="font-extrabold" style={{ fontSize: 12.5, border: "1.5px solid rgba(43,33,24,0.28)", borderRadius: 999, padding: "5px 11px" }}>{v}</span>
   );
-  const stats: { big: React.ReactNode; label: string }[] = [];
-  if (card.experience) stats.push({ big: t(`exp.${card.experience}`), label: t("crush.stat_playing") });
-  if ((card.games_played ?? 0) > 0) stats.push({ big: String(card.games_played), label: t("crush.stat_games") });
-  if ((card.rescues_count ?? 0) > 0) stats.push({ big: `🚑 ${card.rescues_count}`, label: t("crush.stat_rescues") });
-  if (card.member_since) stats.push({ big: String(new Date(card.member_since).getFullYear()), label: t("crush.stat_since") });
+  // Fixed order per the design (Playing first), zeros shown honestly — a
+  // conditional list made "Since" the lone first box on sparse beta profiles.
+  const stats: { big: React.ReactNode; label: string }[] = [
+    { big: card.experience ? t(`exp.${card.experience}`) : "—", label: t("crush.stat_playing") },
+    { big: String(card.games_played ?? 0), label: t("crush.stat_games") },
+    { big: `🚑 ${card.rescues_count ?? 0}`, label: t("crush.stat_rescues") },
+  ];
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(20,15,10,0.5)" }} onClick={onClose}>
       <div className="w-full max-w-md overflow-y-auto" style={{ maxHeight: "80vh", background: "var(--cream)", backgroundImage: "repeating-linear-gradient(0deg, rgba(43,33,24,0.028) 0 2px, transparent 2px 7px)", border: "2px solid var(--ink)", borderBottom: "none", borderRadius: "22px 22px 0 0", boxShadow: "0 -12px 30px rgba(0,0,0,0.28)", padding: "0 20px 24px" }} onClick={(e) => e.stopPropagation()}>
@@ -97,6 +99,13 @@ export function PlayerDossierSheet({ card, onClose, onLike }: { card: DossierPla
               {card.looking_for && chip(t(`lf.${card.looking_for}`), "lf")}
               {(card.goals ?? []).map((g) => chip(t(`goal.${g}`), `g-${g}`))}
             </div>
+          </div>
+        )}
+
+        {/* member-since is a footnote, not a headline stat (tester feedback) */}
+        {card.member_since && (
+          <div className="font-bold mt-3" style={{ fontSize: 12, color: "rgba(43,33,24,0.5)" }}>
+            {t("crush.member_since", { d: String(new Date(card.member_since).getFullYear()) })}
           </div>
         )}
 
