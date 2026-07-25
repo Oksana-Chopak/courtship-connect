@@ -157,7 +157,10 @@ function MatchDeck() {
               <div className="absolute" style={{ top: 9, width: "min(326px, 93%)", height: "94%", borderRadius: 22, background: "var(--cream2)", border: "2px solid var(--ink)", transform: "rotate(-1.2deg) scale(0.98)" }} />
             )}
             <div
-              style={{ transform: `translateX(${drag}px) rotate(${drag / 14}deg)`, transition: dragging ? "none" : "transform 0.25s ease", position: "relative" }}
+              // Width lives HERE (the flex item), not on the card: the card's
+              // percentage width had nothing to resolve against inside this
+              // shrink-to-fit wrapper and collapsed to ~0 (2026-07-25 blank-card bug).
+              style={{ width: "min(340px, 100%)", transform: `translateX(${drag}px) rotate(${drag / 14}deg)`, transition: dragging ? "none" : "transform 0.25s ease", position: "relative" }}
               onPointerDown={(e) => { if (busy || details) return; setDragging(true); dragMoved.current = false; dragStart.current = e.clientX; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); }}
               onPointerMove={(e) => { if (!dragging) return; const dx = e.clientX - dragStart.current; if (Math.abs(dx) > 8) dragMoved.current = true; setDrag(dx); }}
               onPointerUp={(e) => {
@@ -225,7 +228,7 @@ function SwipeCard({ card, photoIdx = 0, onOpenDetails }: { card: Card; photoIdx
   const sports = (card.sports?.length ? card.sports : ["tennis"]) as string[];
   const isDoubles = (card.formats ?? []).includes("doubles");
   return (
-    <div className="relative overflow-hidden mx-auto" style={{ width: "min(340px, 100%)", aspectRatio: "300 / 468", borderRadius: 22, border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.18)", background: bg }}>
+    <div className="relative overflow-hidden" style={{ width: "100%", aspectRatio: "300 / 468", borderRadius: 22, border: "2px solid var(--ink)", boxShadow: "4px 4px 0 rgba(43,33,24,0.18)", background: bg }}>
       {src ? (
         <img src={src} alt={card.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
       ) : (
