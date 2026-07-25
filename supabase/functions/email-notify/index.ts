@@ -79,13 +79,18 @@ Deno.serve(async (req) => {
     if (NOTIFY_SECRET && callerRole(req) === "anon" && req.headers.get("x-notify-secret") !== NOTIFY_SECRET) {
       return new Response(JSON.stringify({ ok: false, error: "forbidden" }), { status: 401 });
     }
-    const { user_ids, title, body, url } = await req.json().catch(() => ({}));
+    const { user_ids, title, body, url, kind } = await req.json().catch(() => ({}));
     if (!Array.isArray(user_ids) || !user_ids.length || !title) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
     }
     if (!RESEND_KEY) return new Response(JSON.stringify({ ok: true, skipped: "no RESEND_API_KEY" }), { status: 200 });
 
     const ids = [...new Set((user_ids as string[]).filter(Boolean))].slice(0, 200);
+    // Event category decides who gets EMAIL (push is unaffected — BATCH13):
+    //   critical → everyone except level 'off'   (picked / cancelled / joined / withdraw)
+    //   social   → only users who chose 'all'    (matches, buddy requests, 💔)
+    //   digest   → weekly recap: its own toggle, never for 'off'
+    const k = kind === "social" || kind === "digest" ? kind : "critical";
 
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -93,12 +98,27 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    // honor per-user opt-out (column may not exist pre-SQL → treat as opted-in)
+    // Per-user email policy. The new columns may not exist pre-BATCH13 — fall
+    // back to the legacy single toggle so behavior degrades, never breaks.
     let allowed = new Set<string>(ids);
     try {
-      const { data: profs } = await sb.from("profiles").select("id,email_notifs").in("id", ids);
-      if (profs) allowed = new Set(profs.filter((p: any) => p.email_notifs !== false).map((p: any) => p.id));
-    } catch (_) { /* keep all */ }
+      const { data: profs, error } = await sb.from("profiles").select("id,email_notifs,email_level,email_digest").in("id", ids);
+      if (error) throw error;
+      if (profs) {
+        allowed = new Set(profs.filter((p: any) => {
+          const level = (p.email_level as string | null) ?? (p.email_notifs === false ? "off" : "important");
+          if (level === "off") return false;
+          if (k === "social") return level === "all";
+          if (k === "digest") return p.email_digest !== false;
+          return true; // critical
+        }).map((p: any) => p.id));
+      }
+    } catch (_) {
+      try {
+        const { data: profs } = await sb.from("profiles").select("id,email_notifs").in("id", ids);
+        if (profs) allowed = new Set(profs.filter((p: any) => p.email_notifs !== false).map((p: any) => p.id));
+      } catch (_) { /* keep all */ }
+    }
 
     const emails: string[] = [];
     for (const id of ids) {

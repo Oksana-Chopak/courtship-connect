@@ -273,33 +273,80 @@ function PrivacyDataSection() {
   );
 }
 
+/** Email policy (BATCH13): three levels instead of all-or-nothing, plus a
+ *  separate weekly-digest toggle. Writes the legacy email_notifs too so the
+ *  old edge function keeps behaving until everything is deployed. */
 function EmailNotifsToggle() {
   const { t } = useI18n();
-  const [on, setOn] = useState<boolean | null>(null);
+  const [level, setLevel] = useState<"all" | "important" | "off" | null>(null);
+  const [digest, setDigest] = useState(true);
+  const [legacyOnly, setLegacyOnly] = useState(false);
+
   useEffect(() => {
     void (async () => {
       const { data: au } = await supabase.auth.getUser();
       if (!au.user) return;
-      const { data } = await (supabase as any).from("profiles").select("email_notifs").eq("id", au.user.id).maybeSingle();
-      setOn(data?.email_notifs !== false);
+      const r = await (supabase as any).from("profiles").select("email_notifs,email_level,email_digest").eq("id", au.user.id).maybeSingle();
+      if (r.error) {
+        // pre-BATCH13 DB — degrade to the old single toggle
+        setLegacyOnly(true);
+        const r2 = await (supabase as any).from("profiles").select("email_notifs").eq("id", au.user.id).maybeSingle();
+        setLevel(r2.data?.email_notifs === false ? "off" : "important");
+        return;
+      }
+      const lv = (r.data?.email_level as "all" | "important" | "off" | null) ?? (r.data?.email_notifs === false ? "off" : "important");
+      setLevel(lv);
+      setDigest(r.data?.email_digest !== false);
     })();
   }, []);
-  async function toggle() {
-    const next = !(on ?? true);
-    setOn(next);
+
+  async function saveLevel(next: "all" | "important" | "off") {
+    const prev = level;
+    setLevel(next);
     const { data: au } = await supabase.auth.getUser();
     if (!au.user) return;
-    const { error } = await (supabase as any).from("profiles").update({ email_notifs: next }).eq("id", au.user.id);
-    if (error) { setOn(!next); toast.error(t("emailn.save_err")); } else toast.success(next ? t("emailn.on") : t("emailn.off"));
+    const patch: any = legacyOnly
+      ? { email_notifs: next !== "off" }
+      : { email_level: next, email_notifs: next !== "off" };
+    const { error } = await (supabase as any).from("profiles").update(patch).eq("id", au.user.id);
+    if (error) { setLevel(prev); toast.error(t("emailn.save_err")); return; }
+    toast.success(t(`emailn.level_saved_${next}`));
   }
+
+  async function toggleDigest() {
+    const next = !digest;
+    setDigest(next);
+    const { data: au } = await supabase.auth.getUser();
+    if (!au.user) return;
+    const { error } = await (supabase as any).from("profiles").update({ email_digest: next }).eq("id", au.user.id);
+    if (error) { setDigest(!next); toast.error(t("emailn.save_err")); }
+  }
+
+  const OPTIONS: { v: "all" | "important" | "off"; label: string; sub: string }[] = [
+    { v: "important", label: t("emailn.level_important"), sub: t("emailn.level_important_sub") },
+    { v: "all", label: t("emailn.level_all"), sub: t("emailn.level_all_sub") },
+    { v: "off", label: t("emailn.level_off"), sub: t("emailn.level_off_sub") },
+  ];
+
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("emailn.sub")}</p>
-      <button type="button" onClick={toggle} disabled={on === null}
-        className="w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
-        style={{ borderColor: "var(--ink)", background: on ? "var(--green-pop)" : "var(--cream2)", opacity: on === null ? 0.6 : 1 }}>
-        {on ? "✅ " : "⬜ "}{t("emailn.toggle")}
-      </button>
+      {OPTIONS.map((o) => (
+        <button key={o.v} type="button" onClick={() => saveLevel(o.v)} disabled={level === null}
+          className="w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+          style={{ borderColor: "var(--ink)", background: level === o.v ? "var(--green-pop)" : "var(--cream2)", opacity: level === null ? 0.6 : 1 }}>
+          {level === o.v ? "✅ " : "⬜ "}{o.label}
+          <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{o.sub}</span>
+        </button>
+      ))}
+      {!legacyOnly && (
+        <button type="button" onClick={toggleDigest} disabled={level === null || level === "off"}
+          className="w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
+          style={{ borderColor: "var(--ink)", background: digest && level !== "off" ? "var(--green-pop)" : "var(--cream2)", opacity: level === "off" ? 0.5 : 1 }}>
+          {digest && level !== "off" ? "✅ " : "⬜ "}{t("emailn.digest")}
+          <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{t("emailn.digest_sub")}</span>
+        </button>
+      )}
     </div>
   );
 }

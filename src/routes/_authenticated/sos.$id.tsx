@@ -512,7 +512,12 @@ function SosDetail() {
             const row = (data as any[])?.[0] ?? {};
             const ids: string[] = row.claimer_ids ?? [];
             const appIds: string[] = row.applicant_ids ?? [];
-            if (ids.length) {
+            // BATCH13: cancel_game notifies server-side (push + EMAIL — people
+            // must not show up to a cancelled game on a missed push alone) and
+            // returns notified=true. Old RPC (no flag) → client pushes as before,
+            // so no deploy order leaves cancellations silent.
+            const serverNotified = row.notified === true;
+            if (!serverNotified && ids.length) {
               await notifyUsers(ids, {
                 title: t("cancel.push_title"),
                 body: t("cancel.push_body", { name: me!.name, when, court: courtName || "the court" }),
@@ -522,7 +527,7 @@ function SosDetail() {
             }
             // Pending candidates were waiting for a pick that will never come —
             // tell them too, so it's not a dangling flow (2026-07-20 audit).
-            if (appIds.length) {
+            if (!serverNotified && appIds.length) {
               await notifyUsers(appIds, {
                 title: t("cancel.applicant_push_title"),
                 body: t("cancel.applicant_push_body", { court: courtName || "the court" }),
