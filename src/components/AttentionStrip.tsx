@@ -43,12 +43,14 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
         const nameById = new Map<string, string>(((pubs as any[]) ?? []).map((p) => [p.id, p.name]));
         const meta: Record<string, { court: string; other: string; otherName: string }> = {};
         for (const g of pendingRows) {
-          const otherId = g.player_a === u.user!.id ? g.player_b : g.player_a;
+          // Guest games (player_b null) are auto-confirmed and never reach the
+          // pending list, but the types must still tolerate the null.
+          const otherId = (g.player_a === u.user!.id ? g.player_b : g.player_a) ?? "";
           const cid = g.court_id ?? (g.sos_id ? sosToCourt.get(g.sos_id) : undefined);
           meta[g.id] = {
             court: (cid && courtName.get(cid)) || "the court",
             other: otherId,
-            otherName: nameById.get(otherId) ?? "Player",
+            otherName: (otherId && nameById.get(otherId)) ?? (g as any).guest_name ?? "Player",
           };
         }
         setPendingMeta(meta);

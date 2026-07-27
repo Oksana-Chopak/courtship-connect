@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 export type GameRow = {
   id: string;
   player_a: string;
-  player_b: string;
+  player_b: string | null; // null = opponent outside the app (see guest_name)
+  guest_name?: string | null;
   confirmed_a: boolean;
   confirmed_b: boolean;
   reported_noshow: string | null;
@@ -49,20 +50,27 @@ export async function fetchPendingPostGameChecks(uid: string): Promise<GameRow[]
  *  game already confirmed on your side; the other player confirms theirs, then
  *  it counts for both (via the existing bump trigger). Needs the log_game RPC. */
 export async function logGame(
-  otherId: string,
+  otherId: string | null,
   playedAtISO: string,
   score?: string,
   winner?: string | null,
   courtId?: string | null,
+  guestName?: string | null,
 ): Promise<{ courtSaved: boolean }> {
   const params: Record<string, any> = {
     _other_id: otherId,
     _played_at: playedAtISO,
     _score: score && score.trim() ? score.trim() : null,
   };
-  if (winner) params._winner = winner; // only send when set — resilient if the RPC isn't upgraded yet
+  // Opponent outside the app: just a name (BATCH14). If the DB isn't migrated
+  // yet we must NOT silently degrade — the caller shows a clear error instead.
+  if (guestName && guestName.trim()) params._guest_name = guestName.trim();
+  if (winner && !params._guest_name) params._winner = winner; // guests can't hold a winner id
   if (courtId) params._court_id = courtId;
   let { error } = await (supabase as any).rpc("log_game", params);
+  if (error && params._guest_name && /(_guest_name|does not exist|PGRST202|schema cache)/i.test(error.message ?? "")) {
+    throw new Error("guest_needs_sql");
+  }
   // Graceful path if the 5-arg RPC (court/winner) isn't applied yet: strip the
   // newer args one by one so the game itself is never lost, and tell the caller.
   if (error && courtId && /(_court_id|does not exist|PGRST202|schema cache)/i.test(error.message ?? "")) {

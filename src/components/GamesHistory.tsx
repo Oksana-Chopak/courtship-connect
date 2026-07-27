@@ -19,7 +19,7 @@ export function GamesHistory() {
       setRows(hist);
       if (hist.length) {
         const sosIds = Array.from(new Set(hist.map((g) => g.sos_id).filter(Boolean) as string[]));
-        const otherIds = Array.from(new Set(hist.map((g) => (g.player_a === u.user!.id ? g.player_b : g.player_a))));
+        const otherIds = Array.from(new Set(hist.map((g) => (g.player_a === u.user!.id ? g.player_b : g.player_a)).filter(Boolean))) as string[];
         const [{ data: sosRows }, { data: pubs }] = await Promise.all([
           sosIds.length ? (supabase as any).from("sos_requests").select("id,court_id").in("id", sosIds) : Promise.resolve({ data: [] }),
           (supabase as any).rpc("players_directory", { _ids: otherIds }),
@@ -39,7 +39,9 @@ export function GamesHistory() {
         for (const g of hist) {
           const otherId = g.player_a === u.user!.id ? g.player_b : g.player_a;
           const cid = g.court_id ?? (g.sos_id ? sosToCourt.get(g.sos_id) : undefined);
-          m[g.id] = { court: (cid && courtName.get(cid)) || "", otherName: nameById.get(otherId) ?? "Player" };
+          // player_b null = opponent outside the app — show their logged name
+          const otherName = otherId ? (nameById.get(otherId) ?? "Player") : ((g as any).guest_name || "Guest");
+          m[g.id] = { court: (cid && courtName.get(cid)) || "", otherName };
         }
         setMeta(m);
       }

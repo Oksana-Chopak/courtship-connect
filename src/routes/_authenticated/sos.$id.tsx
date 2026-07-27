@@ -416,7 +416,10 @@ function SosDetail() {
             )}
           </div>
         )}
-        {isOpen && (!full || applicants.length > 0) && (
+        {/* A PRIVATE game is invisible on the board — nobody can apply, so the
+            candidates card (and its Lucky Serve nudge) is a dead end there.
+            Joiners arrive via the join link instead (2026-07-25 feedback). */}
+        {isOpen && (sos as any).broadcast !== false && (!full || applicants.length > 0) && (
           <div className="ccard p-4 space-y-3">
             <div className="csection-label">🙋 {t("app.candidates")}</div>
             {/* Group already formed but people are still raising hands — the host
