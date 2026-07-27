@@ -450,10 +450,11 @@ export type Database = {
           confirmed_b: boolean
           court_id: string | null
           created_at: string
+          guest_name: string | null
           id: string
           played_at: string
           player_a: string
-          player_b: string
+          player_b: string | null
           reported_noshow: string | null
           score: string | null
           sos_id: string | null
@@ -465,10 +466,11 @@ export type Database = {
           confirmed_b?: boolean
           court_id?: string | null
           created_at?: string
+          guest_name?: string | null
           id?: string
           played_at: string
           player_a: string
-          player_b: string
+          player_b?: string | null
           reported_noshow?: string | null
           score?: string | null
           sos_id?: string | null
@@ -480,10 +482,11 @@ export type Database = {
           confirmed_b?: boolean
           court_id?: string | null
           created_at?: string
+          guest_name?: string | null
           id?: string
           played_at?: string
           player_a?: string
-          player_b?: string
+          player_b?: string | null
           reported_noshow?: string | null
           score?: string | null
           sos_id?: string | null
@@ -1507,8 +1510,9 @@ export type Database = {
       log_game: {
         Args: {
           _court_id?: string
-          _other_id: string
-          _played_at: string
+          _guest_name?: string
+          _other_id?: string
+          _played_at?: string
           _score?: string
           _winner?: string
         }
