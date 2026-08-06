@@ -27,8 +27,11 @@ export const Route = createFileRoute("/_authenticated")({
       const GUEST_PATHS = new Set(["/board", "/players", "/leaders", "/me"]);
       if (FLAGS.guestPeek && GUEST_PATHS.has(path)) return { user: null };
       // Keep the destination: a push tap on a signed-out device (or any deep
-      // link) should land back on that game after login, not on /board.
-      throw redirect({ to: "/auth", search: { mode: "login", next: location.href } });
+      // link) should land back on that page after auth, not on /board.
+      // SIGNUP, not login: most people who hit a gated page are curious guests
+      // (tapping a player, a game, Court Crush) — returning users have the
+      // "I already have an account" link one tap away, and `next` survives it.
+      throw redirect({ to: "/auth", search: { mode: "signup", next: location.href } });
     }
     if (!data.user.email_confirmed_at) {
       throw redirect({ to: "/check-email", search: { email: data.user.email ?? "" } });

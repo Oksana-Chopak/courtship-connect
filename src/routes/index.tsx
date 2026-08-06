@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Courtship — It's a match. Literally." },
-      { name: "description", content: "Tennis partner matching for Uppsala & Stockholm. Invite-only beta." },
+      { name: "description", content: "Tennis partner matching for Uppsala & Stockholm. Free while in beta." },
       { property: "og:title", content: "Courtship" },
       { property: "og:description", content: "Find your hitting partner in Uppsala & Stockholm." },
     ],
@@ -80,18 +80,19 @@ function Index() {
         <p className="text-lg text-[var(--ink)] font-semibold">
           {t("brand.subtitle")}
         </p>
+        {/* ONE door in. A first-time visitor froze in front of three loud CTAs
+            (2026-08-06 report) — now they just walk in and look around; joining
+            happens the moment they try to DO something (post, apply, profiles). */}
         <div className="flex flex-col gap-3 pt-2">
-          {FLAGS.guestPeek && (
+          {FLAGS.guestPeek ? (
             <Link to="/board" className="cbtn cbtn-coral">
               {t("index.cta_peek")}
             </Link>
+          ) : (
+            <Link to="/auth" search={{ mode: "signup" }} className="cbtn cbtn-coral">
+              {t("index.cta_peek")}
+            </Link>
           )}
-          <Link to="/post" className="cbtn cbtn-green">
-            🎾 {t("index.cta_post")}
-          </Link>
-          <Link to="/auth" search={{ mode: "signup" }} className={FLAGS.guestPeek ? "cbtn cbtn-ghost" : "cbtn cbtn-coral"}>
-            {t("index.cta_invite")}
-          </Link>
           <Link to="/auth" search={{ mode: "login" }} className="text-sm font-extrabold underline pt-1" style={{ color: "var(--wood, #8a6d3b)" }}>
             {t("index.cta_have_account")}
           </Link>

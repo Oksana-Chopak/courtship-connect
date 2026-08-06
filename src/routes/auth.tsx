@@ -53,6 +53,11 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [invite, setInvite] = useState((code ?? "").toUpperCase());
+  // Invite codes are OPTIONAL (open beta since 2026-08-06): a link with ?code=
+  // applies it silently, everyone else sees only a quiet "have a code?" toggle.
+  // Nobody types a code to get in — codes exist for attribution (auto-buddy +
+  // referral credit for the inviter), not as a gate.
+  const [showInvite, setShowInvite] = useState(!!code);
   const [busy, setBusy] = useState(false);
   // Legal pack: sign-up requires an 18+ attestation and Terms/Privacy consent
   // (recorded server-side via accept_terms at the end of onboarding).
@@ -85,29 +90,50 @@ function AuthPage() {
     return () => { sub.subscription.unsubscribe(); };
   }, [navigate]);
 
+  // Returns the code to attach ("" = join without one), or null when signup
+  // must stop — a manually TYPED wrong code gets an error (the person expects
+  // it to count), while a stale ?code= from an old invite LINK never blocks:
+  // the newcomer just joins without the referral credit.
+  async function resolveInviteCode(): Promise<string | null> {
+    const codeVal = invite.trim().toUpperCase();
+    if (!codeVal) {
+      try { localStorage.removeItem("courtship.signup_code"); } catch {}
+      return "";
+    }
+    const ok = await checkInvite(codeVal);
+    if (ok) {
+      try { localStorage.setItem("courtship.signup_code", codeVal); } catch {}
+      return codeVal;
+    }
+    if (code && codeVal === code.trim().toUpperCase()) {
+      toast.message(t("auth.invite_link_dead"));
+      try { localStorage.removeItem("courtship.signup_code"); } catch {}
+      return "";
+    }
+    toast.error(t("auth.invite_bad"));
+    return null;
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
       if (mode === "signup") {
-        const code = invite.trim().toUpperCase();
-        const ok = await checkInvite(code);
-        if (!ok) {
-          toast.error(t("auth.invite_bad"));
-          setBusy(false);
-          return;
-        }
-        try { localStorage.setItem("courtship.signup_code", code); } catch {}
+        const codeToUse = await resolveInviteCode();
+        if (codeToUse === null) { setBusy(false); return; }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { lang, signup_code: code } },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { lang, ...(codeToUse ? { signup_code: codeToUse } : {}) },
+          },
         });
         if (error) throw error;
-        // Invite-only app: the invite code is the real gate, so we skip the email
-        // round-trip. New users are auto-confirmed at the DB level (trigger), but
-        // signUp may still withhold a session — so grab one by signing in and go
-        // straight to onboarding. Falls back to the email screen if anything is off.
+        // No email round-trip: new users are auto-confirmed at the DB level
+        // (trigger), but signUp may still withhold a session — so grab one by
+        // signing in and go straight to onboarding. Falls back to the email
+        // screen if anything is off.
         let session = data.session;
         if (!session) {
           const { data: si } = await supabase.auth.signInWithPassword({ email, password });
@@ -189,16 +215,29 @@ function AuthPage() {
 
         <form onSubmit={submit} className="space-y-3">
           {mode === "signup" && (
-            <div>
-              <label className="csection-label block mb-1">{t("auth.invite_label")}</label>
-              <input
-                className="cinput tracking-widest uppercase"
-                placeholder="UPPSALA80"
-                value={invite}
-                onChange={(e) => setInvite(e.target.value)}
-                required
-              />
-            </div>
+            showInvite ? (
+              <div>
+                <label className="csection-label block mb-1">{t("auth.invite_label")}</label>
+                <input
+                  className="cinput tracking-widest uppercase"
+                  placeholder="UPPSALA80"
+                  value={invite}
+                  onChange={(e) => setInvite(e.target.value)}
+                />
+                {!!code && invite === (code ?? "").toUpperCase() && invite.length > 0 && (
+                  <p className="text-xs font-bold mt-1" style={{ opacity: 0.65 }}>{t("auth.invite_applied")}</p>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="text-sm font-extrabold underline text-left"
+                style={{ opacity: 0.7 }}
+              >
+                {t("auth.invite_toggle")}
+              </button>
+            )
           )}
           <div>
             <label className="csection-label block mb-1">{t("auth.email_label")}</label>
@@ -257,21 +296,14 @@ function AuthPage() {
           onClick={async () => {
             setBusy(true);
             try {
-              // Invite-only parity, without breaking returning users. The email
-              // path validates the invite up front; OAuth should too — but only
-              // to catch a WRONG code before the round-trip. An empty field is
-              // allowed: guests who tap "Join" land on the signup screen too, and
-              // Google can't tell a new user from a returning one up front. Truly
-              // new users are still gated server-side by save_my_profile (onboarding
-              // shows the recoverable invite prompt); a valid code entered here is
-              // stored so onboarding stamps signup_code, matching the email flow.
+              // Same optional-invite rules as the email path: a valid code is
+              // stored so onboarding stamps signup_code after the OAuth
+              // round-trip; a stale link code is dropped with a soft note; only
+              // a manually TYPED wrong code stops the flow (to be fixed or
+              // cleared). No code at all is perfectly fine.
               if (mode === "signup") {
-                const code = invite.trim().toUpperCase();
-                if (code) {
-                  const ok = await checkInvite(code);
-                  if (!ok) { toast.error(t("auth.invite_bad")); setBusy(false); return; }
-                  try { localStorage.setItem("courtship.signup_code", code); } catch {}
-                }
+                const codeToUse = await resolveInviteCode();
+                if (codeToUse === null) { setBusy(false); return; }
               }
               const result = await lovable.auth.signInWithOAuth("google", {
                 redirect_uri: window.location.origin,

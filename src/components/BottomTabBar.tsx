@@ -148,7 +148,10 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
               type="button"
               aria-label={t("plus.title")}
               aria-expanded={plusOpen}
-              onClick={() => { if (guest) { navigate({ to: "/auth", search: { mode: "signup", next: undefined } }); return; } setPlusOpen((v) => !v); }}
+              // Guests get the reverse funnel: fill the game form FIRST (/post),
+              // sign up after — the draft publishes itself on arrival. Posting is
+              // the intent; registration is just the doorstep on the way.
+              onClick={() => { if (guest) { navigate({ to: "/post" }); return; } setPlusOpen((v) => !v); }}
               className="flex items-center justify-center rounded-full font-extrabold"
               style={{
                 width: 58, height: 58, transform: "translateY(-14px)",

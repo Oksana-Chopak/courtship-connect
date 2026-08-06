@@ -27,9 +27,9 @@ export function consumeNext(): string | null {
   }
 }
 
-// The app is invite-only, so a shared link carries the user's invite code — that way
-// someone arriving from an external tennis chat can sign up. An optional `next`
-// deep-links them straight to a specific game once they're in.
+// Signup is open (2026-08-06), but a shared link still carries the user's invite
+// code — it auto-buddies the newcomer with the inviter and credits the referral.
+// An optional `next` deep-links them straight to a specific game once they're in.
 export async function myInviteLink(next?: string): Promise<string> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   let code: string | null = null;
