@@ -25,7 +25,7 @@ function fullName(p: { name: string; last_name: string | null }): string { retur
 
 export type LogPrefill = { date?: Date; time?: string; courtId?: string; city?: string };
 
-export function LogGameCard({ defaultOpen = false, prefill }: { defaultOpen?: boolean; prefill?: LogPrefill } = {}) {
+export function LogGameCard({ defaultOpen = false, prefill, onSaved }: { defaultOpen?: boolean; prefill?: LogPrefill; onSaved?: () => void } = {}) {
   const { t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   const [players, setPlayers] = useState<P[]>([]);
@@ -82,6 +82,7 @@ export function LogGameCard({ defaultOpen = false, prefill }: { defaultOpen?: bo
       const guest = guestMode ? guestName.trim() : null;
       const res = await logGame(guest ? null : otherId, playedAt.toISOString(), score, guest ? null : (winner || null), courtId || null, guest);
       toast.success(t("log.done", { name: guest ?? otherName }));
+      onSaved?.(); // e.g. Matches page dismisses the "did this happen?" prompt
       if (courtId && !res.courtSaved) toast.message(t("log.court_later"));
       if (guest) setInvitePrompt(guest);
       setOpen(false);

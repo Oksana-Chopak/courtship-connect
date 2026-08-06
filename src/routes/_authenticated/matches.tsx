@@ -37,6 +37,11 @@ function MatchesPage() {
   const [unlogged, setUnlogged] = useState<Unlogged[]>([]);
   const [prefill, setPrefill] = useState<LogPrefill | null>(null);
   const [logKey, setLogKey] = useState(0);
+  // The SOS whose "Log it" opened the form — dismissed on successful save, so
+  // the prompt never returns for a game the host just logged (log_game rows
+  // carry sos_id = NULL, so the sos_id check alone can't see them —
+  // Lovable's "prompts return after you've logged them" report, 2026-08-06).
+  const [pendingSos, setPendingSos] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -55,12 +60,24 @@ function MatchesPage() {
         const now = Date.now();
         const past = ((sos as any[]) ?? []).filter((s) => new Date(s.play_until ?? s.play_at).getTime() < now);
         if (!past.length) { setUnlogged([]); return; }
-        const ids = past.map((s) => s.id);
-        // Host sees every games row of their own game (RLS: player_a = host).
-        const { data: gs } = await (supabase as any).from("games").select("sos_id").in("sos_id", ids);
-        const withGames = new Set(((gs as any[]) ?? []).map((g) => g.sos_id));
+        // A game "covers" a SOS if it's linked by sos_id OR (for manual logs,
+        // which have sos_id = NULL) if the host has ANY game near that slot.
+        // Without the time check the prompt nags about already-logged games.
+        const { data: gs } = await (supabase as any)
+          .from("games")
+          .select("sos_id,played_at")
+          .or(`player_a.eq.${u.user.id},player_b.eq.${u.user.id}`)
+          .gte("played_at", since);
+        const games = ((gs as any[]) ?? []);
+        const withGames = new Set(games.map((g) => g.sos_id).filter(Boolean));
+        const NEAR = 3 * 3600 * 1000; // a log within ±3h of the slot counts as that game
+        const coveredByTime = (s: any) => {
+          const from = new Date(s.play_at).getTime() - NEAR;
+          const to = new Date(s.play_until ?? s.play_at).getTime() + NEAR;
+          return games.some((g) => { const gt = new Date(g.played_at).getTime(); return gt >= from && gt <= to; });
+        };
         const dismissed = getDismissed();
-        const remaining = past.filter((s) => !withGames.has(s.id) && !dismissed.has(s.id)).slice(0, 5);
+        const remaining = past.filter((s) => !withGames.has(s.id) && !dismissed.has(s.id) && !coveredByTime(s)).slice(0, 5);
         if (!remaining.length) { setUnlogged([]); return; }
         const courtIds = Array.from(new Set(remaining.map((s) => s.court_id).filter(Boolean)));
         const { data: cs } = courtIds.length
@@ -83,6 +100,7 @@ function MatchesPage() {
     const date = new Date(d); date.setHours(0, 0, 0, 0);
     const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     setPrefill({ date, time, courtId: g.courtId ?? undefined, city: g.city });
+    setPendingSos(g.id); // remembered until the save actually succeeds
     setLogKey((k) => k + 1); // remount the card so the prefill takes
     setUnlogged((rows) => rows.filter((r) => r.id !== g.id));
   }
@@ -119,7 +137,8 @@ function MatchesPage() {
         </div>
       )}
 
-      <LogGameCard key={logKey} defaultOpen={!!log || !!prefill} prefill={prefill ?? undefined} />
+      <LogGameCard key={logKey} defaultOpen={!!log || !!prefill} prefill={prefill ?? undefined}
+        onSaved={() => { if (pendingSos) { addDismissed(pendingSos); setPendingSos(null); } }} />
       <GamesHistory />
     </div>
   );
