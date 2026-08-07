@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /* ═══ Wizard kit — shared atoms for the 3-step game wizards ═══
    Used by BOTH the member create/edit wizard (/sos/new) and the guest
@@ -52,23 +52,34 @@ export function QuietNext({ label, onClick }: { label: string; onClick: () => vo
   );
 }
 
-export function ToggleRow({ label, sub, on, onToggle, last }: { label: string; sub?: string; on: boolean; onToggle: () => void; last?: boolean }) {
+export function ToggleRow({ label, sub, info, on, onToggle, last }: { label: string; sub?: string; info?: string; on: boolean; onToggle: () => void; last?: boolean }) {
+  // `info` keeps the row to 1–2 lines: the explanation opens on the ⓘ tap
+  // instead of permanently occupying space (Oxy, 2026-08-07).
+  const [infoOpen, setInfoOpen] = useState(false);
   return (
-    <button type="button" onClick={onToggle} className="w-full flex items-center gap-3 text-left"
-      style={{ padding: "13px 13px", borderBottom: last ? "none" : `1px solid ${HAIR}`, background: "transparent" }}>
-      <span className="flex-1 min-w-0">
-        <span className="block font-bold" style={{ fontSize: 15.5 }}>{label}</span>
-        {sub && <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.6, marginTop: 2 }}>{sub}</span>}
-      </span>
-      <span aria-hidden="true" style={{ width: 46, height: 27, borderRadius: 999, background: on ? LIME : "transparent", border: `1.5px solid ${on ? "var(--ink)" : HAIR}`, position: "relative", flexShrink: 0 }}>
-        <span style={{ position: "absolute", top: 2, left: on ? 21 : 2, width: 19, height: 19, borderRadius: "50%", background: "var(--cream2)", border: "1.5px solid var(--ink)", boxSizing: "border-box", transition: "left 120ms" }} />
-      </span>
-    </button>
+    <div style={{ borderBottom: last ? "none" : `1px solid ${HAIR}` }}>
+      <div className="w-full flex items-center gap-2" style={{ padding: "13px 13px" }}>
+        <button type="button" onClick={onToggle} className="flex-1 min-w-0 text-left" style={{ background: "transparent", padding: 0 }}>
+          <span className="block font-bold" style={{ fontSize: 15.5 }}>{label}</span>
+          {sub && <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.6, marginTop: 2 }}>{sub}</span>}
+        </button>
+        {info && (
+          <button type="button" aria-label="info" aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}
+            style={{ width: 26, height: 26, borderRadius: "50%", border: `1.5px solid ${HAIR}`, background: infoOpen ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 13, color: "var(--ink)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.7 }}>
+            i
+          </button>
+        )}
+        <button type="button" onClick={onToggle} aria-pressed={on} aria-label={label} style={{ background: "transparent", padding: 0, flexShrink: 0 }}>
+          <span aria-hidden="true" style={{ width: 46, height: 27, borderRadius: 999, background: on ? LIME : "transparent", border: `1.5px solid ${on ? "var(--ink)" : HAIR}`, position: "relative", flexShrink: 0, display: "block" }}>
+            <span style={{ position: "absolute", top: 2, left: on ? 21 : 2, width: 19, height: 19, borderRadius: "50%", background: "var(--cream2)", border: "1.5px solid var(--ink)", boxSizing: "border-box", transition: "left 120ms" }} />
+          </span>
+        </button>
+      </div>
+      {info && infoOpen && (
+        <p className="font-semibold" style={{ fontSize: 12.5, opacity: 0.65, padding: "0 13px 12px", margin: 0 }}>{info}</p>
+      )}
+    </div>
   );
-}
-
-export function DetailCard({ children }: { children: React.ReactNode }) {
-  return <div style={{ border: `1px solid ${HAIR}`, borderRadius: 12, background: CARD, overflow: "hidden" }}>{children}</div>;
 }
 
 export function AccordionRow({ label, value, children, last }: { label: string; value: string; children: React.ReactNode; last?: boolean }) {
@@ -176,4 +187,8 @@ export function Wheel({ label, items, value, onChange, disabled }: { label: stri
       </div>
     </div>
   );
+}
+
+export function DetailCard({ children }: { children: React.ReactNode }) {
+  return <div style={{ border: `1px solid ${HAIR}`, borderRadius: 12, background: CARD, overflow: "hidden" }}>{children}</div>;
 }
