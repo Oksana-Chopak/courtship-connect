@@ -1,18 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
 import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useCityNames } from "@/lib/cities";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, isUrgent, generateSlots, snapToSlot, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, SPORTS, sportMeta, type Sport } from "@/lib/courtship";
+import { COURT_STATUSES, SOS_FORMATS, LEVELS, isUrgent, generateSlots, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, sportMeta, type Sport } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
-import { DateChipPicker } from "@/components/DateChipPicker";
 import { CourtCombobox } from "@/components/CourtCombobox";
-import { SlotPicker } from "@/components/SlotPicker";
+import { Avatar } from "@/components/Avatar";
+import { Rackets } from "@/components/RailKit";
 
 export const Route = createFileRoute("/_authenticated/sos/new")({
   head: () => ({ meta: [{ title: "New post — Courtship" }] }),
@@ -24,20 +24,36 @@ export const Route = createFileRoute("/_authenticated/sos/new")({
 });
 
 function pad(n: number) { return n.toString().padStart(2, "0"); }
-function toLocalTimeValue(d: Date) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+
+// ── design tokens (TennisBuddies 9 wizard handoff) ──
+const HAIR = "rgba(43,33,24,0.18)";
+const CARD = "rgba(253,249,238,0.6)";
+const WOOD = "#8C5A33";
+const LIME = "#C9EE3F";
+const CORAL = "#F0705B";
+const LV_COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
+
+/* ═══════════════ 3-step "New game" wizard (TennisBuddies 9) ═══════════════
+   Redesign of the create-game form. The DESIGN is new; the FEATURE SET is the
+   old one, complete: sport picker, flexible window, private (invite-link)
+   games, admin ghost posts, 🏟️ any-surface, auto-flare, buddy invites, city
+   visibility hint, home-court default, edit mode with all RPC fallbacks and
+   the 3-SOS cap. doSubmit is byte-for-byte the previous logic. */
 
 function NewSos() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { edit: editId } = Route.useSearch();
   const editing = !!editId;
+  const [step, setStep] = useState(0);
   const [courts, setCourts] = useState<CourtFull[]>([]);
   const [myLevel, setMyLevel] = useState(3);
   const [uid, setUid] = useState<string | null>(null);
   const [city, setCity] = useState<City>("Uppsala");
   const [myHomeCity, setMyHomeCity] = useState<City | null>(null);
 
-  // Default date = Today; NO time preselected (user must pick a slot — prevents accidental instant send).
+  // Default date = Today; NO time preselected (user must pick — the From wheel
+  // starts on "—", which prevents an accidental instant send).
   const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [time, setTime] = useState<string>("");
   const [courtId, setCourtId] = useState<string>("");
@@ -72,8 +88,14 @@ function NewSos() {
   const [busy, setBusy] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [myName, setMyName] = useState("");
+  const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [buddies, setBuddies] = useState<Array<{ id: string; name: string }>>([]);
   const [inviteIds, setInviteIds] = useState<string[]>([]);
+  // "Send as SOS": user-visible control over what used to be implicit. Auto-
+  // checks when the start is within the 6h urgency window (same rule as
+  // before); unticking posts a planned game instead — never MORE pings than
+  // the old behavior, only an explicit way out of them.
+  const [sosOn, setSosOn] = useState(true);
   const cityNames = useCityNames();
 
   useEffect(() => {
@@ -85,7 +107,7 @@ function NewSos() {
       setUid(u.user.id);
       const { data: p } = await supabase
         .from("profiles" as any)
-        .select("name,level,home_city,home_courts")
+        .select("name,level,home_city,home_courts,photo_url")
         .eq("id", u.user.id)
         .maybeSingle();
       const lv = (p as any)?.level ?? 3;
@@ -94,11 +116,11 @@ function NewSos() {
       setCity(hc);
       setMyHomeCity(hc);
       setMyName((p as any)?.name ?? "");
+      setMyPhoto((p as any)?.photo_url ?? null);
       try {
         const bids = await fetchBuddyIds(u.user!.id);
         if (bids.size) {
           const { data: dir } = await (supabase as any).rpc("players_directory", { _ids: [...bids] });
-          void 0;
           setBuddies(((dir as any[]) ?? []).map((x) => ({ id: x.id, name: x.name })));
         }
       } catch { /* ignore */ }
@@ -126,7 +148,7 @@ function NewSos() {
       const lastCt = (last as any)?.court_type as CourtType | undefined;
       if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
 
-      // Edit mode: load the existing game and prefill (RLS lets the owner update it directly).
+      // Edit mode: load the existing game and prefill (owner-only edit_sos RPC saves it).
       if (editing && editId) {
         const { data: g } = await (supabase as any).from("sos_requests").select("*").eq("id", editId).maybeSingle();
         if (g?.sport) setSport(g.sport as Sport);
@@ -152,6 +174,7 @@ function NewSos() {
         }
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When city changes, pick first matching court if current isn't in city
@@ -197,7 +220,11 @@ function NewSos() {
   }, [flexible, untilTime, date]);
 
   // A flexible-window game is by definition planned, never an urgent SOS.
-  const urgent = flexible ? false : playAt ? isUrgent(playAt) : false;
+  const urgentEligible = !editing && !flexible && !!playAt && isUrgent(playAt);
+  // Auto-check/uncheck as eligibility changes (the old implicit rule), while
+  // still letting the host untick it on purpose.
+  useEffect(() => { setSosOn(urgentEligible); }, [urgentEligible]);
+  const urgent = urgentEligible && sosOn;
   const effCtAny = ctAny && (courtStatus === "will_book" || courtStatus === "public");
   const canSubmit = !!(playAt && courtId && courtType && format) && (!flexible || (playUntil != null && playUntil.getTime() > (playAt?.getTime() ?? 0)));
 
@@ -353,219 +380,306 @@ function NewSos() {
     doSubmit();
   }
 
+  /* ── derived bits for the wizard UI ── */
+  const slots = useMemo(() => generateSlots(city, date), [city, date]);
+  const fromItems = useMemo(() => ["—", ...slots], [slots]);
+  // "To" = optional window end; "—" = exact time (play_until stays null).
+  const toItems = useMemo(() => ["—", ...slots.filter((s) => (time ? s > time : false))], [slots, time]);
+  useEffect(() => {
+    // keep the window end valid as From moves
+    if (flexible && untilTime && time && untilTime <= time) { setFlexible(false); setUntilTime(""); }
+  }, [time, flexible, untilTime]);
+
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const tomorrow0 = new Date(today0.getTime() + 24 * 3600 * 1000);
+  const isToday = date.getTime() === today0.getTime();
+  const isTomorrow = date.getTime() === tomorrow0.getTime();
+  const [pickDateOpen, setPickDateOpen] = useState(false);
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+
+  const courtName = courts.find((c) => c.id === courtId)?.name ?? "";
+  const statusLabel = COURT_STATUSES.find((s) => s.value === courtStatus)?.label ?? "";
+  const stepTitles = [t("wiz.when_title"), t("wiz.court_title"), t("wiz.who_title")];
+
+  function next() { setStep((s) => Math.min(2, s + 1)); }
+  function back() { setStep((s) => Math.max(0, s - 1)); }
+
   return (
-    <div className="space-y-5">
-      <Link to="/board" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
+    <div className="space-y-4" style={{ maxWidth: 480 }}>
+      {/* header: back · title · step + progress (sheet language from the handoff) */}
       <div>
-        <h1 className="font-display text-4xl">{editing ? t("sos.edit_title") : t("post.new_title")}</h1>
+        {step === 0 ? (
+          <Link to="/board" className="text-sm font-extrabold underline">{t("sos.back")}</Link>
+        ) : (
+          <button type="button" onClick={back} className="text-sm font-extrabold underline">← {t("wiz.back")}</button>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          <h1 className="font-display flex-1" style={{ fontSize: 26, lineHeight: 1.1 }}>
+            {editing ? `${t("sos.edit_title")} · ${stepTitles[step]}` : stepTitles[step]}
+          </h1>
+          <span className="font-extrabold" style={{ fontSize: 13.5, opacity: 0.6 }}>{step + 1}/3</span>
+        </div>
+        <div className="flex gap-1.5 mt-2.5">
+          {[0, 1, 2].map((k) => (
+            <span key={k} style={{ flex: 1, height: 4, borderRadius: 999, background: k <= step ? LIME : HAIR }} />
+          ))}
+        </div>
       </div>
 
-      <Section label={t("sos.when")}>
-        <DateChipPicker value={date} onChange={setDate} />
-        <div className="mt-3">
-          <div className="csection-label mb-1">{flexible ? t("sos.flex_from") : t("slot.label")}</div>
-          <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
-        </div>
-        <div className="mt-3">
-            <button type="button" onClick={() => { setFlexible(!flexible); if (flexible) setUntilTime(""); }} className={`cchip ${flexible ? "cchip-on" : ""}`}>
-              🤸 {t("sos.flex_label")}
+      {/* ════ STEP 1 · WHEN — duration · time window · day · SOS ════ */}
+      {step === 0 && (
+        <div className="space-y-4">
+          {mySports.length > 1 && (
+            <div>
+              <WizLbl>{t("sport.label")}</WizLbl>
+              <SegRow items={mySports.map((sp) => ({ key: sp, label: `${sportMeta(sp).emoji} ${t(sportMeta(sp).key)}` }))}
+                sel={sport} onSel={(k) => setSport(k as Sport)} />
+            </div>
+          )}
+          <div>
+            <WizLbl>{t("sos.duration")}</WizLbl>
+            <SegRow items={DURATIONS.map((d) => ({ key: String(d), label: durationLabel(d) }))}
+              sel={String(duration)} onSel={(k) => setDuration(Number(k))} />
+          </div>
+          <div>
+            <WizLbl>{t("wiz.window_label")}</WizLbl>
+            <div style={{ display: "flex", gap: 16, background: "rgba(43,33,24,0.05)", borderRadius: 14, padding: "10px 14px" }}>
+              <Wheel label={t("wiz.from")} items={fromItems} value={time || "—"}
+                onChange={(v) => setTime(v === "—" ? "" : v)} />
+              <Wheel label={t("wiz.to")} items={toItems} value={flexible && untilTime ? untilTime : "—"}
+                disabled={!time}
+                onChange={(v) => { if (v === "—") { setFlexible(false); setUntilTime(""); } else { setFlexible(true); setUntilTime(v); } }} />
+            </div>
+            <p className="text-sm font-semibold mt-1.5" style={{ opacity: 0.65 }}>
+              {flexible && untilTime ? t("sos.flex_help") : t("wiz.window_hint")}
+            </p>
+          </div>
+          <div>
+            <WizLbl>{t("wiz.day")}</WizLbl>
+            <SegRow
+              items={[
+                { key: "today", label: t("wiz.today") },
+                { key: "tomorrow", label: t("wiz.tomorrow") },
+                { key: "pick", label: isToday || isTomorrow ? t("wiz.pick_date") : date.toLocaleDateString(locale, { day: "numeric", month: "short" }) },
+              ]}
+              sel={isToday ? "today" : isTomorrow ? "tomorrow" : "pick"}
+              onSel={(k) => {
+                if (k === "today") { setDate(new Date(today0)); setPickDateOpen(false); }
+                else if (k === "tomorrow") { setDate(new Date(tomorrow0)); setPickDateOpen(false); }
+                else setPickDateOpen(true);
+              }}
+            />
+            {pickDateOpen && (
+              <input type="date" className="cinput mt-2" aria-label={t("wiz.pick_date")}
+                min={new Date().toISOString().slice(0, 10)}
+                value={`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`}
+                onChange={(e) => { const d = new Date(e.target.value + "T00:00:00"); if (!isNaN(d.getTime())) setDate(d); }} />
+            )}
+          </div>
+          {/* Send as SOS — the one coral accent on this screen. Same 6h rule as
+              always; the checkbox only makes it visible and opt-out-able. */}
+          {!editing && (
+            <button type="button" disabled={!urgentEligible}
+              onClick={() => urgentEligible && setSosOn(!sosOn)}
+              className="w-full flex items-start gap-3 text-left"
+              style={{ borderTop: `1px solid ${HAIR}`, paddingTop: 14, opacity: urgentEligible ? 1 : 0.45, background: "transparent" }}>
+              <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 7, border: `2px solid ${CORAL}`, background: urgent ? CORAL : "transparent", color: "#FFF6E8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>{urgent ? "✓" : ""}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-extrabold" style={{ fontSize: 16 }}>🚨 {t("wiz.sos_check")}</span>
+                <span className="block font-semibold" style={{ fontSize: 13, opacity: 0.65, marginTop: 2 }}>
+                  {flexible ? t("wiz.sos_sub_flex") : urgentEligible ? t("wiz.sos_sub") : t("wiz.sos_sub_locked")}
+                </span>
+              </span>
             </button>
-            {flexible && (
+          )}
+          <QuietNext label={t("wiz.next_court")} onClick={next} />
+        </div>
+      )}
+
+      {/* ════ STEP 2 · COURT — city · court picker · surface ════ */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            {cityNames.map((cy) => (
+              <button key={cy} type="button" onClick={() => setCity(cy)}
+                className="font-display" style={{ fontSize: 19, color: WOOD, opacity: city === cy ? 1 : 0.45, background: "transparent", padding: 0 }}>
+                📍 {cy}
+              </button>
+            ))}
+          </div>
+          {/* The board is city-scoped: a game at a Stockholm court is invisible to
+              Uppsala players. Posting outside your home city is fine — but say it
+              out loud, so the game doesn't feel like it vanished (2026-07-22). */}
+          {myHomeCity && city !== myHomeCity && (
+            <p className="text-sm font-semibold" style={{ opacity: 0.65 }}>
+              ℹ️ {t("sos.city_visibility_hint", { city })}
+            </p>
+          )}
+          <div>
+            <WizLbl>{t("sos.court")}</WizLbl>
+            {/* CourtCombobox keeps search + "add a court" (the design's add-a-court row) */}
+            <CourtCombobox city={city} valueId={courtId} onChange={(id, c) => { setCourtId(id); if (c) setCourts((p) => p.some((x) => x.id === c.id) ? p : [...p, c]); }} />
+          </div>
+          <div>
+            <WizLbl>{t("ct.label")}</WizLbl>
+            <SegRow
+              items={COURT_TYPES.map((ct) => { const m = courtTypeMeta(ct, lang); return { key: ct, label: `${m.emoji} ${m.label}` }; })}
+              sel={courtType} onSel={(k) => setCourtType(k as CourtType)} />
+            {(courtStatus === "will_book" || courtStatus === "public") && (
+              <button type="button" onClick={() => setCtAny(!ctAny)}
+                className="mt-2 w-full flex items-start gap-3 text-left" style={{ background: "transparent", padding: "6px 2px" }}>
+                <CheckBox on={ctAny} />
+                <span className="flex-1 min-w-0">
+                  <span className="block font-extrabold" style={{ fontSize: 15 }}>🏟️ {t("ct.any_label")}</span>
+                  <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.65 }}>{t("ct.any_hint")}</span>
+                </span>
+              </button>
+            )}
+          </div>
+          <QuietNext label={t("wiz.next_players")} onClick={next} />
+        </div>
+      )}
+
+      {/* ════ STEP 3 · WHO — live preview · format · level track · details · note · CTA ════ */}
+      {step === 2 && (
+        <div className="space-y-4">
+          {/* live preview — how the game will land on the board */}
+          <div>
+            <div style={{ display: "flex", border: `1px solid ${HAIR}`, borderRadius: 12, overflow: "hidden", background: CARD }}>
+              <div style={{ width: 62, flexShrink: 0, background: urgent ? "#FBE3DE" : "#EEF6D6", borderRight: `1px solid ${HAIR}`, borderLeft: `4px solid ${urgent ? CORAL : LIME}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 4px", textAlign: "center" }}>
+                <div style={{ fontWeight: 800, fontSize: 11.5, textTransform: "uppercase", color: "rgba(43,33,24,0.6)" }}>
+                  {isToday ? t("wiz.today") : isTomorrow ? t("wiz.tomorrow") : date.toLocaleDateString(locale, { day: "numeric", month: "short" })}
+                </div>
+                <div className="font-display" style={{ fontSize: 19, marginTop: 1 }}>{time || "—"}</div>
+                {flexible && untilTime && <div style={{ fontWeight: 700, fontSize: 10.5, color: "rgba(43,33,24,0.55)" }}>→{untilTime}</div>}
+                <div style={{ fontSize: 15, marginTop: 2 }}>{effCtAny ? "🏟️" : courtType === "indoor" ? "🏠" : "☀️"}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, padding: "9px 11px" }}>
+                <div className="flex items-center gap-2.5">
+                  <Avatar src={myPhoto} name={ghostName.trim() || myName || "P"} seed={uid ?? "me"} size={36} />
+                  <div className="min-w-0">
+                    <div className="font-display truncate" style={{ fontSize: 16.5 }}>{ghostName.trim() ? ghostName.trim() : t("wiz.hosting")}</div>
+                    <div className="font-display truncate" style={{ fontSize: 14, color: WOOD }}>📍 {courtName || t("board.court")}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(43,33,24,0.6)" }}>💳 {statusLabel}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(43,33,24,0.6)" }}>
+                    {anyone ? t("sos.anyone") : (<>L <span style={{ color: LV_COLORS[levelMin - 1] }}>{levelMin}</span>–<span style={{ color: LV_COLORS[levelMax - 1] }}>{levelMax}</span></>)}
+                  </span>
+                  <Rackets n={format === "singles" ? 2 : 4} size={19} />
+                  {invitedMode && <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(43,33,24,0.6)" }}>🎟</span>}
+                </div>
+              </div>
+            </div>
+            <div className="text-center font-bold" style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>{t("wiz.preview_hint")}</div>
+          </div>
+
+          {/* priority 1 — Format, one prominent decision */}
+          <div>
+            <WizLbl>{t("sos.format")}</WizLbl>
+            <SegRow
+              items={[
+                { key: "singles", label: t("wiz.singles"), icon: <Rackets n={2} size={18} /> },
+                { key: "doubles", label: t("wiz.doubles"), icon: <Rackets n={4} size={18} /> },
+              ]}
+              sel={format === "singles" ? "singles" : "doubles"}
+              onSel={(k) => setFormat(k === "singles" ? "singles" : (format === "singles" ? "doubles_need1" : format))}
+            />
+            {format !== "singles" && (
               <div className="mt-2">
-                <div className="csection-label mb-1">{t("sos.flex_until")}</div>
-                <SlotPicker city={city} date={date} value={untilTime} onChange={setUntilTime} ariaLabel={t("sos.flex_until")} />
-                <p className="text-sm font-semibold mt-1" style={{ opacity: 0.7 }}>{t("sos.flex_help")}</p>
+                <SegRow
+                  items={[
+                    { key: "doubles_need1", label: t("wiz.need1") },
+                    { key: "doubles_need2", label: t("wiz.need2") },
+                    { key: "doubles_need3", label: t("wiz.need3") },
+                  ]}
+                  sel={format} onSel={(k) => setFormat(k as typeof format)} small
+                />
               </div>
             )}
           </div>
-        <div className="mt-3">
-          {mySports.length > 1 && (<>
-          <div className="csection-label mb-1">{t("sport.label")}</div>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {mySports.map((sp) => (
-              <button key={sp} type="button" onClick={() => setSport(sp)} className={`cchip ${sport === sp ? "cchip-on" : ""}`}>
-                {sportMeta(sp).emoji} {t(sportMeta(sp).key)}
-              </button>
-            ))}
-          </div>
-          </>)}
-          <div className="csection-label mb-1">{t("sos.duration")}</div>
-          <div className="flex gap-2 flex-wrap">
-            {DURATIONS.map((d) => (
-              <Chip key={d} on={duration === d} onClick={() => setDuration(d)}>{durationLabel(d)}</Chip>
-            ))}
-          </div>
-        </div>
-        {time && !editing && (
-          <div className="mt-2 flex items-start gap-2" aria-live="polite" style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.65)" }}>
-            <span className={urgent ? "sos-dot" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: urgent ? "#F0705B" : "#C9EE3F", marginTop: 5, flexShrink: 0 }} />
-            <span><b style={{ color: urgent ? "#F0705B" : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
-          </div>
-        )}
-        {/* Private mode for ANY kind (was urgent-only): don't publish to the
-            board — get a join link to send a friend, even one not in the app
-            yet (link carries the signup code + lands them in this game). */}
-        {!editing && (
-          <button type="button" onClick={() => setInvitedMode(!invitedMode)}
-            className="mt-2 w-full rounded-xl border-2 px-3 py-2 font-extrabold text-left"
-            style={{ borderColor: "var(--ink)", background: invitedMode ? "var(--green-pop)" : "var(--cream2)" }}>
-            🎟 {t("sos.invited_label")}
-            <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{t("sos.invited_hint")}</span>
-          </button>
-        )}
-      </Section>
 
-      <Section label={t("sos.court")}>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {cityNames.map((cy) => (
-            <Chip key={cy} on={city === cy} onClick={() => setCity(cy)}>
-              📍 {cy}
-            </Chip>
-          ))}
-        </div>
-        {/* The board is city-scoped: a game at a Stockholm court is invisible to
-            Uppsala players. Posting outside your home city is fine — but say it
-            out loud, so the game doesn't feel like it vanished (2026-07-22). */}
-        {myHomeCity && city !== myHomeCity && (
-          <p className="text-sm font-semibold mb-2" style={{ opacity: 0.65 }}>
-            ℹ️ {t("sos.city_visibility_hint", { city })}
-          </p>
-        )}
-        <CourtCombobox city={city} valueId={courtId} onChange={(id, c) => { setCourtId(id); if (c) setCourts((p) => p.some((x) => x.id === c.id) ? p : [...p, c]); }} />
-        <div className="mt-3">
-          <div className="csection-label mb-1">{t("ct.label")}</div>
-          <div
-            role="radiogroup"
-            aria-label={t("ct.label")}
-            className="grid grid-cols-2 gap-2"
-          >
-            {(courtStatus === "will_book" || courtStatus === "public") && (
-              <button type="button" onClick={() => setCtAny(!ctAny)}
-                className="col-span-2 rounded-xl border-2 px-3 py-2 font-extrabold text-left"
-                style={{ borderColor: "var(--ink)", background: ctAny ? "var(--green-pop)" : "var(--cream2)" }}>
-                🏟️ {t("ct.any_label")}
-                <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.7 }}>{t("ct.any_hint")}</span>
+          {/* priority 2 — level range as a track */}
+          <div>
+            <WizLbl right={
+              <button type="button" onClick={() => setAnyone(!anyone)} className="font-bold underline" style={{ fontSize: 13.5, opacity: 0.7, background: "transparent" }}>
+                {anyone ? `${levelMin}–${levelMax}` : t("sos.anyone")}
               </button>
+            }>{t("sos.level_range")}</WizLbl>
+            {anyone ? (
+              <div className="font-extrabold" style={{ fontSize: 16 }}>🤝 {t("sos.anyone")} <span className="font-semibold" style={{ fontSize: 13, opacity: 0.6 }}>(1–5)</span></div>
+            ) : (
+              <LevelTrack lo={levelMin} hi={levelMax} onChange={(lo, hi) => { setLevelMin(lo); setLevelMax(hi); }}
+                endLow={t("wiz.lvl_low")} endHigh={t("wiz.lvl_high")} />
             )}
-            {COURT_TYPES.map((ct) => {
-              const meta = courtTypeMeta(ct, lang);
-              const on = courtType === ct;
-              return (
-                <button
-                  key={ct}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setCourtType(ct)}
-                  className="rounded-2xl border-2 border-[var(--ink)] font-extrabold flex items-center justify-center gap-2"
-                  style={{
-                    minHeight: 56,
-                    fontSize: "1.125rem",
-                    background: on ? "var(--green-pop)" : "var(--cream2)",
-                    color: "var(--ink)",
-                  }}
-                >
-                  <span>{meta.emoji}</span><span>{meta.label}</span>
-                </button>
-              );
-            })}
+            <div className="text-sm font-semibold mt-1.5" style={{ opacity: 0.6 }}>{t("wiz.your_level", { n: myLevel, name: LEVELS.find((l) => l.n === myLevel)?.name ?? "" })}</div>
           </div>
-        </div>
-      </Section>
 
-      <Section label={t("sos.format")}>
-        <div className="flex flex-wrap gap-2">
-          {SOS_FORMATS.map((f) => (
-            <Chip key={f.value} on={format === f.value} onClick={() => setFormat(f.value)}>
-              {f.label}
-            </Chip>
-          ))}
-        </div>
-      </Section>
-
-      <Section label={t("sos.level_range")}>
-        <div className="flex items-center justify-between">
-          <Chip on={anyone} onClick={() => setAnyone(!anyone)}>
-            {t("sos.anyone")}
-          </Chip>
-        </div>
-        {!anyone && (
-          <div className="flex items-center gap-2 mt-2">
-            <select className="cinput flex-1" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
-              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
-            </select>
-            <span className="font-extrabold">–</span>
-            <select className="cinput flex-1" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
-            </select>
+          {/* priority 3 — everything else, one quiet list */}
+          <div>
+            <WizLbl>{t("wiz.details")}</WizLbl>
+            <div style={{ border: `1px solid ${HAIR}`, borderRadius: 12, background: CARD, overflow: "hidden" }}>
+              <AccordionRow label={t("sos.court_status")} value={statusLabel}>
+                <div className="flex flex-wrap gap-1.5 pb-3 px-3">
+                  {COURT_STATUSES.map((s) => (
+                    <button key={s.value} type="button" onClick={() => setCourtStatus(s.value)} className={`cchip ${courtStatus === s.value ? "cchip-on" : ""}`}>{s.label}</button>
+                  ))}
+                </div>
+              </AccordionRow>
+              {!editing && buddies.length > 0 && (
+                <AccordionRow label={t("sos.invite_buddies")}
+                  value={inviteIds.length ? buddies.filter((b) => inviteIds.includes(b.id)).map((b) => b.name).slice(0, 2).join(", ") + (inviteIds.length > 2 ? ` +${inviteIds.length - 2}` : "") : "—"}>
+                  <div className="pb-2 px-3">
+                    {buddies.map((b) => {
+                      const on = inviteIds.includes(b.id);
+                      return (
+                        <button key={b.id} type="button" className="w-full flex items-center gap-3 text-left" style={{ padding: "7px 0", background: "transparent" }}
+                          onClick={() => setInviteIds((prev) => (on ? prev.filter((x) => x !== b.id) : [...prev, b.id]))}>
+                          <span className="flex-1 font-bold truncate" style={{ fontSize: 15.5 }}>{b.name}</span>
+                          <CheckBox on={on} />
+                        </button>
+                      );
+                    })}
+                    <p className="font-semibold" style={{ fontSize: 12.5, opacity: 0.6, paddingBottom: 6 }}>{t("sos.invite_hint")}</p>
+                  </div>
+                </AccordionRow>
+              )}
+              {/* Private mode for ANY kind: don't publish to the board — get a
+                  join link to send a friend, even one not in the app yet. */}
+              {!editing && (
+                <ToggleRow label={`🎟 ${t("sos.invited_label")}`} sub={t("sos.invited_hint")} on={invitedMode} onToggle={() => setInvitedMode(!invitedMode)} />
+              )}
+              {!urgent && !editing && !invitedMode && (
+                <ToggleRow label={t("post.auto_flare_label")} sub={t("post.auto_flare_help")} on={autoFlare} onToggle={() => setAutoFlare(!autoFlare)} />
+              )}
+              {isAdmin && !editing && (
+                <AccordionRow label={`👻 ${t("sos.ghost_label")}`} value={ghostName.trim() || "—"} last>
+                  <div className="pb-3 px-3">
+                    <input className="cinput" placeholder={t("sos.ghost_ph")} value={ghostName} onChange={(e) => setGhostName(e.target.value)} maxLength={60} />
+                    <p className="font-semibold mt-1" style={{ fontSize: 12.5, opacity: 0.65 }}>{t("sos.ghost_hint")}</p>
+                  </div>
+                </AccordionRow>
+              )}
+            </div>
           </div>
-        )}
-        <div className="text-base font-semibold text-[var(--ink)] mt-1">L{myLevel} · {LEVELS.find((l) => l.n === myLevel)?.name}</div>
-      </Section>
 
-      <Section label={t("sos.court_status")}>
-        <div className="flex flex-wrap gap-2">
-          {COURT_STATUSES.map((s) => (
-            <Chip key={s.value} on={courtStatus === s.value} onClick={() => setCourtStatus(s.value)}>
-              {s.label}
-            </Chip>
-          ))}
+          <div>
+            <WizLbl>{t("sos.note_label")}</WizLbl>
+            <input className="cinput" placeholder={t("sos.note_placeholder")} value={note} onChange={(e) => setNote(e.target.value)} maxLength={140} />
+          </div>
+
+          {/* the one bright moment: filled coral CTA, no border */}
+          <button
+            disabled={busy || !canSubmit}
+            onClick={onSubmitClick}
+            className="w-full font-extrabold"
+            style={{ background: CORAL, color: "#FFF6E8", border: "none", borderRadius: 12, padding: 16, fontSize: 18, opacity: busy || !canSubmit ? 0.55 : 1 }}
+          >
+            {busy ? "…" : editing ? t("sos.edit_save") : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
+          </button>
         </div>
-      </Section>
-
-      <Section label={t("sos.note_label")}>
-        <input
-          className="cinput"
-          placeholder={t("sos.note_placeholder")}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          maxLength={140}
-        />
-      </Section>
-
-      {isAdmin && !editing && (
-        <Section label={`👻 ${t("sos.ghost_label")}`}>
-          <input className="cinput" placeholder={t("sos.ghost_ph")} value={ghostName} onChange={(e) => setGhostName(e.target.value)} maxLength={60} />
-          <p className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("sos.ghost_hint")}</p>
-        </Section>
       )}
-
-      {!urgent && !editing && !invitedMode && (
-        <Section label={t("post.auto_flare_label")}>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-base text-[var(--ink)] font-semibold flex-1">
-              {t("post.auto_flare_help")}
-            </p>
-            <Chip on={autoFlare} onClick={() => setAutoFlare(!autoFlare)}>
-              {autoFlare ? "ON" : "OFF"}
-            </Chip>
-          </div>
-        </Section>
-      )}
-
-      {!editing && buddies.length > 0 && (
-        <Section label={t("sos.invite_buddies")}>
-          <div className="flex gap-2 flex-wrap">
-            {buddies.map((b) => {
-              const on = inviteIds.includes(b.id);
-              return (
-                <Chip key={b.id} on={on} onClick={() => setInviteIds((prev) => (on ? prev.filter((x) => x !== b.id) : [...prev, b.id]))}>
-                  {b.name}
-                </Chip>
-              );
-            })}
-          </div>
-          <p className="text-base text-[var(--ink)] font-semibold mt-2">{t("sos.invite_hint")}</p>
-        </Section>
-      )}
-
-      <button
-        disabled={busy || !canSubmit}
-        onClick={onSubmitClick}
-        className={`cbtn w-full ${urgent ? "cbtn-coral" : "cbtn-green"}`}
-      >
-        {busy ? "..." : editing ? t("sos.edit_save") : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
-      </button>
 
       {showConfirm && (
         <div
@@ -601,19 +715,165 @@ function NewSos() {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+/* ═══ wizard atoms (page-local; board tokens from the TB9 handoff) ═══ */
+
+function WizLbl({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <div>
-      <div className="csection-label mb-1">{label}</div>
-      {children}
+    <div className="flex items-baseline mb-2">
+      <span className="flex-1 font-extrabold uppercase" style={{ fontSize: 13, letterSpacing: "0.1em", color: WOOD }}>{children}</span>
+      {right}
     </div>
   );
 }
 
-function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => void; children: React.ReactNode }) {
+function SegRow({ items, sel, onSel, small }: { items: Array<{ key: string; label: string; icon?: React.ReactNode }>; sel: string; onSel: (k: string) => void; small?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className={`cchip ${on ? "cchip-on" : ""}`}>
-      {children}
+    <div role="radiogroup" style={{ display: "flex", background: "rgba(43,33,24,0.06)", border: `1px solid ${HAIR}`, borderRadius: 999, padding: 3 }}>
+      {items.map((it) => {
+        const on = it.key === sel;
+        return (
+          <button key={it.key} type="button" role="radio" aria-checked={on} onClick={() => onSel(it.key)}
+            className="font-extrabold"
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontSize: small ? 13.5 : 15, padding: small ? "9px 0" : "12px 0", borderRadius: 999, background: on ? LIME : "transparent", border: on ? "1.5px solid var(--ink)" : "1.5px solid transparent", color: "var(--ink)", minWidth: 0 }}>
+            {it.icon}<span className="truncate">{it.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CheckBox({ on }: { on: boolean }) {
+  return <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 7, border: `2px solid ${on ? "var(--ink)" : "rgba(43,33,24,0.35)"}`, background: on ? LIME : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, flexShrink: 0 }}>{on ? "✓" : ""}</span>;
+}
+
+function QuietNext({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="w-full flex items-center justify-end gap-2 font-extrabold"
+      style={{ borderTop: `1px solid ${HAIR}`, paddingTop: 13, fontSize: 17, background: "transparent" }}>
+      {label} <span style={{ fontSize: 20 }}>→</span>
     </button>
+  );
+}
+
+function ToggleRow({ label, sub, on, onToggle, last }: { label: string; sub?: string; on: boolean; onToggle: () => void; last?: boolean }) {
+  return (
+    <button type="button" onClick={onToggle} className="w-full flex items-center gap-3 text-left"
+      style={{ padding: "13px 13px", borderBottom: last ? "none" : `1px solid ${HAIR}`, background: "transparent" }}>
+      <span className="flex-1 min-w-0">
+        <span className="block font-bold" style={{ fontSize: 15.5 }}>{label}</span>
+        {sub && <span className="block font-semibold" style={{ fontSize: 12.5, opacity: 0.6, marginTop: 2 }}>{sub}</span>}
+      </span>
+      <span aria-hidden="true" style={{ width: 46, height: 27, borderRadius: 999, background: on ? LIME : "transparent", border: `1.5px solid ${on ? "var(--ink)" : HAIR}`, position: "relative", flexShrink: 0 }}>
+        <span style={{ position: "absolute", top: 2, left: on ? 21 : 2, width: 19, height: 19, borderRadius: "50%", background: "var(--cream2)", border: "1.5px solid var(--ink)", boxSizing: "border-box", transition: "left 120ms" }} />
+      </span>
+    </button>
+  );
+}
+
+function AccordionRow({ label, value, children, last }: { label: string; value: string; children: React.ReactNode; last?: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: last ? "none" : `1px solid ${HAIR}` }}>
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 text-left" style={{ padding: "13px 13px", background: "transparent" }} aria-expanded={open}>
+        <span className="flex-1 font-bold" style={{ fontSize: 15.5 }}>{label}</span>
+        <span className="font-bold truncate" style={{ fontSize: 14.5, opacity: 0.6, maxWidth: 150 }}>{value}</span>
+        <span style={{ fontSize: 15, opacity: 0.6, flexShrink: 0 }}>{open ? "▲" : "›"}</span>
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
+/** Level range as a tappable track: tap a dot → the NEAREST endpoint moves there. */
+function LevelTrack({ lo, hi, onChange, endLow, endHigh }: { lo: number; hi: number; onChange: (lo: number, hi: number) => void; endLow: string; endHigh: string }) {
+  const n = 5;
+  const pct = (i: number) => (i / (n - 1)) * 100;
+  function tap(level: number) {
+    if (level < lo) onChange(level, hi);
+    else if (level > hi) onChange(lo, level);
+    else if (Math.abs(level - lo) <= Math.abs(level - hi)) onChange(level, hi);
+    else onChange(lo, level);
+  }
+  return (
+    <div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-display" style={{ fontSize: 20 }}>L</span>
+        <span className="font-display" style={{ fontSize: 20, color: LV_COLORS[lo - 1] }}>{lo}</span>
+        <span className="font-display" style={{ fontSize: 20, opacity: 0.5 }}>–</span>
+        <span className="font-display" style={{ fontSize: 20, color: LV_COLORS[hi - 1] }}>{hi}</span>
+      </div>
+      <div style={{ position: "relative", height: 34, margin: "4px 9px 0" }}>
+        <div style={{ position: "absolute", left: 0, right: 0, top: 13, height: 7, borderRadius: 999, background: "rgba(43,33,24,0.16)" }} />
+        <div style={{ position: "absolute", left: `${pct(lo - 1)}%`, right: `${100 - pct(hi - 1)}%`, top: 13, height: 7, borderRadius: 999, background: LIME }} />
+        {Array.from({ length: n }).map((_, i) => {
+          const on = i + 1 >= lo && i + 1 <= hi;
+          return (
+            <button key={i} type="button" onClick={() => tap(i + 1)}
+              aria-label={`L${i + 1}`}
+              style={{ position: "absolute", left: `${pct(i)}%`, top: 0, transform: "translateX(-50%)", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", padding: 0 }}>
+              <span style={{ width: 17, height: 17, borderRadius: "50%", background: on ? "var(--ink)" : "var(--cream2)", border: `2px solid ${on ? "var(--ink)" : "rgba(43,33,24,0.35)"}`, display: "block" }} />
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="font-bold" style={{ fontSize: 12.5, opacity: 0.6 }}>{endLow}</span>
+        <span className="font-bold" style={{ fontSize: 12.5, opacity: 0.6 }}>{endHigh}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Vertical scroll wheel (native-picker feel): center row large, neighbors fade,
+ *  scroll-snap + tap-to-select. "—" as the first row = nothing chosen yet. */
+const WHEEL_ITEM = 38;
+const WHEEL_H = 138;
+function Wheel({ label, items, value, onChange, disabled }: { label: string; items: string[]; value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [center, setCenter] = useState(0);
+  const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const itemsKey = items.join("|");
+
+  // external value → scroll position (initial mount, prefill, resets)
+  useEffect(() => {
+    const idx = Math.max(0, items.indexOf(value));
+    setCenter(idx);
+    const el = ref.current;
+    if (el && Math.round(el.scrollTop / WHEEL_ITEM) !== idx) el.scrollTop = idx * WHEEL_ITEM;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, itemsKey]);
+
+  function onScroll() {
+    const el = ref.current;
+    if (!el) return;
+    const idx = Math.min(items.length - 1, Math.max(0, Math.round(el.scrollTop / WHEEL_ITEM)));
+    setCenter(idx);
+    if (settle.current) clearTimeout(settle.current);
+    settle.current = setTimeout(() => { if (items[idx] !== undefined && items[idx] !== value) onChange(items[idx]); }, 140);
+  }
+
+  return (
+    <div style={{ flex: 1, opacity: disabled ? 0.35 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+      <div className="text-center font-extrabold uppercase" style={{ fontSize: 12, letterSpacing: "0.1em", color: WOOD, marginBottom: 4 }}>{label}</div>
+      <div style={{ position: "relative", height: WHEEL_H, WebkitMaskImage: "linear-gradient(180deg, transparent 0%, black 28%, black 72%, transparent 100%)", maskImage: "linear-gradient(180deg, transparent 0%, black 28%, black 72%, transparent 100%)" }}>
+        <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 40, background: "rgba(43,33,24,0.07)", borderRadius: 8 }} />
+        <div ref={ref} onScroll={onScroll} role="listbox" aria-label={label}
+          style={{ position: "absolute", inset: 0, overflowY: "auto", scrollSnapType: "y mandatory", scrollbarWidth: "none", paddingTop: (WHEEL_H - WHEEL_ITEM) / 2, paddingBottom: (WHEEL_H - WHEEL_ITEM) / 2 }}>
+          {items.map((h, i) => {
+            const dist = Math.abs(i - center);
+            const isCenter = i === center;
+            return (
+              <button key={h + i} type="button" role="option" aria-selected={h === value}
+                onClick={() => onChange(h)}
+                className={isCenter ? "font-display" : "font-bold"}
+                style={{ height: WHEEL_ITEM, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", scrollSnapAlign: "center", fontSize: isCenter ? 27 : 16, color: "var(--ink)", opacity: dist === 0 ? 1 : dist === 1 ? 0.55 : 0.28, background: "transparent", padding: 0 }}>
+                {h}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
