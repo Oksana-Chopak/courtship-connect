@@ -65,42 +65,59 @@ function Index() {
 
   if (!ready) return <div className="terry-bg min-h-screen" />;
 
+  /* "Warm wash" home (TennisBuddies 10, variant B): real app icon as the logo,
+     centered calm column, cities in wood under the subtitle, ONE pulsing coral
+     CTA anchored at the bottom (thumb reach) with the language toggle just
+     above it, quiet text link + legal footer. One door in — a first-time
+     visitor froze in front of three loud CTAs (2026-08-06 report). */
+  const ctaStyle: React.CSSProperties = {
+    display: "block", width: "100%", textAlign: "center",
+    background: "#F0705B", color: "#FFF6E8", borderRadius: 12,
+    padding: "16px 20px", fontWeight: 700, fontSize: 15.5,
+    boxShadow: "0 10px 22px rgba(240,112,91,0.28)",
+  };
+
   return (
-    <div className="terry-bg min-h-screen flex flex-col items-center justify-center px-6 text-[var(--ink)] font-body">
-      <div className="max-w-md w-full text-center space-y-8">
-        <div className="flex justify-end"><LangToggle /></div>
-        <div className="space-y-0.5 text-xs font-extrabold tracking-widest uppercase">
-          <div>{t("brand.cities")}</div>
-          <div className="text-[var(--ink)]/50 font-semibold">{t("brand.beta_tag")}</div>
-        </div>
-        <h1 className="font-display text-6xl leading-[0.95]">
-          {t("index.match_a")}<br/>
-          <span className="text-[var(--coral)]">{t("index.match_b")}</span>
+    <div className="terry-bg text-[var(--ink)] font-body" style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* the CTA's soft heartbeat — the only animation on this screen */}
+      <style>{`
+        @keyframes csHeart { 0% { transform: scale(1); } 55% { transform: scale(1.05); } 75% { transform: scale(1); } 90% { transform: scale(1.03); } 100% { transform: scale(1); } }
+        .cs-pulse { animation: csHeart 3.2s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .cs-pulse { animation: none; } }
+      `}</style>
+      <div style={{ width: "100%", maxWidth: 430, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "64px 32px 60px", boxSizing: "border-box" }}>
+        <img src="/icon-512.png" width={92} height={92} alt="Courtship" style={{ display: "block", borderRadius: "22%", marginTop: 4 }} />
+        <h1 className="font-display" style={{ fontSize: 40, lineHeight: 1.3, marginTop: 24 }}>
+          {t("index.match_a")}<br />
+          <span style={{ color: "var(--coral)" }}>{t("index.match_b")}</span>
         </h1>
-        <p className="text-lg text-[var(--ink)] font-semibold">
+        <p style={{ fontWeight: 500, fontSize: 15, color: "rgba(43,33,24,0.6)", marginTop: 14, maxWidth: 268, lineHeight: 1.45 }}>
           {t("brand.subtitle")}
         </p>
-        {/* ONE door in. A first-time visitor froze in front of three loud CTAs
-            (2026-08-06 report) — now they just walk in and look around; joining
-            happens the moment they try to DO something (post, apply, profiles). */}
-        <div className="flex flex-col gap-3 pt-2">
-          {FLAGS.guestPeek ? (
-            <Link to="/board" className="cbtn cbtn-coral">
-              {t("index.cta_peek")}
-            </Link>
-          ) : (
-            <Link to="/auth" search={{ mode: "signup" }} className="cbtn cbtn-coral">
-              {t("index.cta_peek")}
-            </Link>
-          )}
-          <Link to="/auth" search={{ mode: "login" }} className="text-sm font-extrabold underline pt-1" style={{ color: "var(--wood, #8a6d3b)" }}>
-            {t("index.cta_have_account")}
-          </Link>
+        <div style={{ marginTop: 16 }}>
+          <div className="font-display" style={{ fontSize: 16, color: "#8C5A33", whiteSpace: "nowrap" }}>📍 {t("brand.cities")}</div>
+          <div style={{ fontWeight: 600, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(43,33,24,0.38)", marginTop: 4 }}>{t("brand.beta_tag")}</div>
         </div>
-        <div className="text-xs font-bold" style={{ opacity: 0.55 }}>
-          <Link to="/privacy" className="underline">{t("legal.footer_privacy")}</Link>
+
+        <div style={{ flex: 1 }} />
+
+        <div style={{ display: "flex", justifyContent: "flex-end", width: "100%", marginBottom: 20 }}><LangToggle /></div>
+        {FLAGS.guestPeek ? (
+          <Link to="/board" className="cs-pulse" style={ctaStyle}>
+            {t("index.cta_peek")}
+          </Link>
+        ) : (
+          <Link to="/auth" search={{ mode: "signup" }} className="cs-pulse" style={ctaStyle}>
+            {t("index.cta_peek")}
+          </Link>
+        )}
+        <Link to="/auth" search={{ mode: "login" }} style={{ marginTop: 13, fontWeight: 700, fontSize: 13, color: "#8C5A33", textDecoration: "underline", textUnderlineOffset: 3 }}>
+          {t("index.cta_have_account")}
+        </Link>
+        <div style={{ marginTop: 16, fontWeight: 600, fontSize: 10.5, color: "rgba(43,33,24,0.32)" }}>
+          <Link to="/privacy" style={{ textDecoration: "underline" }}>{t("legal.footer_privacy")}</Link>
           {" · "}
-          <Link to="/terms" className="underline">{t("legal.footer_terms")}</Link>
+          <Link to="/terms" style={{ textDecoration: "underline" }}>{t("legal.footer_terms")}</Link>
         </div>
       </div>
     </div>
