@@ -91,11 +91,6 @@ function NewSos() {
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [buddies, setBuddies] = useState<Array<{ id: string; name: string }>>([]);
   const [inviteIds, setInviteIds] = useState<string[]>([]);
-  // "Send as SOS": user-visible control over what used to be implicit. Auto-
-  // checks when the start is within the 6h urgency window (same rule as
-  // before); unticking posts a planned game instead — never MORE pings than
-  // the old behavior, only an explicit way out of them.
-  const [sosOn, setSosOn] = useState(true);
   const cityNames = useCityNames();
 
   useEffect(() => {
@@ -219,12 +214,11 @@ function NewSos() {
     return base;
   }, [flexible, untilTime, date]);
 
-  // A flexible-window game is by definition planned, never an urgent SOS.
-  const urgentEligible = !editing && !flexible && !!playAt && isUrgent(playAt);
-  // Auto-check/uncheck as eligibility changes (the old implicit rule), while
-  // still letting the host untick it on purpose.
-  useEffect(() => { setSosOn(urgentEligible); }, [urgentEligible]);
-  const urgent = urgentEligible && sosOn;
+  // Urgency is fully automatic, zero user attention spent (Oxy's rule):
+  // start within 6h => the game goes out as an SOS; a flexible-window game is
+  // by definition planned. Step 3 shows plainly which mode the post will use,
+  // and the coral confirm modal still guards the actual send.
+  const urgent = flexible ? false : playAt ? isUrgent(playAt) : false;
   const effCtAny = ctAny && (courtStatus === "will_book" || courtStatus === "public");
   const canSubmit = !!(playAt && courtId && courtType && format) && (!flexible || (playUntil != null && playUntil.getTime() > (playAt?.getTime() ?? 0)));
 
@@ -476,22 +470,6 @@ function NewSos() {
                 onChange={(e) => { const d = new Date(e.target.value + "T00:00:00"); if (!isNaN(d.getTime())) setDate(d); }} />
             )}
           </div>
-          {/* Send as SOS — the one coral accent on this screen. Same 6h rule as
-              always; the checkbox only makes it visible and opt-out-able. */}
-          {!editing && (
-            <button type="button" disabled={!urgentEligible}
-              onClick={() => urgentEligible && setSosOn(!sosOn)}
-              className="w-full flex items-start gap-3 text-left"
-              style={{ borderTop: `1px solid ${HAIR}`, paddingTop: 14, opacity: urgentEligible ? 1 : 0.45, background: "transparent" }}>
-              <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 7, border: `2px solid ${CORAL}`, background: urgent ? CORAL : "transparent", color: "#FFF6E8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>{urgent ? "✓" : ""}</span>
-              <span className="flex-1 min-w-0">
-                <span className="block font-extrabold" style={{ fontSize: 16 }}>🚨 {t("wiz.sos_check")}</span>
-                <span className="block font-semibold" style={{ fontSize: 13, opacity: 0.65, marginTop: 2 }}>
-                  {flexible ? t("wiz.sos_sub_flex") : urgentEligible ? t("wiz.sos_sub") : t("wiz.sos_sub_locked")}
-                </span>
-              </span>
-            </button>
-          )}
           <QuietNext label={t("wiz.next_court")} onClick={next} />
         </div>
       )}
@@ -612,19 +590,21 @@ function NewSos() {
             <div className="text-sm font-semibold mt-1.5" style={{ opacity: 0.6 }}>{t("wiz.your_level", { n: myLevel, name: LEVELS.find((l) => l.n === myLevel)?.name ?? "" })}</div>
           </div>
 
-          {/* priority 3 — everything else, one quiet list */}
-          <div>
-            <WizLbl>{t("wiz.details")}</WizLbl>
-            <div style={{ border: `1px solid ${HAIR}`, borderRadius: 12, background: CARD, overflow: "hidden" }}>
-              <AccordionRow label={t("sos.court_status")} value={statusLabel}>
+          {/* each detail = its own visible row (label + current value), one tap
+              to expand, second tap acts. No nested drawers (Oxy's two-click rule). */}
+          <div className="space-y-2">
+            <DetailCard>
+              <AccordionRow label={t("sos.court_status")} value={statusLabel} last>
                 <div className="flex flex-wrap gap-1.5 pb-3 px-3">
                   {COURT_STATUSES.map((s) => (
                     <button key={s.value} type="button" onClick={() => setCourtStatus(s.value)} className={`cchip ${courtStatus === s.value ? "cchip-on" : ""}`}>{s.label}</button>
                   ))}
                 </div>
               </AccordionRow>
-              {!editing && buddies.length > 0 && (
-                <AccordionRow label={t("sos.invite_buddies")}
+            </DetailCard>
+            {!editing && buddies.length > 0 && (
+              <DetailCard>
+                <AccordionRow label={t("sos.invite_buddies")} last
                   value={inviteIds.length ? buddies.filter((b) => inviteIds.includes(b.id)).map((b) => b.name).slice(0, 2).join(", ") + (inviteIds.length > 2 ? ` +${inviteIds.length - 2}` : "") : "—"}>
                   <div className="pb-2 px-3">
                     {buddies.map((b) => {
@@ -640,30 +620,44 @@ function NewSos() {
                     <p className="font-semibold" style={{ fontSize: 12.5, opacity: 0.6, paddingBottom: 6 }}>{t("sos.invite_hint")}</p>
                   </div>
                 </AccordionRow>
-              )}
-              {/* Private mode for ANY kind: don't publish to the board — get a
-                  join link to send a friend, even one not in the app yet. */}
-              {!editing && (
-                <ToggleRow label={`🎟 ${t("sos.invited_label")}`} sub={t("sos.invited_hint")} on={invitedMode} onToggle={() => setInvitedMode(!invitedMode)} />
-              )}
-              {!urgent && !editing && !invitedMode && (
-                <ToggleRow label={t("post.auto_flare_label")} sub={t("post.auto_flare_help")} on={autoFlare} onToggle={() => setAutoFlare(!autoFlare)} />
-              )}
-              {isAdmin && !editing && (
+              </DetailCard>
+            )}
+            {/* Private mode for ANY kind: don't publish to the board — get a
+                join link to send a friend, even one not in the app yet. */}
+            {!editing && (
+              <DetailCard>
+                <ToggleRow label={`🎟 ${t("sos.invited_label")}`} sub={t("sos.invited_hint")} on={invitedMode} onToggle={() => setInvitedMode(!invitedMode)} last />
+              </DetailCard>
+            )}
+            {!urgent && !editing && !invitedMode && (
+              <DetailCard>
+                <ToggleRow label={t("post.auto_flare_label")} sub={t("post.auto_flare_help")} on={autoFlare} onToggle={() => setAutoFlare(!autoFlare)} last />
+              </DetailCard>
+            )}
+            {isAdmin && !editing && (
+              <DetailCard>
                 <AccordionRow label={`👻 ${t("sos.ghost_label")}`} value={ghostName.trim() || "—"} last>
                   <div className="pb-3 px-3">
                     <input className="cinput" placeholder={t("sos.ghost_ph")} value={ghostName} onChange={(e) => setGhostName(e.target.value)} maxLength={60} />
                     <p className="font-semibold mt-1" style={{ fontSize: 12.5, opacity: 0.65 }}>{t("sos.ghost_hint")}</p>
                   </div>
                 </AccordionRow>
-              )}
-            </div>
+              </DetailCard>
+            )}
           </div>
 
           <div>
             <WizLbl>{t("sos.note_label")}</WizLbl>
             <input className="cinput" placeholder={t("sos.note_placeholder")} value={note} onChange={(e) => setNote(e.target.value)} maxLength={140} />
           </div>
+
+          {/* which mode this post goes out as — stated where the decision lands */}
+          {time && !editing && (
+            <div className="flex items-start gap-2" aria-live="polite" style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.65)" }}>
+              <span className={urgent ? "sos-dot" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: urgent ? CORAL : LIME, marginTop: 5, flexShrink: 0 }} />
+              <span><b style={{ color: urgent ? CORAL : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
+            </div>
+          )}
 
           {/* the one bright moment: filled coral CTA, no border */}
           <button
@@ -765,6 +759,10 @@ function ToggleRow({ label, sub, on, onToggle, last }: { label: string; sub?: st
       </span>
     </button>
   );
+}
+
+function DetailCard({ children }: { children: React.ReactNode }) {
+  return <div style={{ border: `1px solid ${HAIR}`, borderRadius: 12, background: CARD, overflow: "hidden" }}>{children}</div>;
 }
 
 function AccordionRow({ label, value, children, last }: { label: string; value: string; children: React.ReactNode; last?: boolean }) {
