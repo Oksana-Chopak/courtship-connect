@@ -578,25 +578,21 @@ function NewSos() {
           {/* priority 1 — Format, one prominent decision */}
           <div>
             <WizLbl>{t("sos.format")}</WizLbl>
+            {/* No "need 1/2/3" math at creation: since BATCH12 the host picks
+                as many candidates as they like (choose_applicant accepts past
+                full, spots_needed self-grows), so Doubles just opens up to 3
+                spots and the host assembles the court from whoever applies.
+                Editing an older need1/need2 game keeps its original count. */}
             <SegRow
               items={[
                 { key: "singles", label: t("wiz.singles"), icon: <Rackets n={2} size={18} /> },
                 { key: "doubles", label: t("wiz.doubles"), icon: <Rackets n={4} size={18} /> },
               ]}
               sel={format === "singles" ? "singles" : "doubles"}
-              onSel={(k) => setFormat(k === "singles" ? "singles" : (format === "singles" ? "doubles_need1" : format))}
+              onSel={(k) => setFormat(k === "singles" ? "singles" : (format === "singles" ? "doubles_need3" : format))}
             />
             {format !== "singles" && (
-              <div className="mt-2">
-                <SegRow
-                  items={[
-                    { key: "doubles_need1", label: t("wiz.need1") },
-                    { key: "doubles_need2", label: t("wiz.need2") },
-                    { key: "doubles_need3", label: t("wiz.need3") },
-                  ]}
-                  sel={format} onSel={(k) => setFormat(k as typeof format)} small
-                />
-              </div>
+              <p className="text-sm font-semibold mt-1.5" style={{ opacity: 0.65 }}>{t("wiz.doubles_hint")}</p>
             )}
           </div>
 
