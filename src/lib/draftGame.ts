@@ -11,6 +11,7 @@ export type DraftGame = {
   court_id: string;
   city: string;
   play_at: string; // ISO
+  play_until?: string | null; // ISO — flexible-start window end (optional)
   format: string;
   level_min: number;
   level_max: number;
@@ -51,6 +52,7 @@ export async function publishDraftGame(uid: string): Promise<string | null> {
   const insertRow: any = {
     caller_id: uid,
     play_at: d.play_at,
+    play_until: d.play_until ?? null,
     court_id: d.court_id,
     format: d.format,
     level_min: d.level_min,
@@ -65,6 +67,10 @@ export async function publishDraftGame(uid: string): Promise<string | null> {
     duration_min: d.duration_min,
   };
   let res = await (supabase as any).from("sos_requests").insert(insertRow).select("id").single();
+  if (res.error && /play_until/i.test(res.error.message || "")) {
+    const { play_until: _pu, ...noWin } = insertRow;
+    res = await (supabase as any).from("sos_requests").insert(noWin).select("id").single();
+  }
   if (res.error && /duration_min/i.test(res.error.message || "")) {
     const { duration_min: _omit, ...fallback } = insertRow;
     res = await (supabase as any).from("sos_requests").insert(fallback).select("id").single();
