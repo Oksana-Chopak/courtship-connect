@@ -112,8 +112,12 @@ export async function shareMessage(message: string, copiedNote: string): Promise
     try {
       await (navigator as any).share({ text: message });
       return;
-    } catch {
-      return; // user dismissed the sheet
+    } catch (e: any) {
+      // ONLY a user-cancel ends here silently. Anything else (NotAllowedError
+      // in a cross-origin iframe like the Lovable preview, unsupported data…)
+      // must fall through to the clipboard — a dead button is never OK
+      // (2026-08-08: "Invite a friend does nothing").
+      if (e?.name === "AbortError") return;
     }
   }
   await copyText(message, copiedNote);

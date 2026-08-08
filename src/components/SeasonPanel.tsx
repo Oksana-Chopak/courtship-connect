@@ -106,9 +106,11 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
     ].filter(Boolean);
     const text = `${bits.join(" · ")} — ${t("prog.share_tag")}`;
     try {
-      if (navigator.share) await navigator.share({ text });
-      else { await copyText(text, t("prog.copied")); }
-    } catch { /* cancelled */ }
+      if (navigator.share) { await navigator.share({ text }); return; }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return; // user closed the sheet
+    }
+    await copyText(text, t("prog.copied"));
   }
 
   if (!loaded) {

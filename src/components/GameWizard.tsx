@@ -162,6 +162,14 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Belt & braces (2026-08-08 "default court got lost"): whatever the load
+  // order or profile state, an empty pick self-heals to first-in-city.
+  useEffect(() => {
+    if (courtId || !courts.length) return;
+    const first = courts.find((c) => c.city === city) ?? courts[0];
+    if (first) setCourtId(first.id);
+  }, [courts, courtId, city]);
+
   // When city changes, pick first matching court if current isn't in city
   useEffect(() => {
     if (!courts.length) return;
@@ -403,6 +411,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
   const isToday = date.getTime() === today0.getTime();
   const isTomorrow = date.getTime() === tomorrow0.getTime();
   const [pickDateOpen, setPickDateOpen] = useState(false);
+  const [windowInfo, setWindowInfo] = useState(false);
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
 
   const courtName = courts.find((c) => c.id === courtId)?.name ?? "";
@@ -434,9 +443,9 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
         </div>
       </div>
 
-      {/* ════ STEP 1 · WHEN — duration · time window · day · SOS ════ */}
+      {/* ════ STEP 1 · WHEN — duration · time window · day ════ */}
       {step === 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {mySports.length > 1 && (
             <div>
               <WizLbl>{t("sport.label")}</WizLbl>
@@ -450,17 +459,21 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
               sel={String(duration)} onSel={(k) => setDuration(Number(k))} />
           </div>
           <div>
-            <WizLbl>{t("wiz.window_label")}</WizLbl>
-            <div style={{ display: "flex", gap: 16, background: "rgba(43,33,24,0.05)", borderRadius: 14, padding: "10px 14px" }}>
+            <WizLbl right={
+              <button type="button" aria-label="info" aria-expanded={windowInfo} onClick={() => setWindowInfo(!windowInfo)}
+                style={{ width: 22, height: 22, borderRadius: "50%", border: "1.5px solid rgba(43,33,24,0.25)", background: windowInfo ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 12, opacity: 0.7 }}>i</button>
+            }>{t("wiz.window_label")}</WizLbl>
+            <div style={{ display: "flex", gap: 14, background: "rgba(43,33,24,0.05)", borderRadius: 14, padding: "6px 12px" }}>
               <Wheel label={t("wiz.from")} items={fromItems} value={time || "—"}
                 onChange={(v) => setTime(v === "—" ? "" : v)} />
               <Wheel label={t("wiz.to")} items={toItems} value={flexible && untilTime ? untilTime : "—"}
                 disabled={!time}
                 onChange={(v) => { if (v === "—") { setFlexible(false); setUntilTime(""); } else { setFlexible(true); setUntilTime(v); } }} />
             </div>
-            <p className="text-sm font-semibold mt-1.5" style={{ opacity: 0.65 }}>
-              {flexible && untilTime ? t("sos.flex_help") : t("wiz.window_hint")}
-            </p>
+            {/* teaching copy lives behind ⓘ; the ONLY always-on line is the 1-line
+                state feedback when a window is actually set (one-screen rule) */}
+            {windowInfo && <p className="text-sm font-semibold mt-1.5" style={{ opacity: 0.65 }}>{t("wiz.window_hint")}</p>}
+            {!windowInfo && flexible && untilTime && <p className="text-sm font-semibold mt-1.5" style={{ opacity: 0.65 }}>{t("sos.flex_help")}</p>}
           </div>
           <div>
             <WizLbl>{t("wiz.day")}</WizLbl>
@@ -490,14 +503,17 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
 
       {/* ════ STEP 2 · COURT — city · court picker · surface ════ */}
       {step === 1 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div className="space-y-3">
+          <div>
+            <WizLbl>📍 {t("sos.city")}</WizLbl>
+            <div className="flex items-center gap-4 flex-wrap" style={{ padding: "2px 0 2px" }}>
             {cityNames.map((cy) => (
               <button key={cy} type="button" onClick={() => setCity(cy)}
                 className="font-display" style={{ fontSize: 19, color: WOOD, opacity: city === cy ? 1 : 0.45, background: "transparent", padding: 0 }}>
                 📍 {cy}
               </button>
             ))}
+            </div>
           </div>
           {/* The board is city-scoped: a game at a Stockholm court is invisible to
               Uppsala players. Posting outside your home city is fine — but say it
@@ -531,7 +547,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
 
       {/* ════ STEP 3 · WHO — live preview · format · level track · details · note · CTA ════ */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* priority 1 — Format, one prominent decision */}
           <div>
             <WizLbl>{t("sos.format")}</WizLbl>
@@ -665,8 +681,12 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
           {/* which mode this post goes out as — stated where the decision lands */}
           {time && !editing && !guest && (
             <div className="flex items-start gap-2" aria-live="polite" style={{ fontWeight: 700, fontSize: 14, color: "rgba(43,33,24,0.65)" }}>
-              <span className={urgent ? "sos-dot" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: urgent ? CORAL : LIME, marginTop: 5, flexShrink: 0 }} />
-              <span><b style={{ color: urgent ? CORAL : "var(--ink)" }}>{urgent ? "SOS" : t("post.mode_planned_word")}</b> · {urgent ? t("post.info_urgent") : t("post.info_planned")}</span>
+              <span className={urgent ? "sos-dot" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: urgent ? CORAL : invitedMode ? "rgba(43,33,24,0.45)" : LIME, marginTop: 5, flexShrink: 0 }} />
+              <span>
+                <b style={{ color: urgent ? CORAL : "var(--ink)" }}>{urgent ? "SOS" : invitedMode ? `🎟 ${t("post.mode_private_word")}` : t("post.mode_planned_word")}</b>
+                {" · "}
+                {urgent ? t("post.info_urgent") : invitedMode ? t("post.info_private") : t("post.info_planned")}
+              </span>
             </div>
           )}
 
