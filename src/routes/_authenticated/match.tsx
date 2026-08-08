@@ -118,8 +118,9 @@ function MatchDeck() {
           <Avatar src={matched.photo_url} name={matched.name} seed={matched.id} size={140} />
           <div className="font-display text-3xl">{matched.name}</div>
           <div className="font-extrabold">📍 {matched.home_city ?? "—"} · L<span style={{ color: lm.color }}>{matched.level}</span></div>
+          {/* ONE action after a match: say hi. Planning a game comes naturally
+              from the chat — a second loud CTA here was too much (Oxy 2026-08-08). */}
           <button onClick={() => messageWa(matched)} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
-          <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral w-full text-center block">{t("match.plan_game")}</Link>
           <button onClick={() => { setMatched(null); setI((n) => n + 1); }} className="cbtn cbtn-ghost w-full">{t("match.keep_swiping")}</button>
         </div>
       </div>
