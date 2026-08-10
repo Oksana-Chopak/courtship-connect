@@ -263,10 +263,9 @@ function InviteAccent() {
 
   async function share() {
     if (!code) return;
-    const link = `${window.location.origin}/auth?code=${code}`;
-    const msg = t("invite.message").replace("{link}", link).replace("{code}", code);
-    if (navigator.share) { try { await navigator.share({ text: msg }); return; } catch { /* cancelled */ } }
-    await copyText(msg, t("invite.copied"));
+    // Canonical share path (AbortError = silent, anything else falls to the
+    // clipboard) — same code as shown on the card, no duplicated share logic.
+    await shareInvite(t("invite.message"), t("invite.copied"));
   }
   function copyCode() {
     if (!code) return;
@@ -337,17 +336,17 @@ function FilterSheet({ level, setLevel, format, setFormat, time, setTime, city, 
           <Chip on={level == null} onClick={() => setLevel(null)}>{t("common.all")}</Chip>
           {LEVELS.map((l) => (
             <Chip key={l.n} on={level === l.n} onClick={() => setLevel(level === l.n ? null : l.n)}>
-              <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />{l.name}
+              <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />{t(`lvl.${l.n}`)}
             </Chip>
           ))}
         </Group>
         <Group label={t("players.filter_format")}>
           <Chip on={!format} onClick={() => setFormat(null)}>{t("common.all")}</Chip>
-          {["singles", "doubles"].map((f) => <Chip key={f} on={format === f} onClick={() => setFormat(format === f ? null : f)}>{f}</Chip>)}
+          {["singles", "doubles"].map((f) => <Chip key={f} on={format === f} onClick={() => setFormat(format === f ? null : f)}>{t(`fmt.${f}`)}</Chip>)}
         </Group>
         <Group label={t("players.filter_time")}>
           <Chip on={!time} onClick={() => setTime(null)}>{t("common.any")}</Chip>
-          {PLAY_TIMES.map((pt) => <Chip key={pt} on={time === pt} onClick={() => setTime(time === pt ? null : pt)}>{pt}</Chip>)}
+          {PLAY_TIMES.map((pt, i) => <Chip key={pt} on={time === pt} onClick={() => setTime(time === pt ? null : pt)}>{t(`ptime.${i}`)}</Chip>)}
         </Group>
         <Group label={t("players.filter_buddies")}>
           <Chip on={buddiesOnly} onClick={() => setBuddiesOnly(!buddiesOnly)}>{t("players.will_rescue")}</Chip>

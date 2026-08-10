@@ -167,8 +167,8 @@ function PlayerDetail() {
         {Array.isArray((p as any).areas) && ((p as any).areas as string[]).length > 0 && (
           <Row label={t("prof.areas")}>{((p as any).areas as string[]).join(" · ")}</Row>
         )}
-        <Row label={t("player.formats")}>{p.formats?.join(" · ") || "—"}</Row>
-        <Row label={t("player.when")}>{p.play_times?.join(" · ") || "—"}</Row>
+        <Row label={t("player.formats")}>{p.formats?.map((f: string) => t(`fmt.${f}`)).join(" · ") || "—"}</Row>
+        <Row label={t("player.when")}>{p.play_times?.map((pt: string) => { const i = (PLAY_TIMES as readonly string[]).indexOf(pt); return i >= 0 ? t(`ptime.${i}`) : pt; }).join(" · ") || "—"}</Row>
         <Row label={t("player.looking_for")}>{p.looking_for ? t((`lf.${p.looking_for}`) as any) : "—"}</Row>
         <Row label={t("player.home_courts")}>{p.home_courts || "—"}</Row>
         <Row label={t("player.buddy")}>{p.buddy_optin === "yes" ? t("player.buddy_yes_radius", { km: p.buddy_radius_km ?? 10 }) : p.buddy_optin ? t((`optin.${p.buddy_optin}`) as any) : "—"}</Row>

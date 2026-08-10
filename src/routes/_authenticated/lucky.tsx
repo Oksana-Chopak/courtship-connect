@@ -105,8 +105,10 @@ function Lucky() {
             <div className="space-y-2 mt-3">
               <button onClick={messageWa} className="cbtn cbtn-green w-full">{t("sos.message_wa")}</button>
               <div className="grid grid-cols-2 gap-2">
+                {/* Both quiet: WhatsApp above is the ONE accent — re-rolling the
+                    person you just got must not outshout meeting them. */}
                 <Link to="/players/$id" params={{ id: player.id }} className="cbtn cbtn-ghost text-center block">{t("lucky.view_profile")}</Link>
-                <button onClick={() => void spin()} className="cbtn cbtn-coral">{t("lucky.spin_again")}</button>
+                <button onClick={() => void spin()} className="cbtn cbtn-ghost">{t("lucky.spin_again")}</button>
               </div>
             </div>
           </div>

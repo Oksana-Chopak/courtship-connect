@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
-import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, formatLabel, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
+import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
-import { fetchApprovedEvents, fetchMyAttendance, type EventRow } from "@/lib/events";
+import { fetchApprovedEvents, fetchMyAttendance, joinEvent, type EventRow } from "@/lib/events";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { useCityNames } from "@/lib/cities";
 import { EventCard } from "@/components/EventCard";
@@ -26,8 +26,10 @@ import { toast } from "@/lib/toast";
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),
   // seg kept optional for backwards-compatible links; the board now shows one merged list.
-  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned" } => ({
+  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned"; join_event?: string } => ({
     seg: s.seg === "planned" ? "planned" : s.seg === "urgent" ? "urgent" : undefined,
+    // Carried through the guest signup funnel by EventCard — board finishes the join.
+    join_event: typeof s.join_event === "string" && s.join_event ? s.join_event : undefined,
   }),
   component: BoardPage,
 });
@@ -174,6 +176,27 @@ function BoardPage() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [load]);
+
+  // Finish a guest's event join after signup: /board?join_event=<id> is the
+  // promise EventCard makes when a signed-out visitor taps join (mirrors the
+  // /sos/<id>?apply=1 game path — the tapped thing is never lost in the funnel).
+  const joinEventParam = (Route.useSearch() as { join_event?: string }).join_event;
+  const joinEventDoneRef = useRef(false);
+  const navigateBoard = useNavigate();
+  useEffect(() => {
+    if (!meId || !joinEventParam || joinEventDoneRef.current) return;
+    joinEventDoneRef.current = true;
+    (async () => {
+      const r = await joinEvent(joinEventParam);
+      if (r.ok) toast.success(t("ev.joined"));
+      else if (r.reason === "already_in") toast.success(t("ev.already_in"));
+      else if (r.reason === "full") toast.error(t("ev.full_label"));
+      else if (r.reason === "past") toast.error(t("ev.past"));
+      // Clear the param so refresh / back never re-fires the join.
+      navigateBoard({ to: "/board", search: { seg: undefined }, replace: true });
+      load();
+    })();
+  }, [meId, joinEventParam, navigateBoard, load, t]);
 
   async function onWithdraw(sos: EligibleSosRow) {
     if (typeof window !== "undefined" && !window.confirm(t("home.cant_make_confirm"))) return;

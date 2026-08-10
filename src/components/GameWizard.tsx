@@ -6,7 +6,7 @@ import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useCityNames } from "@/lib/cities";
-import { COURT_STATUSES, SOS_FORMATS, LEVELS, isUrgent, generateSlots, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, sportMeta, type Sport } from "@/lib/courtship";
+import { COURT_STATUSES, courtStatusMeta, SOS_FORMATS, LEVELS, isUrgent, generateSlots, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, sportMeta, type Sport } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -415,7 +415,9 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
 
   const courtName = courts.find((c) => c.id === courtId)?.name ?? "";
-  const statusLabel = COURT_STATUSES.find((s) => s.value === courtStatus)?.label ?? "";
+  // Localized status label (courtStatusMeta carries EN+SV) — the raw
+  // COURT_STATUSES labels are English-only and would contradict the board in SV.
+  const statusLabel = courtStatusMeta(courtStatus, lang).label;
   const stepTitles = [t("wiz.when_title"), t("wiz.court_title"), t("wiz.who_title")];
 
   function next() { setStep((s) => Math.min(2, s + 1)); }
@@ -592,7 +594,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
               <AccordionRow label={t("sos.court_status")} value={statusLabel} last>
                 <div className="flex flex-wrap gap-1.5 pb-3 px-3">
                   {COURT_STATUSES.map((s) => (
-                    <button key={s.value} type="button" onClick={() => setCourtStatus(s.value)} className={`cchip ${courtStatus === s.value ? "cchip-on" : ""}`}>{s.label}</button>
+                    <button key={s.value} type="button" onClick={() => setCourtStatus(s.value)} className={`cchip ${courtStatus === s.value ? "cchip-on" : ""}`}>{courtStatusMeta(s.value, lang).label}</button>
                   ))}
                 </div>
               </AccordionRow>

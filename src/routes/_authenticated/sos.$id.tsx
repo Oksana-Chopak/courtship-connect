@@ -7,7 +7,7 @@ import { getProfilePhone } from "@/lib/whatsapp.functions";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { notifyUsers } from "@/lib/push";
 import { myInviteLink, myGameShareLink, shareMessage, copyText } from "@/lib/share";
-import { countMatchingRescuers, claimSos, formatLabel, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
+import { countMatchingRescuers, claimSos, whatsappClaimLink, withdrawClaim, applyToGame, withdrawApplication, fetchApplicants, pickApplicant, type SosRow, type ApplicantRow } from "@/lib/sos";
 import { whenLabel, hourRange, levelMeta, vibeEmoji } from "@/lib/courtship";
 import { courtTypeMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
@@ -180,6 +180,9 @@ function SosDetail() {
   const winEnd = (sos as any).play_until ? new Date((sos as any).play_until as string) : null;
   const when = whenLabel(sos.play_at) + (winEnd ? "–" + winEnd.toLocaleTimeString(lang === "sv" ? "sv-SE" : "en-GB", { hour: "2-digit", minute: "2-digit" }) : "");
   const ctMeta = courtTypeMeta(sos.court_type, lang);
+  // Localized game format. No "need N" — multipick lets the host take as many
+  // players as they want; the joined_count line carries the live numbers.
+  const fmtGame = sos.format === "singles" ? t("fmt.singles") : t("fmt.doubles");
   const spotsNeeded = sos.spots_needed ?? 1;
   const spotsFilled = sos.spots_filled ?? 0;
   const remaining = Math.max(0, spotsNeeded - spotsFilled);
@@ -254,10 +257,10 @@ function SosDetail() {
   if (sos.status === "expired" || sos.status === "cancelled") {
     return (
       <div className="space-y-5">
-        <Link to="/rescue" className="text-sm font-extrabold underline">← Rescue board</Link>
+        <Link to="/rescue" className="text-sm font-extrabold underline">← {t("rescue.title")}</Link>
         <div className="ccard p-6 text-center">
           <div className="text-3xl">⌛</div>
-          <div className="font-display text-xl mt-1">{sos.status === "cancelled" ? t("sos.cancelled") : "Expired"}</div>
+          <div className="font-display text-xl mt-1">{sos.status === "cancelled" ? t("sos.cancelled") : t("sos.expired_title")}</div>
         </div>
       </div>
     );
@@ -267,7 +270,7 @@ function SosDetail() {
   if (iJoined && !isCaller) {
     return (
       <div className="space-y-5">
-        <Link to="/board" className="text-sm font-extrabold underline">← Home</Link>
+        <Link to="/board" className="text-sm font-extrabold underline">← {t("nav.board")}</Link>
         <div className="ccard p-5 text-center space-y-3" style={{ background: "var(--green-pop)" }}>
           <div className="text-5xl">🎾</div>
           <h1 className="font-display text-3xl">{t("sos.youre_in")}</h1>
@@ -336,7 +339,7 @@ function SosDetail() {
                 <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 4, ...clampLines(1) }}>📍 {courtCity} · {courtName}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "nowrap", overflow: "hidden", whiteSpace: "nowrap" }}>
                   <span style={{ flexShrink: 0 }}><CourtStatusBadge status={sos.court_status} muted /></span>
-                  <span style={{ flexShrink: 0, fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</span>
+                  <span style={{ flexShrink: 0, fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)" }}>{ctMeta.emoji} {ctMeta.label} · {fmtGame}</span>
                 </div>
                 {full && !isOpen && <div className="font-extrabold" style={{ fontSize: RF.meta, marginTop: 8 }}>{t("sos.rescued_sub")}</div>}
                 {multi && <div className="font-extrabold" style={{ fontSize: RF.meta, marginTop: 6 }}>{t("sos.joined_count", { filled: spotsFilled, needed: spotsNeeded })}</div>}
@@ -483,8 +486,10 @@ function SosDetail() {
           </div>
         )}
 
+        {/* Quiet lever, not the shout: Share/Publish below is THE one accent on
+            the unfilled-host screen (one-priority-action rule, 2026-08-08). */}
         {!full && !isOpen && (sos.level_min > 1 || sos.level_max < 5) && (
-          <button className="cbtn cbtn-coral w-full" disabled={busy} onClick={widenLevels}>🎯 {t("sos.widen")}</button>
+          <button className="cbtn cbtn-ghost w-full" disabled={busy} onClick={widenLevels}>🎯 {t("sos.widen")}</button>
         )}
         {/* Private (invited) game the invitee never took → let the host open it to
             the board instead of the cancel+repost dead end. */}
@@ -560,7 +565,7 @@ function SosDetail() {
   if (sos.status === "claimed") {
     return (
       <div className="space-y-5">
-        <Link to="/rescue" className="text-sm font-extrabold underline">← Rescue board</Link>
+        <Link to="/rescue" className="text-sm font-extrabold underline">← {t("rescue.title")}</Link>
         <div className="ccard p-6 text-center space-y-2">
           <div className="text-5xl">💔</div>
           <div className="font-display text-2xl">{t("sos.taken_title")}</div>
@@ -575,10 +580,10 @@ function SosDetail() {
   const lmMax = levelMeta(sos.level_max);
   return (
     <div className="space-y-5">
-      <Link to="/rescue" className="text-sm font-extrabold underline">← Rescue board</Link>
+      <Link to="/rescue" className="text-sm font-extrabold underline">← {t("rescue.title")}</Link>
       <div className="ccard p-5 space-y-3">
         <div className="font-display text-3xl">{when}</div>
-        <div className="font-extrabold">📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {formatLabel(sos.format)}</div>
+        <div className="font-extrabold">📍 {courtCity} · {courtName} · {ctMeta.emoji} {ctMeta.label} · {fmtGame}</div>
         <div><CourtStatusBadge status={sos.court_status} /></div>
         {multi && <div className="font-extrabold text-[var(--coral)]">{t("sos.spots_left", { n: remaining })}</div>}
         <div className="text-sm">

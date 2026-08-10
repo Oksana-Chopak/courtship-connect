@@ -43,7 +43,9 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
 
   async function join() {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) { window.location.href = "/auth?mode=signup&next=%2Fboard"; return; }
+    // Guest taps join on a SPECIFIC event — carry it through signup so the
+    // board can finish the join on arrival (same promise the game path keeps).
+    if (!u.user) { window.location.href = `/auth?mode=signup&next=${encodeURIComponent(`/board?join_event=${e.id}`)}`; return; }
     setBusy(true);
     const r = await joinEvent(e.id);
     setBusy(false);

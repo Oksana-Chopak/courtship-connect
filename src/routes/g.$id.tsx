@@ -145,7 +145,7 @@ function PublicGamePage() {
                   </div>
                   <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 6, ...clampLines(1) }}>📍 {game.court_city} · {game.court_name}</div>
                   <div style={{ fontWeight: 700, fontSize: RF.meta, color: "rgba(43,33,24,0.6)", marginTop: 6 }}>
-                    {formatLabel(game.format)} · L{game.level_min}–{game.level_max}
+                    {game.format === "singles" ? t("fmt.singles") : t("fmt.doubles")} · L{game.level_min}–{game.level_max}
                   </div>
                 </div>
               </div>

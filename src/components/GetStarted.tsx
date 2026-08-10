@@ -36,7 +36,9 @@ export function GetStarted() {
       <button onClick={dismiss} aria-label={t("gs.dismiss")} className="absolute top-1.5 right-2.5 opacity-40 text-base leading-none">✕</button>
       <div className="opacity-60 pr-6">{t("gs.title")}</div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 font-extrabold">
-        {!inviteDone && <Link to="/me" className="underline">{t("gs.step2")}</Link>}
+        {/* /players carries the invite hero + personal code — /me has no invite
+            action at all (that link was a dead end, 2026-08-08 release audit). */}
+        {!inviteDone && <Link to="/players" className="underline">{t("gs.step2")}</Link>}
         <Link to="/sos/new" search={{ planned: undefined }} className="underline">{t("gs.step3")}</Link>
       </div>
     </div>
