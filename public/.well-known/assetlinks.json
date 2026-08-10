@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.courtship.app",
+      "sha256_cert_fingerprints": [
+        "F9:CC:3E:AC:90:94:F5:3C:BC:B6:6E:51:2C:DA:88:FB:76:BA:75:9C:72:19:69:D9:80:63:83:5B:38:C1:1A:C4"
+      ]
+    }
+  }
+]
