@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ycsidxtrizgycfumkrnq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "courtship-connect",
+      "version": "0.1.0",
+      "title": "Courtship Connect"
+    },
+    "tools": [
+      {
+        "name": "list_urgent_sos",
+        "title": "List urgent SOS games",
+        "description": "Urgent (SOS) tennis games the signed-in player is eligible to rescue, soonest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_open_games",
+        "title": "List open planned games",
+        "description": "Planned (non-urgent) games on the board that the signed-in player can apply to.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_games",
+        "title": "List my posted games",
+        "description": "Games the signed-in player posted, newest first, with status, time, spots and court.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by game status. Defaults to active.",
+              "type": "string",
+              "enum": [
+                "active",
+                "filled",
+                "cancelled",
+                "expired",
+                "any"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_players",
+        "title": "Find players",
+        "description": "Suggested Courtship players for the signed-in user, ranked by district, level and availability overlap.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "How many players to return. Defaults to 15.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "community_stats",
+        "title": "Community stats",
+        "description": "Aggregate Courtship community stats (players, games, activity), optionally for one city.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "city": {
+              "description": "City name, e.g. Stockholm. Omit for all cities.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "apply_to_game",
+        "title": "Apply to a game",
+        "description": "Send an application (optionally a counter-proposed time) for a game on the board, as the signed-in player.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "game_id": {
+              "type": "string",
+              "description": "The id of the game (sos_requests.id) to apply to."
+            },
+            "proposed_at": {
+              "description": "Optional ISO timestamp counter-proposal, must fall inside the game's time window.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "game_id"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
