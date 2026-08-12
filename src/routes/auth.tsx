@@ -12,6 +12,15 @@ import { rememberNext, consumeNext } from "@/lib/share";
  *  on their very first screen (2026-08-12 audit P1-12). Known codes map to
  *  dictionary keys; anything else goes through oops() — calm copy, detail
  *  parked behind the gear. */
+/** True inside the iOS/Android Capacitor shells (the native bridge injects
+ *  window.Capacitor into the remote page). Google OAuth inside a WKWebView is
+ *  blocked by Google itself (disallowed_useragent) — a guaranteed dead end —
+ *  and hiding third-party login also keeps App Store guideline 4.8 (Sign in
+ *  with Apple) out of scope for the wrapper. Email/password works everywhere. */
+function isNativeShell(): boolean {
+  try { return !!(window as any).Capacitor?.isNativePlatform?.(); } catch { return false; }
+}
+
 function authErrToast(t: (k: string) => string, err: any): void {
   const m = String(err?.message ?? "");
   if (/invalid login credentials/i.test(m)) toast.error(t("auth.err_bad_creds"));
@@ -303,6 +312,7 @@ function AuthPage() {
           </button>
         </form>
 
+        {!isNativeShell() && <>
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-[var(--ink)]/15" />
           <span className="text-xs font-extrabold uppercase tracking-widest opacity-60">or</span>
@@ -344,6 +354,7 @@ function AuthPage() {
           </svg>
           <span className="font-extrabold">{mode === "signup" ? "Sign up with Google" : "Sign in with Google"}</span>
         </button>
+        </>}
 
         {mode === "login" && (
           <button
