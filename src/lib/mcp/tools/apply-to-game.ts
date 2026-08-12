@@ -12,7 +12,6 @@ export default defineTool({
       .describe("Optional ISO timestamp counter-proposal, must fall inside the game's time window."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-  needsApproval: true,
   handler: async ({ game_id, proposed_at }, ctx) => {
     if (!ctx.isAuthenticated()) return errorResult("Not authenticated");
     const supabase = supabaseForUser(ctx);
