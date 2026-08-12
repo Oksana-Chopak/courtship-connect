@@ -240,11 +240,14 @@ function BoardPage() {
       {/* Hero — Save my set (SOS), with Plan-a-game / Host under-links */}
       <div>
         <p className="text-center font-display leading-tight px-2" style={{ fontSize: 18, marginBottom: 12 }}>{t("tonight.encourage")}</p>
-        <Link to="/sos/new" search={{ planned: undefined }} style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 12, padding: "13px 16px", textDecoration: "none" }}>
+        {/* Same CTA language as the Home screen (2026-08 board handoff):
+            softCoral fill, NO border, cream text, soft coral shadow, and the
+            shared .cs-pulse heartbeat (defined in styles.css). */}
+        <Link to="/sos/new" search={{ planned: undefined }} className="cs-pulse" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", borderRadius: 12, padding: "16px 18px", boxShadow: "0 10px 22px rgba(240,112,91,0.28)", textDecoration: "none" }}>
           <BallHeart size={26} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1 }}>{t("tonight.sos")}</div>
-            <div style={{ fontWeight: 800, fontSize: 13.5, opacity: 0.95, marginTop: 2 }}>{t("tonight.sos_sub")}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, lineHeight: 1 }}>{t("tonight.sos")}</div>
+            <div style={{ fontWeight: 700, fontSize: 12, opacity: 0.95, marginTop: 3 }}>{t("tonight.sos_sub")}</div>
           </div>
           <span style={{ fontSize: 20 }}>→</span>
         </Link>

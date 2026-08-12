@@ -79,12 +79,8 @@ function Index() {
 
   return (
     <div className="terry-bg text-[var(--ink)] font-body" style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      {/* the CTA's soft heartbeat — the only animation on this screen */}
-      <style>{`
-        @keyframes csHeart { 0% { transform: scale(1); } 55% { transform: scale(1.05); } 75% { transform: scale(1); } 90% { transform: scale(1.03); } 100% { transform: scale(1); } }
-        .cs-pulse { animation: csHeart 3.2s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) { .cs-pulse { animation: none; } }
-      `}</style>
+      {/* the CTA's soft heartbeat (.cs-pulse) now lives in styles.css —
+          shared with the Board hero so the two buttons can never drift */}
       <div style={{ width: "100%", maxWidth: 430, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "64px 32px 60px", boxSizing: "border-box" }}>
         <img src="/icon-512.png" width={92} height={92} alt="Courtship" style={{ display: "block", borderRadius: "22%", marginTop: 4 }} />
         <h1 className="font-display" style={{ fontSize: 40, lineHeight: 1.3, marginTop: 24 }}>
