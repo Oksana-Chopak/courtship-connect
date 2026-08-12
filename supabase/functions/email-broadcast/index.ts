@@ -17,6 +17,49 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+
+const BREVO_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
+
+/** "Name <email>" → Brevo sender object; bare address works too. */
+function parseFrom(from: string): { name?: string; email: string } {
+  const m = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  return m ? { name: m[1] || undefined, email: m[2] } : { email: from.trim() };
+}
+
+/** Send a batch through whichever provider is configured. Brevo (ex-Sendinblue)
+ *  wins when both keys exist — single-sender verification works without DNS,
+ *  which is how this project actually sends (2026-08-14). Brevo has no batch
+ *  endpoint, so it loops; Resend keeps the original /emails/batch call. */
+async function sendBatch(batch: Array<{ from: string; to: string[]; subject: string; html: string }>): Promise<{ ok: boolean; detail: string }> {
+  if (BREVO_KEY) {
+    let okAll = true;
+    let detail = "";
+    for (const m of batch) {
+      const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
+        body: JSON.stringify({
+          sender: parseFrom(m.from),
+          to: m.to.map((email) => ({ email })),
+          subject: m.subject,
+          htmlContent: m.html,
+        }),
+      });
+      if (!r.ok) {
+        okAll = false;
+        if (!detail) detail = `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200);
+      }
+    }
+    return { ok: okAll, detail };
+  }
+  const r = await fetch("https://api.resend.com/emails/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
+    body: JSON.stringify(batch),
+  });
+  return { ok: r.ok, detail: r.ok ? "" : `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200) };
+}
+
 const FROM = Deno.env.get("BROADCAST_FROM") ?? "Courtship <onboarding@resend.dev>";
 
 function esc(s: string): string {
@@ -80,7 +123,7 @@ async function unsubTokens(sb: any, emails: string[]): Promise<Map<string, strin
 
 Deno.serve(async (req) => {
   try {
-    if (!RESEND_KEY) {
+    if (!RESEND_KEY && !BREVO_KEY) {
       return new Response(JSON.stringify({ ok: false, error: "RESEND_API_KEY not configured" }), { status: 500 });
     }
     // Identify the caller from their JWT, then hard-verify is_admin.
@@ -137,13 +180,9 @@ Deno.serve(async (req) => {
         subject: String(subject),
         html: html(String(body), `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`),
       }));
-      const r = await fetch("https://api.resend.com/emails/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
-        body: JSON.stringify(batch),
-      });
+      const r = await sendBatch(batch);
       if (r.ok) sent += batch.length;
-      else failures.push(`batch ${i / 100}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 200));
+      else failures.push(`batch ${i / 100}: ${r.detail}`.slice(0, 200));
     }
     return new Response(JSON.stringify({ ok: failures.length === 0, sent, total: emails.length, failures }), { status: 200 });
   } catch (e) {
