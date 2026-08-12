@@ -13,7 +13,7 @@ import { useI18n } from "@/lib/i18n";
 import { CourtCombobox } from "@/components/CourtCombobox";
 import { Avatar } from "@/components/Avatar";
 import { Rackets } from "@/components/RailKit";
-import { rememberDraftGame } from "@/lib/draftGame";
+import { rememberDraftGame, peekDraftGame, clearDraftGame } from "@/lib/draftGame";
 import { rememberNext } from "@/lib/share";
 import { HAIR, CARD, WOOD, LIME, CORAL, LV_COLORS, WizLbl, SegRow, CheckBox, QuietNext, ToggleRow, AccordionRow, DetailCard, LevelTrack, Wheel } from "@/components/wizardKit";
 
@@ -133,6 +133,39 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       const lastCt = (last as any)?.court_type as CourtType | undefined;
       if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
 
+      // Rescue path (2026-08-12 audit P0-1): a guest draft that could NOT
+      // auto-publish after signup was kept — prefill everything they typed so
+      // nothing is lost, then clear it (one shot, no republish loops).
+      if (!editing) {
+        const draft = peekDraftGame();
+        if (draft) {
+          clearDraftGame();
+          const pa = new Date(draft.play_at);
+          if (!isNaN(pa.getTime()) && pa.getTime() > Date.now()) {
+            const day = new Date(pa); day.setHours(0, 0, 0, 0);
+            setDate(day);
+            setTime(`${pad(pa.getHours())}:${pad(pa.getMinutes())}`);
+          } // stale time → keep today + empty slot, the person re-picks
+          const court = cs.find((c) => c.id === draft.court_id);
+          if (court) { setCity(court.city as City); setCourtId(court.id); }
+          if (draft.court_type === "indoor" || draft.court_type === "outdoor") setCourtType(draft.court_type as CourtType);
+          if (draft.court_type_any) setCtAny(true);
+          if (draft.format) setFormat(draft.format as typeof SOS_FORMATS[number]["value"]);
+          if (draft.level_min === 1 && draft.level_max === 5) setAnyone(true);
+          else { setAnyone(false); setLevelMin(draft.level_min); setLevelMax(draft.level_max); }
+          if (draft.court_status) setCourtStatus(draft.court_status as typeof COURT_STATUSES[number]["value"]);
+          if (draft.duration_min) setDuration(draft.duration_min);
+          if (draft.play_until) {
+            const pu = new Date(draft.play_until);
+            if (!isNaN(pu.getTime()) && pu.getTime() > Date.now()) {
+              setFlexible(true);
+              setUntilTime(`${pad(pu.getHours())}:${pad(pu.getMinutes())}`);
+            }
+          }
+          if (draft.note) setNote(draft.note);
+        }
+      }
+
       // Edit mode: load the existing game and prefill (owner-only edit_sos RPC saves it).
       if (editing && editId) {
         const { data: g } = await (supabase as any).from("sos_requests").select("*").eq("id", editId).maybeSingle();
@@ -145,6 +178,8 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
           const court = cs.find((c) => c.id === g.court_id);
           if (court) { setCity(court.city as City); setCourtId(court.id); }
           if (g.court_type === "indoor" || g.court_type === "outdoor") setCourtType(g.court_type);
+          // Any-surface must round-trip through edit (2026-08-12 audit P1-9)
+          setCtAny(!!g.court_type_any);
           if (g.format) setFormat(g.format);
           if (g.level_min === 1 && g.level_max === 5) { setAnyone(true); }
           else { setAnyone(false); setLevelMin(g.level_min); setLevelMax(g.level_max); }
@@ -266,11 +301,23 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       };
       const wantsWindow = flexible && !!playUntil;
       let windowDropped = false;
-      let { data: er, error } = await (supabase as any).rpc("edit_sos", { ...editArgs, _play_until: wantsWindow ? playUntil!.toISOString() : null });
+      let ctAnyDropped = false;
+      // Accumulative retries (audit P1-10 pattern): each fallback strips ONE
+      // newer arg from the PREVIOUS attempt, so any mix of deployed signatures
+      // converges instead of ping-ponging fields back in.
+      let attempt: any = { ...editArgs, _play_until: wantsWindow ? playUntil!.toISOString() : null, _court_type_any: effCtAny };
+      let { data: er, error } = await (supabase as any).rpc("edit_sos", attempt);
+      if (error && /_court_type_any|does not exist|schema cache/i.test(error.message ?? "")) {
+        // pre-BATCH16 edit_sos deployed - Any-surface not saveable; retry without, but SAY so
+        ctAnyDropped = true;
+        const { _court_type_any: _ca, ...noCt } = attempt; attempt = noCt;
+        ({ data: er, error } = await (supabase as any).rpc("edit_sos", attempt));
+      }
       if (error && /_play_until|does not exist|schema cache/i.test(error.message ?? "")) {
-        // pre-window edit_sos (11-arg) still deployed — save without the window, but SAY so
+        // pre-window edit_sos (11-arg) still deployed - save without the window, but SAY so
         windowDropped = wantsWindow;
-        ({ data: er, error } = await (supabase as any).rpc("edit_sos", editArgs));
+        const { _play_until: _pu, ...noWin } = attempt; attempt = noWin;
+        ({ data: er, error } = await (supabase as any).rpc("edit_sos", attempt));
       }
       if (!error) {
         const row = Array.isArray(er) ? er[0] : er;
@@ -292,6 +339,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       setBusy(false);
       if (error) { oops(error); return; }
       if (windowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
+      if (ctAnyDropped) toast.warning(t("sos.batch_not_saved"), { duration: 9000 });
       else toast.success(t("sos.edit_saved"));
       navigate({ to: "/sos/$id", params: { id: editId } });
       return;
@@ -326,32 +374,37 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       duration_min: duration,
       sport,
     };
-    let res = await (supabase as any).from("sos_requests").insert(insertRow).select("id").single();
+    // Fallbacks drop columns ACCUMULATIVELY from one `row` (2026-08-12 audit
+    // P1-10): each retry used to rebuild from the ORIGINAL insertRow, silently
+    // re-adding a column an earlier step had just dropped — two missing columns
+    // meant no attempt could ever succeed.
+    let row: any = { ...insertRow };
+    let res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
     if (res.error && /sport/i.test(res.error.message || "")) {
-      const { sport: _s, ...rest } = insertRow;
-      res = await (supabase as any).from("sos_requests").insert(rest).select("id").single();
+      const { sport: _s, ...rest } = row; row = rest;
+      res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
     }
     let createWindowDropped = false;
     if (res.error && /court_type_any|broadcast|invite_join_token/i.test(res.error.message || "")) {
-      const { court_type_any: _c1, broadcast: _c2, invite_join_token: _c3, ...noNew } = insertRow;
-      res = await (supabase as any).from("sos_requests").insert(noNew).select("id").single();
+      const { court_type_any: _c1, broadcast: _c2, invite_join_token: _c3, ...noNew } = row; row = noNew;
+      res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
       if (!res.error && (effCtAny || invitedMode)) toast.warning(t("sos.batch_not_saved"), { duration: 9000 });
     }
     if (res.error && /ghost_/i.test(res.error.message || "")) {
-      const { ghost_name: _g1, ghost_claim_token: _g2, ...noGhost } = insertRow;
-      res = await (supabase as any).from("sos_requests").insert(noGhost).select("id").single();
+      const { ghost_name: _g1, ghost_claim_token: _g2, ...noGhost } = row; row = noGhost;
+      res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
       if (!res.error) toast.warning(t("sos.ghost_not_saved"), { duration: 9000 });
     }
     if (res.error && /play_until/i.test(res.error.message || "")) {
       // window column not migrated yet — post as exact-time so creation never breaks, but SAY so
       createWindowDropped = flexible && !!playUntil;
-      const { play_until: _pu, ...noWin } = insertRow;
-      res = await (supabase as any).from("sos_requests").insert(noWin).select("id").single();
+      const { play_until: _pu, ...noWin } = row; row = noWin;
+      res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
     }
     if (res.error && /duration_min/i.test(res.error.message || "")) {
       // duration_min column not migrated yet — post without it so creation never breaks
-      const { duration_min: _omit, ...fallback } = insertRow;
-      res = await (supabase as any).from("sos_requests").insert(fallback).select("id").single();
+      const { duration_min: _omit, ...fallback } = row; row = fallback;
+      res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
     }
     const { data, error } = res;
     setBusy(false);

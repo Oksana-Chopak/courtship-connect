@@ -4,8 +4,24 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "@/lib/toast";
+import { oops } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { rememberNext, consumeNext } from "@/lib/share";
+
+/** Newcomers must not read raw Supabase strings ("Invalid login credentials")
+ *  on their very first screen (2026-08-12 audit P1-12). Known codes map to
+ *  dictionary keys; anything else goes through oops() — calm copy, detail
+ *  parked behind the gear. */
+function authErrToast(t: (k: string) => string, err: any): void {
+  const m = String(err?.message ?? "");
+  if (/invalid login credentials/i.test(m)) toast.error(t("auth.err_bad_creds"));
+  else if (/already registered|already been registered/i.test(m)) toast.error(t("auth.err_registered"));
+  else if (/rate limit/i.test(m)) toast.error(t("auth.err_rate_limit"));
+  else if (/not confirmed/i.test(m)) toast.error(t("auth.err_not_confirmed"));
+  else if (/at least 6|password.*(short|weak)/i.test(m)) toast.error(t("auth.err_weak_pw"));
+  else if (/valid email/i.test(m)) toast.error(t("auth.err_bad_email"));
+  else oops(err ?? new Error("auth_failed"));
+}
 
 const search = z.object({
   mode: z.enum(["signup", "login"]).optional().default("signup"),
@@ -156,7 +172,7 @@ function AuthPage() {
         else navigate({ to: "/onboarding" });
       }
     } catch (err: any) {
-      toast.error(err?.message ?? "Something went wrong");
+      authErrToast(t, err);
     } finally {
       setBusy(false);
     }
@@ -178,7 +194,7 @@ function AuthPage() {
                 setRecovery(false);
                 navigate({ to: "/board" });
               } catch (err: any) {
-                toast.error(err?.message ?? "Something went wrong");
+                authErrToast(t, err);
               } finally {
                 setBusy(false);
               }
@@ -310,7 +326,7 @@ function AuthPage() {
               });
               if (result.error) throw result.error;
             } catch (err: any) {
-              toast.error(err?.message ?? "Something went wrong");
+              authErrToast(t, err);
               setBusy(false);
             }
           }}
@@ -341,7 +357,7 @@ function AuthPage() {
                 if (error) throw error;
                 toast.success(t("auth.reset_sent"));
               } catch (err: any) {
-                toast.error(err?.message ?? "Something went wrong");
+                authErrToast(t, err);
               } finally {
                 setBusy(false);
               }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchMyGameHistory } from "@/lib/games";
-import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak, RANK_LADDERS } from "@/lib/courtship";
+import { activityTier, rescuerTier, recruiterTier, matchmakerTier, weeklyStreak, RANK_LADDERS, tierNameKey } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 import { RF, clampLines, SkeletonRail, railTone } from "@/components/RailKit";
 import { toast } from "@/lib/toast";
@@ -102,7 +102,7 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
     const top = tracks.filter((x) => x.tier).sort((a, b) => (b.tier!.level - a.tier!.level))[0];
     const bits = [
       streak.weeks >= 1 ? t("prog.share_streak", { n: streak.weeks }) : "",
-      top ? `${top.tier!.emoji} ${top.tier!.name}` : "",
+      top ? `${top.tier!.emoji} ${t(tierNameKey(top.track as "activity" | "rescuer" | "recruiter" | "matchmaker", top.tier!.level))}` : "",
     ].filter(Boolean);
     const text = `${bits.join(" · ")} — ${t("prog.share_tag")}`;
     try {
@@ -171,7 +171,7 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
                   <span style={{ fontSize: 30 }}>{closest.tier!.emoji}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0, padding: "13px 14px" }}>
-                  <div className="font-display" style={{ fontSize: RF.name - 2, lineHeight: 1.15, ...clampLines(1) }}>{closest.tier!.name} → {closest.tier!.nextName}</div>
+                  <div className="font-display" style={{ fontSize: RF.name - 2, lineHeight: 1.15, ...clampLines(1) }}>{t(tierNameKey(closest.track as "activity" | "rescuer" | "recruiter" | "matchmaker", closest.tier!.level))} → {t(tierNameKey(closest.track as "activity" | "rescuer" | "recruiter" | "matchmaker", closest.tier!.level + 1))}</div>
                   <div className="mt-2 rounded-full overflow-hidden" style={{ height: 10, background: "var(--cream2)", border: "1.5px solid var(--ink)" }}>
                     <div style={{ width: `${Math.min(100, Math.max(6, ((closest.count - closest.tier!.at) / Math.max(1, closest.span)) * 100))}%`, height: "100%", background: tm.bar }} />
                   </div>
@@ -196,7 +196,7 @@ export function SeasonPanel({ showShare = false }: { showShare?: boolean }) {
                 <div className="flex items-center justify-center rounded-full" style={{ width: 52, height: 52, background: started ? meta.bg : "var(--cream2)", border: "1.5px solid rgba(43,33,24,0.3)", opacity: started ? 1 : 0.55 }}>
                   <span style={{ fontSize: 24 }}>{started ? x.tier!.emoji : meta.emoji}</span>
                 </div>
-                <div className="font-extrabold leading-tight" style={{ fontSize: RF.tag }}>{started ? x.tier!.name : t("prog.not_yet")}</div>
+                <div className="font-extrabold leading-tight" style={{ fontSize: RF.tag }}>{started ? t(tierNameKey(x.track as "activity" | "rescuer" | "recruiter" | "matchmaker", x.tier!.level)) : t("prog.not_yet")}</div>
                 <div className="font-bold uppercase tracking-wide leading-tight" style={{ fontSize: 10, color: "#8C5A33" }}>{t(meta.key)}</div>
               </button>
             );
@@ -240,7 +240,7 @@ function RankSheet({ track, count, onClose }: { track: string; count: number; on
             return (
               <div key={tier.level} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: isCur ? "var(--green-pop)" : "var(--cream2)", border: "2px solid var(--ink)", opacity: reached || isCur ? 1 : 0.55 }}>
                 <span style={{ fontSize: 20 }}>{tier.emoji}</span>
-                <span className="font-extrabold flex-1">{tier.name}</span>
+                <span className="font-extrabold flex-1">{t(tierNameKey(track as "activity" | "rescuer" | "recruiter" | "matchmaker", tier.level))}</span>
                 {isCur && <span className="text-[10px] font-bold uppercase tracking-wide">{t("prog.ladder_current")}</span>}
                 <span className="font-extrabold tabular-nums">{tier.at}</span>
               </div>
@@ -248,7 +248,7 @@ function RankSheet({ track, count, onClose }: { track: string; count: number; on
           })}
         </div>
         <div className="text-sm font-semibold">
-          {next ? t("prog.ladder_togo", { n: toNext, name: `${next.emoji} ${next.name}` }) : t("prog.ladder_maxed")}
+          {next ? t("prog.ladder_togo", { n: toNext, name: `${next.emoji} ${t(tierNameKey(track as "activity" | "rescuer" | "recruiter" | "matchmaker", next.level))}` }) : t("prog.ladder_maxed")}
         </div>
         <button type="button" onClick={onClose} className="cbtn cbtn-ghost w-full">{t("prog.ladder_close")}</button>
       </div>

@@ -1,5 +1,6 @@
 import { rescuerTier } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
+import { tierNameKey } from "@/lib/courtship";
 
 export function RescuerBadge({ count, size = "sm", progress = false }: { count: number; size?: "sm" | "lg"; progress?: boolean }) {
   const { t } = useI18n();
@@ -21,10 +22,10 @@ export function RescuerBadge({ count, size = "sm", progress = false }: { count: 
     return (
       <div className="ccard p-4">
         <div className="csection-label">{t("tier.rank")}</div>
-        <div className="font-display text-2xl mt-1">{tier.emoji} {tier.name}</div>
+        <div className="font-display text-2xl mt-1">{tier.emoji} {t(tierNameKey("rescuer", tier.level))}</div>
         <div className="text-base font-extrabold text-[var(--ink)] mt-1">🚑 {t("tier.rescues", { n: count })}</div>
         {progress && toNext != null && tier.nextName && (
-          <div className="text-sm text-[var(--ink)] mt-1">{t("tier.to_next", { n: toNext, name: tier.nextName })}</div>
+          <div className="text-sm text-[var(--ink)] mt-1">{t("tier.to_next", { n: toNext, name: t(tierNameKey("rescuer", tier.level + 1)) })}</div>
         )}
       </div>
     );
@@ -34,7 +35,7 @@ export function RescuerBadge({ count, size = "sm", progress = false }: { count: 
       className="inline-flex items-center gap-1 text-xs font-extrabold px-2 py-1 rounded-full"
       style={{ background: "var(--cream2)", border: "1px solid var(--ink)" }}
     >
-      {tier.emoji} {tier.name}
+      {tier.emoji} {t(tierNameKey("rescuer", tier.level))}
     </span>
   );
 }

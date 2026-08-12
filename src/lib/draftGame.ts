@@ -40,15 +40,18 @@ export function clearDraftGame() {
   try { localStorage.removeItem(KEY); } catch {}
 }
 
+export type PublishDraftResult = { id: string | null; reason: "stale" | "failed" | null };
+
 /** Publish the stashed draft as an OPEN game for the (now signed-in) user.
- *  Clears the draft in all outcomes so it can never double-post or loop.
- *  Returns the new game id, or null when there was nothing/stale/failed. */
-export async function publishDraftGame(uid: string): Promise<string | null> {
+ *  Success clears the draft. Stale/failed KEEP it and return the reason, so
+ *  the caller can route the person to the wizard with everything prefilled —
+ *  a guest's game must never silently vanish (2026-08-12 audit P0-1). The
+ *  wizard consumes+clears the kept draft, so this can't double-post or loop. */
+export async function publishDraftGame(uid: string): Promise<PublishDraftResult> {
   const d = peekDraftGame();
-  if (!d) return null;
-  clearDraftGame();
+  if (!d) return { id: null, reason: null };
   // Stale draft (the picked time already passed while the user confirmed email)
-  if (new Date(d.play_at).getTime() < Date.now() + 5 * 60 * 1000) return null;
+  if (new Date(d.play_at).getTime() < Date.now() + 5 * 60 * 1000) return { id: null, reason: "stale" };
 
   const insertRow: any = {
     caller_id: uid,
@@ -68,19 +71,23 @@ export async function publishDraftGame(uid: string): Promise<string | null> {
     court_type: d.court_type,
     duration_min: d.duration_min,
   };
-  let res = await (supabase as any).from("sos_requests").insert(insertRow).select("id").single();
+  // Accumulative drops (audit P1-10): never rebuild from the original row —
+  // with two missing columns the old chain could never converge.
+  let row: any = { ...insertRow };
+  let res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   if (res.error && /court_type_any/i.test(res.error.message || "")) {
-    const { court_type_any: _ca, ...noAny } = insertRow;
-    res = await (supabase as any).from("sos_requests").insert(noAny).select("id").single();
+    const { court_type_any: _ca, ...noAny } = row; row = noAny;
+    res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   }
   if (res.error && /play_until/i.test(res.error.message || "")) {
-    const { play_until: _pu, ...noWin } = insertRow;
-    res = await (supabase as any).from("sos_requests").insert(noWin).select("id").single();
+    const { play_until: _pu, ...noWin } = row; row = noWin;
+    res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   }
   if (res.error && /duration_min/i.test(res.error.message || "")) {
-    const { duration_min: _omit, ...fallback } = insertRow;
-    res = await (supabase as any).from("sos_requests").insert(fallback).select("id").single();
+    const { duration_min: _omit, ...fallback } = row; row = fallback;
+    res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   }
-  if (res.error || !res.data?.id) return null;
-  return res.data.id as string;
+  if (res.error || !res.data?.id) return { id: null, reason: "failed" };
+  clearDraftGame();
+  return { id: res.data.id as string, reason: null };
 }

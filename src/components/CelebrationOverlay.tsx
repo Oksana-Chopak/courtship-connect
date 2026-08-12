@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import type { Celebration } from "@/lib/celebrate";
 import { useI18n } from "@/lib/i18n";
 import { shareInvite } from "@/lib/share";
+import { tierNameKey } from "@/lib/courtship";
 import { Link } from "@tanstack/react-router";
 
 // Dark "celebration moment" — the elevated reward screen. Driven entirely by our
@@ -41,7 +42,7 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
   let bigEmoji: string;
   if (c.leveledUp) {
     kicker = t("celebrate.kicker_levelup");
-    title = c.tierName; // the new tier IS the headline
+    title = c.track && c.tierLevel ? t(tierNameKey(c.track, c.tierLevel)) : c.tierName; // the new tier IS the headline
     const subKey =
       c.kind === "rescue" ? "celebrate.levelup_sub_rescue" : c.kind === "recruit" ? "celebrate.levelup_sub_recruit" : c.kind === "host" ? "celebrate.levelup_sub_host" : "celebrate.levelup_sub_game";
     subtitle = t(subKey, { n: c.count });
@@ -135,7 +136,7 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
             className="inline-flex items-center gap-1 font-extrabold mt-5 px-3 py-1.5 rounded-full"
             style={{ background: "rgba(255,246,232,0.1)", color: CREAM }}
           >
-            {t("celebrate.to_next", { n: c.toNext, name: c.nextName })}
+            {t("celebrate.to_next", { n: c.toNext, name: c.track && c.nextLevel ? t(tierNameKey(c.track, c.nextLevel)) : c.nextName })}
           </div>
         )}
 

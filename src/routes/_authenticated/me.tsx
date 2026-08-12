@@ -87,7 +87,7 @@ function MePage() {
           <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}{profile.member_tier ? " 🏆" : ""}</div>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lm.color }} />
-            <span className="font-extrabold text-sm">{lm.name}</span>
+            <span className="font-extrabold text-sm">{t(`lvl.${profile.level}`)}</span>
             <span className="text-sm">· {vibeEmoji(profile.vibe)}</span>
           </div>
         </div>

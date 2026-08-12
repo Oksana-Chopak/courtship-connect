@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
+import { tStatic } from "@/lib/i18n";
 
 type Props = { children: React.ReactNode; resetKey: string };
 type State = { error: Error | null };
@@ -34,21 +35,29 @@ export class RouteErrorBoundary extends React.Component<Props, State> {
       return (
         <div className="ccard p-6 text-center space-y-3">
           <div className="text-4xl">🎾💥</div>
-          <div className="font-display text-2xl leading-tight">This page hit a snag</div>
+          <div className="font-display text-2xl leading-tight">{tStatic("err.snag_title")}</div>
           <div className="text-sm font-semibold" style={{ opacity: 0.65 }}>
-            Something went wrong loading this screen. Reload it, or jump back to the board — the rest of the app still works.
+            {tStatic("err.snag_sub")}
           </div>
-          <div className="font-mono break-all" style={{ fontSize: 11, opacity: 0.45 }}>
-            {String(this.state.error?.message ?? this.state.error).slice(0, 200)}
-          </div>
+          {/* Raw error text parks behind ⚙️ like oops() does — never a wall of
+              stack on screen (2026-08-12 audit P1-15). */}
+          <details className="text-left" style={{ fontSize: 11, opacity: 0.55 }}>
+            <summary className="cursor-pointer font-bold text-center">{tStatic("err.detail")}</summary>
+            <div className="font-mono break-all mt-1">
+              {String(this.state.error?.message ?? this.state.error).slice(0, 200)}
+            </div>
+          </details>
           <div className="flex gap-2 justify-center pt-1">
             <button type="button" onClick={() => window.location.reload()} className="cbtn cbtn-coral">
-              Reload
+              {tStatic("err.reload")}
             </button>
             <Link to="/board" className="cbtn cbtn-ghost">
-              Board
+              {tStatic("err.board")}
             </Link>
           </div>
+          <Link to="/help" className="block text-sm font-extrabold underline" style={{ opacity: 0.75 }}>
+            {tStatic("err.support")}
+          </Link>
         </div>
       );
     }

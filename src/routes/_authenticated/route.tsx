@@ -71,10 +71,17 @@ function AuthedShell() {
   const navigate = useNavigate();
   useEffect(() => {
     if (guest || !user || !peekDraftGame()) return;
-    void publishDraftGame(user.id).then((id) => {
-      if (!id) return;
-      toast.success(t("post_pub.live_toast"));
-      navigate({ to: "/sos/$id", params: { id } });
+    void publishDraftGame(user.id).then((r) => {
+      if (r.id) {
+        toast.success(t("post_pub.live_toast"));
+        navigate({ to: "/sos/$id", params: { id: r.id } });
+        return;
+      }
+      // Auto-publish couldn't finish — the draft is KEPT and the wizard picks
+      // it up prefilled. Never let a guest's game vanish in silence (audit P0-1).
+      if (r.reason === "stale") toast.warning(t("post_pub.stale_toast"));
+      else if (r.reason === "failed") toast.warning(t("post_pub.failed_toast"));
+      if (r.reason) navigate({ to: "/sos/new", search: { edit: undefined, planned: undefined } });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guest, user?.id]);

@@ -84,7 +84,11 @@ function MatchDeck() {
     if (!card || busy) return;
     setBusy(true);
     try {
-      const { data } = await (supabase as any).rpc("do_swipe", { _target: card.id, _like: like });
+      // supabase-js returns {error}, it does NOT throw — without this check a
+      // failing swipe (RLS/limit/schema) advanced the deck silently and no like
+      // was ever recorded (2026-08-12 audit P0-2).
+      const { data, error } = await (supabase as any).rpc("do_swipe", { _target: card.id, _like: like });
+      if (error) { oops(error); return; }
       const isMatch = Array.isArray(data) ? data[0]?.is_match : (data as any)?.is_match;
       if (like && isMatch) setMatched(card);
       else setI((n) => n + 1);

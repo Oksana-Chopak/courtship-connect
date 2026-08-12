@@ -382,6 +382,13 @@ const MATCHMAKER_TIERS = [
   { level: 5, name: "Impresario", emoji: "🌟", at: 40 },
 ] as const;
 
+/** Rank names render through the dictionary (2026-08-12 audit P1-14):
+ *  key = tier.<track>.<level>. Ladders are contiguous 1..N, so "next tier
+ *  name" is simply level+1 through the same builder. */
+export function tierNameKey(track: "activity" | "rescuer" | "recruiter" | "matchmaker", level: number): string {
+  return `tier.${track}.${level}`;
+}
+
 // Full ladders for the "All four ranks" info popover (what each badge is + the count to reach it).
 export const RANK_LADDERS: Record<string, ReadonlyArray<{ level: number; name: string; emoji: string; at: number }>> = {
   activity: ACTIVITY_TIERS,

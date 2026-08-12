@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { PLAY_TIMES, sportMeta } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
+import { oops } from "@/lib/oops";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   head: () => ({ meta: [{ title: "Find a coach — Courtship" }] }),
@@ -52,7 +53,7 @@ function CoachPage() {
     }
     const row = Array.isArray(data) ? data[0] : data;
     if (!row?.ok) {
-      toast.error(row?.reason === "already_open" ? t("coach.err_open") : row?.reason ?? "error");
+      if (row?.reason === "already_open") toast.error(t("coach.err_open")); else oops(new Error(String(row?.reason ?? "coach_request_failed")));
       if (row?.reason === "already_open") void load();
       return;
     }
@@ -84,13 +85,37 @@ function CoachPage() {
               disabled={busy}
               onClick={async () => {
                 setBusy(true);
-                try { await (supabase as any).rpc("cancel_coach_request", { _id: open.id }); } catch { /* ignore */ }
+                // supabase-js returns {error}, it doesn't throw — the old
+                // catch-and-toast-success reported "Cancelled ✓" even when RLS
+                // refused and the request stayed open (2026-08-12 audit P1-4).
+                const { data, error } = await (supabase as any).rpc("cancel_coach_request", { _id: open.id });
                 setBusy(false);
+                if (error || data !== true) { oops(error ?? new Error("cancel_failed")); return; }
                 toast.success(t("coach.cancelled"));
                 setOpen(null);
               }}
             >
               {t("coach.cancel")}
+            </button>
+          )}
+          {st === "matched" && (
+            /* A matched request must not be a forever-card: one quiet action
+               closes it ("got my coach") and frees the person to ask again
+               (2026-08-12 audit P1-3; RPC in APPLY_BATCH16). */
+            <button
+              className="cbtn cbtn-ghost w-full"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const { data, error } = await (supabase as any).rpc("close_my_coach_request", { _id: open.id });
+                setBusy(false);
+                if (error && /does not exist|schema cache|PGRST202/i.test(error.message ?? "")) { toast.error(t("coach.not_ready")); return; }
+                if (error || data !== true) { oops(error ?? new Error("close_failed")); return; }
+                toast.success(t("coach.closed"));
+                setOpen(null);
+              }}
+            >
+              {t("coach.done_cta")}
             </button>
           )}
         </div>

@@ -18,6 +18,10 @@ export type Celebration = {
   tierEmoji: string;
   toNext: number | null;
   nextName: string | null;
+  /** dictionary routing (audit P1-14): tier.<track>.<level> */
+  track: "activity" | "rescuer" | "recruiter" | "matchmaker" | null;
+  tierLevel: number | null;
+  nextLevel: number | null;
 };
 
 type Progress = { games: number; rescues: number; referrals: number; hosted: number };
@@ -53,6 +57,7 @@ function celebrationFor(kind: Celebration["kind"], before: number, after: number
   const tBefore = tierOf(kind, before);
   const tAfter = tierOf(kind, after);
   const leveledUp = !!tAfter && (!tBefore || tAfter.level > tBefore.level);
+  const track = kind === "game" ? "activity" as const : kind === "rescue" ? "rescuer" as const : kind === "recruit" ? "recruiter" as const : "matchmaker" as const;
   return {
     kind,
     count: after,
@@ -61,6 +66,9 @@ function celebrationFor(kind: Celebration["kind"], before: number, after: number
     tierEmoji: tAfter?.emoji ?? "🎾",
     toNext: tAfter?.next != null ? tAfter.next - after : null,
     nextName: tAfter?.nextName ?? null,
+    track: tAfter ? track : null,
+    tierLevel: tAfter?.level ?? null,
+    nextLevel: tAfter && tAfter.next != null ? tAfter.level + 1 : null,
   };
 }
 

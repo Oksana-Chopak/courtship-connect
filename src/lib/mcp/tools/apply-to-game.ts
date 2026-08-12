@@ -11,6 +11,7 @@ export default defineTool({
     proposed_at: z.string().optional()
       .describe("Optional ISO timestamp counter-proposal, must fall inside the game's time window."),
   },
+  // needsApproval isn't in this @lovable.dev/mcp-js version's ToolDefinition (broke tsc).
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async ({ game_id, proposed_at }, ctx) => {
     if (!ctx.isAuthenticated()) return errorResult("Not authenticated");

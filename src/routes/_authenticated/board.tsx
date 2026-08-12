@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, shareTo } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier } from "@/lib/courtship";
+import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier , tierNameKey } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, joinEvent, type EventRow } from "@/lib/events";
+import { reasonToast } from "@/lib/reasons";
 import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { useCityNames } from "@/lib/cities";
 import { EventCard } from "@/components/EventCard";
@@ -152,7 +153,7 @@ function BoardPage() {
       const fresh = claimedIds.filter((id) => !seenClaimedRef.current!.has(id));
       if (fresh.length) {
         fresh.forEach((id) => seenClaimedRef.current!.add(id));
-        setCelebration({ kind: "joined", count: 0, leveledUp: false, tierName: "", tierEmoji: "", toNext: null, nextName: null });
+        setCelebration({ kind: "joined", count: 0, leveledUp: false, tierName: "", tierEmoji: "", toNext: null, nextName: null, track: null, tierLevel: null, nextLevel: null });
       }
     }
     setLoading(false);
@@ -201,7 +202,7 @@ function BoardPage() {
   async function onWithdraw(sos: EligibleSosRow) {
     if (typeof window !== "undefined" && !window.confirm(t("home.cant_make_confirm"))) return;
     const r = await withdrawClaim(sos.id);
-    if (!r.ok) { toast.error(r.reason); return; }
+    if (!r.ok) { reasonToast(t, r.reason); return; }
     toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
     load();
   }
@@ -263,7 +264,7 @@ function BoardPage() {
         const atRisk = streakWeeks > 0 && !playedThisWeek && (dow === 5 || dow === 6 || dow === 0);
         const rescueLine = atRisk
           ? t("mini.streak_risk")
-          : rt && rt.next != null && rt.nextName ? `${rt.emoji} ${rt.name} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: rt.nextName })}` : rt ? `${rt.emoji} ${rt.name}` : t("mini.games", { n: gamesPlayed ?? 0 });
+          : rt && rt.next != null && rt.nextName ? `${rt.emoji} ${t(tierNameKey("rescuer", rt.level))} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: t(tierNameKey("rescuer", rt.level + 1)) })}` : rt ? `${rt.emoji} ${t(tierNameKey("rescuer", rt.level))}` : t("mini.games", { n: gamesPlayed ?? 0 });
         return (
           <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: atRisk ? "1.5px solid #F0705B" : "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: atRisk ? "#FCE9E4" : "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
             {streakWeeks > 0 && (
@@ -458,7 +459,7 @@ function BoardFilterSheet({ ctFilter, setCtFilter, fCity, setFCity, fLevel, setF
           <FilterChip on={fLevel == null} onClick={() => setFLevel(null)}>{t("common.all")}</FilterChip>
           {LEVELS.map((l) => (
             <FilterChip key={l.n} on={fLevel === l.n} onClick={() => setFLevel(fLevel === l.n ? null : l.n)}>
-              <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: l.color }} />{l.name}
+              <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: l.color }} />{t(`lvl.${l.n}`)}
             </FilterChip>
           ))}
         </BoardGroup>
@@ -627,15 +628,34 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
                   if (guest) { navigate({ to: "/auth", search: joinSearch(`/sos/${sos.id}?apply=1`) }); return; }
                   const ctAnyGame = !!(sos as any).court_type_any;
                   if ((winEnd || ctAnyGame) && !proposing) { setProposing(true); return; }
+                  let iso: string | undefined;
+                  if ((winEnd || ctAnyGame) && proposing) {
+                    // Chips are open: this button submits the CHOSEN slot/pref —
+                    // a second tap must never fire a bare apply that drops the
+                    // picked time (2026-08-12 audit P1-8).
+                    if (winEnd && !propTime) return; // Send below is disabled for the same reason
+                    if (winEnd) {
+                      const dd = new Date(sos.play_at);
+                      const [h, m] = propTime.split(":").map(Number);
+                      dd.setHours(h ?? 0, m ?? 0, 0, 0);
+                      if (dd.getTime() < new Date(sos.play_at).getTime() || dd.getTime() > winEnd.getTime()) { toast.error(t("app.time_outside")); return; }
+                      iso = dd.toISOString();
+                    }
+                  }
                   setBusy(true);
-                  const r = await applyToGame(sos.id);
+                  const r = await applyToGame(sos.id, iso ?? null, proposing && ctAnyGame && prefCt !== "any" ? prefCt : null);
                   setBusy(false);
                   if (!r.ok) {
                     if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); onChange(); return; }
-                    toast.error(r.reason === "taken" ? t("sos.err_taken") : r.reason === "already_in" ? t("sos.err_already_in") : r.reason === "already_applied" ? t("app.already") : r.reason); return;
+                    if (r.reason === "taken") toast.error(t("sos.err_taken"));
+                    else if (r.reason === "already_in") toast.error(t("sos.err_already_in"));
+                    else if (r.reason === "already_applied") toast.error(t("app.already"));
+                    else reasonToast(t, r.reason);
+                    return;
                   }
                   if (r.fallbackClaimed) { navigate({ to: "/sos/$id", params: { id: sos.id } }); return; }
                   toast.success(t("app.sent"));
+                  setProposing(false);
                   onChange();
                 }}>🙋 {t("app.im_interested")}</button>
             )}
@@ -700,7 +720,13 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
                 setBusy(true);
                 const r = await applyToGame(sos.id, iso, (sos as any).court_type_any && prefCt !== "any" ? prefCt : null);
                 setBusy(false);
-                if (!r.ok) { toast.error(r.reason === "bad_proposed_time" ? t("app.time_outside") : r.reason === "already_applied" ? t("app.already") : r.reason === "not_applicable" ? t("app.turned_urgent") : r.reason); if (r.reason === "not_applicable") onChange(); return; }
+                if (!r.ok) {
+                  if (r.reason === "bad_proposed_time") toast.error(t("app.time_outside"));
+                  else if (r.reason === "already_applied") toast.error(t("app.already"));
+                  else if (r.reason === "not_applicable") { toast.info(t("app.turned_urgent")); onChange(); }
+                  else reasonToast(t, r.reason);
+                  return;
+                }
                 toast.success(t("app.sent"));
                 setProposing(false);
                 onChange();

@@ -14,6 +14,7 @@ import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
+import { reasonToast } from "@/lib/reasons";
 import { useI18n } from "@/lib/i18n";
 import { TimeRail, RailShell, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { FLAGS } from "@/lib/flags";
@@ -119,6 +120,10 @@ function SosDetail() {
             const r = await applyToGame(sos.id);
             if (r.ok) toast.success(t("app.sent"));
             else if (r.reason === "already_applied") toast.info(t("app.already"));
+            // The pending-application probe raced this INSERT and won't re-run
+            // (same sos.id) — set the state directly so the CTA can't offer a
+            // second, doomed "I'm interested" (2026-08-12 audit P1-5).
+            if (r.ok || r.reason === "already_applied") setMyApplied(true);
           } else {
             const r = await claimSos(sos.id);
             if (r.ok) toast.success(t("sos.claimed_toast"));
@@ -134,6 +139,9 @@ function SosDetail() {
       const { data, error } = await (supabase as any).rpc(fn, { _sos_id: sos.id, _token: claim ?? join });
       const row = Array.isArray(data) ? data[0] : data;
       if (!error && row?.ok) toast.success(t(claim ? "sos.ghost_claimed" : "sos.joined_via_invite"));
+      // A dead/taken/expired token must SAY so — silently landing on the game
+      // page as a spectator reads as a bug (2026-08-12 audit P1-7).
+      else toast.error(t("sos.join_link_dead"));
       navigate2({ to: "/sos/$id", params: { id: sos.id }, search: {}, replace: true });
       await load();
     })();
@@ -216,7 +224,7 @@ function SosDetail() {
     setBusy(true);
     const r = await withdrawClaim(sos!.id);
     setBusy(false);
-    if (!r.ok) { toast.error(r.reason); return; }
+    if (!r.ok) { reasonToast(t, r.reason); return; }
     toast.success(r.re_flared ? t("home.withdrawn_reflared") : t("home.withdrawn"));
     navigate({ to: "/board" });
   }
@@ -461,7 +469,7 @@ function SosDetail() {
                     setBusy(true);
                     const r = await pickApplicant(sos.id, a.id);
                     setBusy(false);
-                    if (!r.ok) { toast.error(r.reason === "no_application" ? t("app.gone") : r.reason); await load(); fetchApplicants(sos.id).then(setApplicants).catch(() => {}); return; }
+                    if (!r.ok) { if (r.reason === "no_application") toast.error(t("app.gone")); else reasonToast(t, r.reason); await load(); fetchApplicants(sos.id).then(setApplicants).catch(() => {}); return; }
                     toast.success(t("app.picked_toast", { name: a.name }));
                     await load();
                     fetchApplicants(sos.id).then(setApplicants).catch(() => {});
@@ -603,6 +611,9 @@ function SosDetail() {
                 const ok = await withdrawApplication(sos.id);
                 setBusy(false);
                 if (ok) { setMyApplied(false); toast.success(t("app.withdrawn")); }
+                // Silent failure kept the person in the host's candidate list
+                // while they believed they'd left (2026-08-12 audit P1-6).
+                else { toast.error(t("app.withdraw_fail")); await load(); }
               }}>
               {t("app.withdraw")}
             </button>
@@ -619,7 +630,7 @@ function SosDetail() {
               else if (r.reason === "already_applied") toast.error(t("app.already"));
               else if (r.reason === "already_in") toast.error(t("sos.already_in"));
               else if (r.reason === "bad_proposed_time") toast.error(t("app.time_outside"));
-              else toast.error(r.reason);
+              else reasonToast(t, r.reason);
               await load();
               return;
             }
@@ -631,7 +642,26 @@ function SosDetail() {
           return (
             <div className="space-y-2">
               <button className="cbtn cbtn-coral w-full" disabled={busy}
-                onClick={() => { if (needsPanel && !proposing) { setProposing(true); return; } void sendApply(); }}>
+                onClick={() => {
+                  if (needsPanel && !proposing) { setProposing(true); return; }
+                  if (needsPanel && proposing) {
+                    // Panel is open: the big button submits the CHOSEN values —
+                    // it must never fire a bare apply that drops the picked
+                    // time/preference (2026-08-12 audit P1-8).
+                    if (winEnd && !propTime) return; // Send below is disabled for the same reason
+                    let iso: string | undefined;
+                    if (winEnd) {
+                      const dd = new Date(sos.play_at);
+                      const [h, m] = propTime.split(":").map(Number);
+                      dd.setHours(h ?? 0, m ?? 0, 0, 0);
+                      if (dd.getTime() < new Date(sos.play_at).getTime() || dd.getTime() > winEnd.getTime()) { toast.error(t("app.time_outside")); return; }
+                      iso = dd.toISOString();
+                    }
+                    void sendApply(iso ?? null, ctAnyGame && prefCt !== "any" ? prefCt : null);
+                    return;
+                  }
+                  void sendApply();
+                }}>
                 🙋 {t("app.im_interested")}
               </button>
               {proposing && needsPanel && (
@@ -682,7 +712,7 @@ function SosDetail() {
             else if (r.reason === "expired") toast.error(t("sos.err_expired"));
             else if (r.reason === "own_sos") toast.error(t("sos.err_own"));
             else if (r.reason === "already_in") toast.error(t("sos.already_in"));
-            else toast.error(r.reason);
+            else reasonToast(t, r.reason);
             await load();
             return;
           }

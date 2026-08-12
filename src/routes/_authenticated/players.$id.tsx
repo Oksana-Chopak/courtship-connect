@@ -93,7 +93,7 @@ function PlayerDetail() {
           <div className="mt-1 flex flex-wrap items-center justify-center gap-1"><RescuerBadge count={p.rescues_count ?? 0} /><ActivityBadge count={p.games_played ?? 0} /></div>
           <div className="flex items-center justify-center gap-2 mt-1">
             <span className="w-3 h-3 rounded-full" style={{ background: lm.color }} />
-            <span className="font-extrabold">{lm.name}</span>
+            <span className="font-extrabold">{t(`lvl.${p.level}`)}</span>
             <span>· {vibeEmoji(p.vibe)}</span>
           </div>
           {p.ghost_badge && (

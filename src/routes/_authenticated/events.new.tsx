@@ -237,11 +237,11 @@ function NewEvent() {
         {!anyone && (
           <div className="flex items-center gap-2 mt-2">
             <select className="cinput flex-1" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
-              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
+              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {t(`lvl.${l.n}`)}</option>)}
             </select>
             <span className="font-extrabold">–</span>
             <select className="cinput flex-1" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {l.name}</option>)}
+              {LEVELS.map((l) => <option key={l.n} value={l.n}>{l.n} · {t(`lvl.${l.n}`)}</option>)}
             </select>
           </div>
         )}
