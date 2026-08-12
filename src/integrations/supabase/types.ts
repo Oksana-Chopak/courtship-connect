@@ -1260,6 +1260,7 @@ export type Database = {
         }[]
       }
       clear_announcements: { Args: never; Returns: undefined }
+      close_my_coach_request: { Args: { _id: string }; Returns: boolean }
       community_stats: {
         Args: { _city: string }
         Returns: {
@@ -1295,6 +1296,7 @@ export type Database = {
           _court_id: string
           _court_status: string
           _court_type: string
+          _court_type_any?: boolean
           _duration_min: number
           _format: string
           _level_max: number
