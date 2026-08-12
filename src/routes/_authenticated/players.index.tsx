@@ -293,8 +293,8 @@ function InviteAccent() {
       {code && (editing ? (
         <div className="flex items-center gap-2">
           <input className="cinput flex-1 font-extrabold tracking-widest uppercase" value={draft} onChange={(e) => setDraft(e.target.value.toUpperCase())} placeholder="YOURCODE" />
-          <button className="cbtn cbtn-green shrink-0 px-3" onClick={saveCode}>✓</button>
-          <button className="cbtn cbtn-ghost shrink-0 px-3" onClick={() => setEditing(false)}>✕</button>
+          <button className="cbtn cbtn-green shrink-0 px-3" aria-label={t("invite.saved")} onClick={saveCode}>✓</button>
+          <button className="cbtn cbtn-ghost shrink-0 px-3" aria-label={t("court.cancel")} onClick={() => setEditing(false)}>✕</button>
         </div>
       ) : (
         <div className="flex items-center gap-2">

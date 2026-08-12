@@ -124,7 +124,7 @@ function MatchesPage() {
                   {new Date(g.playAt).toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" })} · {new Date(g.playAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                 </div>
               </div>
-              <button type="button" className="cbtn cbtn-green shrink-0" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => startLog(g)}>
+              <button type="button" className="cbtn cbtn-ghost shrink-0" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => startLog(g)}>
                 ✍️ {t("unlogged.log")}
               </button>
               <button type="button" className="shrink-0 font-extrabold" aria-label={t("unlogged.skip")} title={t("unlogged.skip")}

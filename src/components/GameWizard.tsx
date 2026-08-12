@@ -62,7 +62,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
   const [courtStatus, setCourtStatus] = useState<typeof COURT_STATUSES[number]["value"]>("booked");
   const [duration, setDuration] = useState<number>(60);
   const [note, setNote] = useState("");
-  const [autoFlare, setAutoFlare] = useState(true);
+  const autoFlare = true; // automation-owned (audit D-22b): quiet flare if nobody bites
   const [flexible, setFlexible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [ghostName, setGhostName] = useState("");
@@ -70,7 +70,6 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
   const [invitedMode, setInvitedMode] = useState(false);
   const [untilTime, setUntilTime] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [myName, setMyName] = useState("");
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [buddies, setBuddies] = useState<Array<{ id: string; name: string }>>([]);
@@ -444,8 +443,9 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
   function onSubmitClick() {
     if (!canSubmit) return;
     if (guest) { guestContinue(); return; }
-    if (editing) { doSubmit(); return; }
-    if (urgent) { setShowConfirm(true); return; }
+    // No confirm modal: the mode line right above the CTA already states the
+    // consequence, and asking twice about an automatic decision is exactly the
+    // attention-tax the house rules forbid (2026-08-12 audit D-22).
     doSubmit();
   }
 
@@ -516,7 +516,7 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
           <div>
             <WizLbl right={
               <button type="button" aria-label="info" aria-expanded={windowInfo} onClick={() => setWindowInfo(!windowInfo)}
-                style={{ width: 22, height: 22, borderRadius: "50%", border: "1.5px solid rgba(43,33,24,0.25)", background: windowInfo ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 12, opacity: 0.7 }}>i</button>
+                style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(43,33,24,0.25)", background: windowInfo ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 12, opacity: 0.7 }}>i</button>
             }>{t("wiz.window_label")}</WizLbl>
             <div style={{ display: "flex", gap: 14, background: "rgba(43,33,24,0.05)", borderRadius: 14, padding: "6px 12px" }}>
               <Wheel label={t("wiz.from")} items={fromItems} value={time || "—"}
@@ -681,7 +681,11 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
             )}
             {!guest && !urgent && !editing && !invitedMode && (
               <DetailCard>
-                <ToggleRow label={t("post.auto_flare_label")} info={t("post.auto_flare_help")} on={autoFlare} onToggle={() => setAutoFlare(!autoFlare)} last />
+                {/* Auto-flare is automation's call — no toggle to babysit
+                    (audit D-22b). One quiet consequence line instead. */}
+                <div className="px-3 py-2.5" style={{ fontWeight: 700, fontSize: 13.5, color: "rgba(43,33,24,0.65)" }}>
+                  ⚡ {t("post.auto_flare_line")}
+                </div>
               </DetailCard>
             )}
             {isAdmin && !editing && (
@@ -757,36 +761,6 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
         </div>
       )}
 
-      {showConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setShowConfirm(false)}
-        >
-          <div
-            className="w-full sm:max-w-md ccard p-5 space-y-3"
-            style={{ background: "var(--cream)", borderColor: "var(--ink)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="font-display text-2xl">{t("post.confirm_title")}</div>
-            <button
-              disabled={busy}
-              onClick={() => { setShowConfirm(false); doSubmit(); }}
-              className="cbtn cbtn-coral w-full"
-            >
-              {t("post.confirm_send")}
-            </button>
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="cbtn cbtn-ghost w-full"
-            >
-              {t("post.confirm_cancel")}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -68,20 +68,20 @@ function WithdrawPage() {
         <form onSubmit={submit} className="space-y-3">
           <LP>{t("withdraw.sub")}</LP>
           <div>
-            <label className="csection-label block mb-1">{t("withdraw.name")}</label>
-            <input className="cinput" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
+            <label className="csection-label block mb-1" htmlFor="wd-name">{t("withdraw.name")}</label>
+            <input id="wd-name" className="cinput" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
           </div>
           <div>
-            <label className="csection-label block mb-1">{t("withdraw.email")}</label>
-            <input type="email" className="cinput" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={200} />
+            <label className="csection-label block mb-1" htmlFor="wd-email">{t("withdraw.email")}</label>
+            <input id="wd-email" type="email" className="cinput" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={200} />
           </div>
           <div>
-            <label className="csection-label block mb-1">{t("withdraw.purchase")}</label>
-            <input className="cinput" value={purchase} onChange={(e) => setPurchase(e.target.value)} required maxLength={300} />
+            <label className="csection-label block mb-1" htmlFor="wd-purchase">{t("withdraw.purchase")}</label>
+            <input id="wd-purchase" className="cinput" value={purchase} onChange={(e) => setPurchase(e.target.value)} required maxLength={300} />
           </div>
           <div>
-            <label className="csection-label block mb-1">{t("withdraw.note")}</label>
-            <input className="cinput" value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
+            <label className="csection-label block mb-1" htmlFor="wd-note">{t("withdraw.note")}</label>
+            <input id="wd-note" className="cinput" value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
           </div>
           {err && <p className="text-sm font-bold" style={{ color: "var(--coral)" }}>{t("withdraw.err")}</p>}
           <button disabled={busy} className="cbtn cbtn-coral w-full">{busy ? "..." : t("withdraw.send")}</button>

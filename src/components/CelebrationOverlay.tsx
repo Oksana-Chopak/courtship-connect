@@ -101,6 +101,10 @@ export function CelebrationOverlay({ c, onClose }: { c: Celebration; onClose: ()
       <style>{`
         @keyframes ccfall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(112vh) rotate(560deg); opacity: 0; } }
         @keyframes ccpop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="ccfall"] { animation: none !important; opacity: 0 !important; }
+          [style*="ccpop"], .cc-pop-target { animation: none !important; }
+        }
       `}</style>
 
       <div

@@ -147,7 +147,7 @@ function PlansPage() {
         </div>
 
         {tier === "pro" ? null : links.pro ? (
-          <a href={links.pro} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-coral w-full text-center block">{t("plans.p_cta")}</a>
+          <a href={links.pro} target="_blank" rel="noopener noreferrer" className="cbtn cbtn-ghost w-full text-center block">{t("plans.p_cta")}</a>
         ) : swish ? (
           <>
             <SwishPayBlock number={swish} amountSek={proAmount} message={proTag} />

@@ -46,7 +46,7 @@ export function SupportCard() {
           type="button"
           onClick={() => setRevealed(true)}
           className="font-extrabold rounded-full border-2 border-[var(--ink)] px-4 py-2 text-sm"
-          style={{ background: "var(--green-pop)", color: "var(--ink)" }}
+          style={{ background: "var(--cream2)", color: "var(--ink)" }}
         >
           {t("support.reveal")} 💛
         </button>

@@ -161,14 +161,14 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
               <div className="grid grid-cols-2 gap-2">
                 <button className="cbtn cbtn-ghost text-sm" disabled={busy} onClick={() => setConfirming(false)}>{t("ev.delete_keep")}</button>
                 {/* Destructive = muted, never coral (accent-budget rule) */}
-                <button className="cbtn cbtn-ghost text-sm" style={{ color: "var(--coral)" }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
+                <button className="cbtn cbtn-ghost text-sm" style={{ color: "var(--ink)", opacity: 0.65 }} disabled={busy} onClick={doDelete}>{t("ev.delete_yes")}</button>
               </div>
             </div>
           ) : (
             <div className="flex items-center gap-5 border-t border-[var(--ink)]/15 pt-3">
-              <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 3 }}><EditIcon /></Link>
-              <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 3 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
-              <button type="button" aria-label={t("share.spread")} title={t("share.spread")} style={{ padding: 3 }} onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}><ShareIcon /></button>
+              <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 10, margin: -7 }}><EditIcon /></Link>
+              <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 10, margin: -7 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
+              <button type="button" aria-label={t("share.spread")} title={t("share.spread")} style={{ padding: 10, margin: -7 }} onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}><ShareIcon /></button>
             </div>
           )}
         </div>
@@ -181,10 +181,10 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
         <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
           <Rackets n={4} size={22} />
           <button type="button" disabled={busy || full} onClick={join}
-            style={{ flex: 1, textAlign: "center", background: full ? "var(--cream2)" : isPaid ? "#8C5A33" : "var(--green-pop)", color: full ? "var(--ink)" : isPaid ? "#FFF6E8" : "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}>
+            style={{ flex: 1, textAlign: "center", background: full ? "var(--cream2)" : isPaid ? "#8C5A33" : "var(--green-pop)", color: full ? "var(--ink)" : isPaid ? "#FFF6E8" : "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}>
             {full ? t("ev.full_label") : isPaid ? t("ev.book_a_spot") : t("ev.express_interest")}
           </button>
-          {!guest && <button type="button" onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+          {!guest && <button type="button" onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
         </div>
       )}
       </div>

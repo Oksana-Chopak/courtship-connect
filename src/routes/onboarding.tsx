@@ -152,7 +152,7 @@ function Onboarding() {
             {!peekDraftGame() && (
               <button onClick={() => navigate({ to: "/sos/new", search: { edit: undefined } })} className="cbtn cbtn-coral w-full">🎾 {t("ob.first_post")}</button>
             )}
-            <button onClick={() => navigate({ to: "/board" })} className={`cbtn w-full ${peekDraftGame() ? "cbtn-coral" : "cbtn-green"}`}>{t("ob.first_go")}</button>
+            <button onClick={() => navigate({ to: "/board" })} className={`cbtn w-full ${peekDraftGame() ? "cbtn-coral" : "cbtn-ghost"}`}>{t("ob.first_go")}</button>
             <button onClick={() => navigate({ to: "/matches", search: { log: true } })} className="cbtn cbtn-ghost w-full">✅ {t("ob.first_log")}</button>
             <button onClick={() => navigate({ to: "/players" })} className="cbtn cbtn-ghost w-full">{t("ob.first_browse")}</button>
           </div>

@@ -87,7 +87,7 @@ function Lucky() {
               <Link to="/players/$id" params={{ id: player.id }} className="shrink-0" style={{ borderRadius: 999, overflow: "hidden", border: "1.5px solid rgba(43,33,24,0.28)", display: "block" }}>
                 <Avatar src={player.photo_url} name={player.name} seed={player.id} size={64} />
               </Link>
-              <div className="min-w-0" role="button" onClick={() => setSheet(true)}>
+              <div className="min-w-0" role="button" tabIndex={0} onClick={() => setSheet(true)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSheet(true); } }}>
                 <div className="font-display" style={{ fontSize: RF.name, lineHeight: 1.05 }}>{player.name} <span style={{ fontSize: 13, opacity: 0.5 }}>ⓘ</span></div>
                 <div style={{ fontWeight: 800, fontSize: RF.club, color: "#8C5A33", marginTop: 2 }}>📍 {player.home_city ?? "—"}</div>
               </div>

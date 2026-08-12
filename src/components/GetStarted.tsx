@@ -33,7 +33,7 @@ export function GetStarted() {
 
   return (
     <div className="rounded-xl border border-[var(--ink)]/15 px-3 py-2.5 text-sm relative" style={{ background: "var(--cream2)" }}>
-      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="absolute top-1.5 right-2.5 opacity-40 text-base leading-none">✕</button>
+      <button onClick={dismiss} aria-label={t("gs.dismiss")} className="absolute leading-none" style={{ top: 0, right: 0, padding: 12, fontSize: 17, opacity: 0.6 }}>✕</button>
       <div className="opacity-60 pr-6">{t("gs.title")}</div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 font-extrabold">
         {/* /players carries the invite hero + personal code — /me has no invite

@@ -299,16 +299,19 @@ function BoardPage() {
       {!newbieNudge && <InstallBanner />}
       {!newbieNudge && <StandaloneNotifPrompt />}
 
+      {/* Quiet status line, not a second coral shout: the hero above owns the
+          accent and the SOS cards below carry the urgency (audit D-16). */}
       {!loading && urgentOthers.length > 0 && (
         <div
-          className="rounded-2xl border-2 border-[var(--ink)] px-4 py-3"
-          style={{ background: "var(--coral)", color: "var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
+          className="rounded-xl px-4 py-2.5"
+          style={{ background: "var(--cream2)", border: "1px solid rgba(43,33,24,0.18)", color: "var(--ink)" }}
           role="status"
         >
-          <div className="font-display text-lg leading-tight">
+          <span className="font-extrabold text-sm">
             🚨 {t(urgentOthers.length === 1 ? "board.rescue_one" : "board.rescue_many", { n: urgentOthers.length })}
-          </div>
-          <div className="text-sm font-semibold" style={{ opacity: 0.9 }}>{t("board.rescue_sub")}</div>
+            {" · "}
+            <span style={{ opacity: 0.7 }}>{t("board.rescue_sub")}</span>
+          </span>
         </div>
       )}
 
@@ -605,23 +608,23 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
         {mine ? (
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 11 }}>
             <Rackets n={nRackets} size={22} />
-            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14 }}>{t("board.manage")}</Link>
-            {!claimed && <Link to="/sos/new" search={{ edit: sos.id }} aria-label={t("board.edit")} style={{ padding: 3 }}><EditIcon /></Link>}
-            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14 }}>{t("board.manage")}</Link>
+            {!claimed && <Link to="/sos/new" search={{ edit: sos.id }} aria-label={t("board.edit")} style={{ padding: 10, margin: -7 }}><EditIcon /></Link>}
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
           </div>
         ) : isUrgent ? (
           <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
             <Rackets n={nRackets} size={22} />
-            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: softCoral, color: "var(--ink)", border: "none", borderRadius: 10, padding: "12px", fontWeight: 800, fontSize: 14 }}>🚨 {t("sos.save_this")}</Link>
-            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+            <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--cream2)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14 }}>🚨 {t("sos.save_this")}</Link>
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
           </div>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 11 }}>
             <Rackets n={nRackets} size={22} />
             {applied ? (
-              <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--cream2)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14 }}>🙋 {t("app.applied_chip")}</Link>
+              <Link to="/sos/$id" params={{ id: sos.id }} style={{ flex: 1, textAlign: "center", background: "var(--cream2)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14 }}>🙋 {t("app.applied_chip")}</Link>
             ) : (
-              <button type="button" disabled={busy} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "10px", fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}
+              <button type="button" disabled={busy} style={{ flex: 1, textAlign: "center", background: "var(--green-pop)", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}
                 onClick={async () => {
                   // Guest taps "I'm interested" on a SPECIFIC game — carry that
                   // game (with the apply intent) through signup, not just /board.
@@ -659,7 +662,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
                   onChange();
                 }}>🙋 {t("app.im_interested")}</button>
             )}
-            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 3 }}><ShareIcon /></button>}
+            {!guest && <button type="button" onClick={shareGame} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
           </div>
         )}
 

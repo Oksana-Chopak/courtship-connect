@@ -66,7 +66,7 @@ export function ReportPlayerButton({ targetId, targetName }: { targetId: string;
             />
             <div className="flex gap-2">
               <button onClick={() => setOpen(false)} disabled={busy} className="cbtn cbtn-ghost flex-1">{t("court.cancel")}</button>
-              <button onClick={send} disabled={busy} className="cbtn cbtn-ghost flex-1" style={{ color: "var(--coral)" }}>
+              <button onClick={send} disabled={busy} className="cbtn cbtn-ghost flex-1" style={{ color: "var(--ink)", opacity: 0.65 }}>
                 {busy ? "..." : t("report.send")}
               </button>
             </div>

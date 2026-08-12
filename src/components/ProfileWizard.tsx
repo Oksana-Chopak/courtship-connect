@@ -110,6 +110,7 @@ export function ProfileWizard({
   savedLabel = "Saved ✓",
   busy,
   onProgress,
+  flat = false,
 }: {
   initial: ProfileFormValues;
   userId: string;
@@ -119,6 +120,10 @@ export function ProfileWizard({
   savedLabel?: string;
   busy?: boolean;
   onProgress?: (v: ProfileFormValues) => void | Promise<void>;
+  /** Settings mode (2026-08-12 audit D-17): every section on ONE screen —
+   *  label + current value visible, nothing buried behind four "Next" taps.
+   *  The 5-step walk stays for onboarding only. */
+  flat?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const { t } = useI18n();
@@ -180,6 +185,13 @@ export function ProfileWizard({
   }
 
   function next() {
+    if (flat) {
+      // One screen, one Save: validate the whole profile at once.
+      if (!v.name.trim() || !v.last_name.trim() || !/^\+\d{8,15}$/.test(toE164(v.phone_e164))) { toast.error(t("wiz.err_name_phone")); return; }
+      if (v.formats.length === 0 || v.sports.length === 0) { toast.error(t("wiz.err_pick")); return; }
+      onSubmit({ ...v, phone_e164: toE164(v.phone_e164) });
+      return;
+    }
     if (!canAdvance()) {
       toast.error(step === 0 ? t("wiz.err_name_phone") : t("wiz.err_pick"));
       return;
@@ -198,36 +210,42 @@ export function ProfileWizard({
   const norm = (x: ProfileFormValues) =>
     JSON.stringify({ ...x, formats: [...(x.formats || [])].sort(), play_times: [...(x.play_times || [])].sort() });
   const dirty = norm(v) !== norm(initial);
-  const saved = savedState && step === 4 && !dirty;
+  const saved = savedState && (flat || step === 4) && !dirty;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <button
-          type="button"
-          onClick={() => step > 0 && setStep(step - 1)}
-          className="text-sm font-extrabold underline disabled:opacity-30"
-          disabled={step === 0}
-        >
-          {t("wiz.back")}
-        </button>
-        <span className="csection-label">{step + 1} / 5</span>
-      </div>
+      {!flat && (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <button
+              type="button"
+              onClick={() => step > 0 && setStep(step - 1)}
+              className="text-sm font-extrabold underline disabled:opacity-30"
+              disabled={step === 0}
+            >
+              {t("wiz.back")}
+            </button>
+            <span className="csection-label">{step + 1} / 5</span>
+          </div>
 
-      <div className="flex gap-2 justify-center mb-5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <span
-            key={i}
-            className="w-3 h-3 rounded-full border-2 border-[var(--ink)]"
-            style={{ background: i <= step ? "var(--green-pop)" : "var(--cream2)" }}
-          />
-        ))}
-      </div>
+          <div className="flex gap-2 justify-center mb-5">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                className="w-3 h-3 rounded-full border-2 border-[var(--ink)]"
+                style={{ background: i <= step ? "var(--green-pop)" : "var(--cream2)" }}
+              />
+            ))}
+          </div>
 
-      <h2 className="font-display text-3xl mb-5">{titles[step]}</h2>
+          <h2 className="font-display text-3xl mb-5">{titles[step]}</h2>
+        </>
+      )}
 
       <div className="min-h-[260px]">
-        {step === 0 && (
+        {(flat || step === 0) && (
+          <>
+          {flat && <div className="font-display text-2xl mb-3" style={{ marginTop: 0 }}>{titles[0]}</div>}
           <div className="flex flex-col items-center gap-5">
             <div className="w-full">
               <div className="grid grid-cols-3 gap-2">
@@ -287,9 +305,12 @@ export function ProfileWizard({
               </p>
             </div>
           </div>
+        </>
         )}
 
-        {step === 1 && (
+        {(flat || step === 1) && (
+          <>
+          {flat && <div className="font-display text-2xl mb-3" style={{ marginTop: 26 }}>{titles[1]}</div>}
           <div className="flex flex-col items-center gap-7 pt-3">
             <div className="flex gap-3">
               {LEVELS.map((l) => (
@@ -317,9 +338,12 @@ export function ProfileWizard({
               </div>
             </div>
           </div>
+        </>
         )}
 
-        {step === 2 && (
+        {(flat || step === 2) && (
+          <>
+          {flat && <div className="font-display text-2xl mb-3" style={{ marginTop: 26 }}>{titles[2]}</div>}
           <div className="flex flex-col gap-6">
             <div>
               <div className="csection-label mb-2">{t("wiz.format")}</div>
@@ -352,9 +376,12 @@ export function ProfileWizard({
               </div>
             </div>
           </div>
+        </>
         )}
 
-        {step === 3 && (
+        {(flat || step === 3) && (
+          <>
+          {flat && <div className="font-display text-2xl mb-3" style={{ marginTop: 26 }}>{titles[3]}</div>}
           <div className="flex flex-col gap-3">
             {VIBES.map((vb) => {
               const on = v.vibe === vb.value;
@@ -382,9 +409,12 @@ export function ProfileWizard({
               );
             })}
           </div>
+        </>
         )}
 
-        {step === 4 && (
+        {(flat || step === 4) && (
+          <>
+          {flat && <div className="font-display text-2xl mb-3" style={{ marginTop: 26 }}>{titles[4]}</div>}
           <div className="flex flex-col gap-6">
             <div>
               <div className="csection-label mb-2">{t("wiz.sports")}</div>
@@ -580,6 +610,7 @@ export function ProfileWizard({
               </label>
             </div>
           </div>
+        </>
         )}
       </div>
 
@@ -592,7 +623,7 @@ export function ProfileWizard({
       >
         {busy
           ? t("wiz.saving")
-          : step < 4
+          : !flat && step < 4
             ? t("wiz.next")
             : saved
               ? savedLabel

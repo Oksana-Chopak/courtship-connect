@@ -65,7 +65,7 @@ export function ToggleRow({ label, sub, info, on, onToggle, last }: { label: str
         </button>
         {info && (
           <button type="button" aria-label="info" aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}
-            style={{ width: 26, height: 26, borderRadius: "50%", border: `1.5px solid ${HAIR}`, background: infoOpen ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 13, color: "var(--ink)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.7 }}>
+            style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${HAIR}`, background: infoOpen ? "rgba(43,33,24,0.08)" : "transparent", fontWeight: 800, fontSize: 13, color: "var(--ink)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.7 }}>
             i
           </button>
         )}

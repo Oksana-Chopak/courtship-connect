@@ -6,7 +6,6 @@ import { oops } from "@/lib/oops";
 import { useI18n, LangToggle } from "@/lib/i18n";
 import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
 import { PushControls } from "@/components/PushControls";
-import { Collapsible } from "@/components/Collapsible";
 import { unsubscribeFromPush } from "@/lib/push";
 import { downloadMyData } from "@/lib/legal";
 
@@ -54,6 +53,7 @@ function SettingsPage() {
 
       <div className="ccard p-5">
         <ProfileWizard
+          flat
           initial={initial ?? emptyProfile}
           userId={uid}
           submitLabel={t("me.save")}
@@ -92,17 +92,23 @@ function SettingsPage() {
         />
       </div>
 
-      <Collapsible title={`📧 ${t("emailn.title")}`}>
+      {/* No anonymous drawers (2026-08-12 audit D-18): every setting is a
+          visible row with its current value — nothing hides behind a bare
+          "Details ▾" you must open to know what's inside. */}
+      <div className="ccard p-4 space-y-2">
+        <div className="csection-label">📧 {t("emailn.title")}</div>
         <EmailNotifsToggle />
-      </Collapsible>
+      </div>
 
-      <Collapsible title={`🔔 ${t("push.title")}`}>
+      <div className="ccard p-4 space-y-2">
+        <div className="csection-label">🔔 {t("push.title")}</div>
         <PushControls bare />
-      </Collapsible>
+      </div>
 
-      <Collapsible title={`🔐 ${t("privacyc.title")}`}>
+      <div className="ccard p-4 space-y-2">
+        <div className="csection-label">🔐 {t("privacyc.title")}</div>
         <PrivacyDataSection />
-      </Collapsible>
+      </div>
 
       {isAdmin && (
         <Link to="/admin" className="ccard p-4 flex items-center justify-between">
@@ -147,7 +153,7 @@ function SettingsPage() {
                   window.location.href = "/";
                 }}
                 className="cbtn cbtn-ghost flex-1"
-                style={{ color: "var(--coral)" }}
+                style={{ color: "var(--ink)", opacity: 0.65 }}
               >
                 {t("auth.signout")}
               </button>
@@ -261,7 +267,7 @@ function PrivacyDataSection() {
                 onClick={deleteAccount}
                 disabled={deleteText.trim().toUpperCase() !== "DELETE" || deleting}
                 className="cbtn cbtn-ghost flex-1"
-                style={{ color: "var(--coral)", opacity: deleteText.trim().toUpperCase() === "DELETE" ? 1 : 0.5 }}
+                style={{ color: "var(--ink)", opacity: deleteText.trim().toUpperCase() === "DELETE" ? 0.8 : 0.4 }}
               >
                 {deleting ? "..." : t("privacyc.delete_cta")}
               </button>

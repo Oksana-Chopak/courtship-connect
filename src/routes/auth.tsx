@@ -202,8 +202,8 @@ function AuthPage() {
             className="space-y-3"
           >
             <div>
-              <label className="csection-label block mb-1">{t("auth.password_label")}</label>
-              <input type="password" className="cinput" placeholder="••••••••" minLength={6} value={newPw} onChange={(e) => setNewPw(e.target.value)} required />
+              <label className="csection-label block mb-1" htmlFor="auth-newpw">{t("auth.password_label")}</label>
+              <input id="auth-newpw" type="password" className="cinput" placeholder="••••••••" minLength={6} value={newPw} onChange={(e) => setNewPw(e.target.value)} required />
             </div>
             <button disabled={busy} className="cbtn cbtn-coral w-full">{busy ? "..." : t("auth.new_pw_cta")}</button>
           </form>
@@ -233,8 +233,9 @@ function AuthPage() {
           {mode === "signup" && (
             showInvite ? (
               <div>
-                <label className="csection-label block mb-1">{t("auth.invite_label")}</label>
+                <label className="csection-label block mb-1" htmlFor="auth-invite">{t("auth.invite_label")}</label>
                 <input
+                  id="auth-invite"
                   className="cinput tracking-widest uppercase"
                   placeholder="UPPSALA80"
                   value={invite}
@@ -256,8 +257,9 @@ function AuthPage() {
             )
           )}
           <div>
-            <label className="csection-label block mb-1">{t("auth.email_label")}</label>
+            <label className="csection-label block mb-1" htmlFor="auth-email">{t("auth.email_label")}</label>
             <input
+              id="auth-email"
               type="email"
               className="cinput"
               placeholder="you@uppsala.se"
@@ -267,8 +269,9 @@ function AuthPage() {
             />
           </div>
           <div>
-            <label className="csection-label block mb-1">{t("auth.password_label")}</label>
+            <label className="csection-label block mb-1" htmlFor="auth-pw">{t("auth.password_label")}</label>
             <input
+              id="auth-pw"
               type="password"
               className="cinput"
               placeholder="••••••••"

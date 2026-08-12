@@ -153,9 +153,12 @@ export function BottomTabBar({ guest = false }: { guest?: boolean } = {}) {
               // the intent; registration is just the doorstep on the way.
               onClick={() => { if (guest) { navigate({ to: "/post" }); return; } setPlusOpen((v) => !v); }}
               className="flex items-center justify-center rounded-full font-extrabold"
+              /* Chrome, not accent: the FAB sits on EVERY screen, so a coral
+                 fill spent the accent budget everywhere at once and doubled the
+                 board hero (audit D-20). Cream + ink keeps it obvious, quiet. */
               style={{
                 width: 58, height: 58, transform: "translateY(-14px)",
-                background: "var(--coral)", color: "var(--ink)",
+                background: "var(--cream2)", color: "var(--ink)",
                 border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
                 fontSize: 32, lineHeight: 1,
               }}

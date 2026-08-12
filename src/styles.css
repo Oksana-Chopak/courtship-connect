@@ -284,3 +284,6 @@
 
 @keyframes csk-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .skeleton-shimmer { animation: csk-pulse 1.3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; opacity: 0.55; }
+}

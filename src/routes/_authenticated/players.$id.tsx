@@ -155,7 +155,7 @@ function PlayerDetail() {
                   } catch (e: any) { oops(e); }
                   setBusy(false);
                 }}
-                className="cbtn cbtn-coral w-full"
+                className="cbtn cbtn-ghost w-full"
               >
                 {t("buddy.add")}
               </button>
