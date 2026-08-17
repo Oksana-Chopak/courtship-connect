@@ -50,6 +50,7 @@ export async function fetchCityAreas(): Promise<Record<string, string[]>> {
 /** Map of city → ordered area list; starts with the fallback, swaps in DB data. */
 export function useCityAreas(): Record<string, string[]> {
   const [m, setM] = useState<Record<string, string[]>>(FALLBACK_AREAS);
+  // Stryker disable next-line ArrayDeclaration: any constant deps array produces the same single effect run.
   useEffect(() => { void fetchCityAreas().then(setM); }, []);
   return m;
 }

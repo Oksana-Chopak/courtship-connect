@@ -29,6 +29,7 @@ export function rememberDraftGame(d: DraftGame) {
 export function peekDraftGame(): DraftGame | null {
   try {
     const raw = localStorage.getItem(KEY);
+    // Stryker disable next-line ConditionalExpression: JSON.parse(null) yields null and the shape check below rejects it — the guard is a fast path, not a behavior gate.
     if (!raw) return null;
     const d = JSON.parse(raw) as DraftGame;
     if (!d || typeof d.court_id !== "string" || typeof d.play_at !== "string") return null;
@@ -75,14 +76,17 @@ export async function publishDraftGame(uid: string): Promise<PublishDraftResult>
   // with two missing columns the old chain could never converge.
   let row: any = { ...insertRow };
   let res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
+  // Stryker disable next-line StringLiteral: the || "" fallback only feeds the regex when message is nullish, and no mutant value matches /court_type_any/i — same false either way.
   if (res.error && /court_type_any/i.test(res.error.message || "")) {
     const { court_type_any: _ca, ...noAny } = row; row = noAny;
     res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   }
+  // Stryker disable next-line StringLiteral: same argument as the court_type_any fallback above.
   if (res.error && /play_until/i.test(res.error.message || "")) {
     const { play_until: _pu, ...noWin } = row; row = noWin;
     res = await (supabase as any).from("sos_requests").insert(row).select("id").single();
   }
+  // Stryker disable next-line StringLiteral: same argument as the court_type_any fallback above.
   if (res.error && /duration_min/i.test(res.error.message || "")) {
     const { duration_min: _omit, ...fallback } = row; row = fallback;
     res = await (supabase as any).from("sos_requests").insert(row).select("id").single();

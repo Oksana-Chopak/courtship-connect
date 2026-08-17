@@ -31,9 +31,14 @@ else
   echo "✅ no hooks violations"
 fi
 
-echo "→ Unit tests (core reward / streak / date logic)…"
-if npx vitest run >/tmp/vitest_out.txt 2>&1; then
+echo "→ Unit + contract tests with the logic-layer coverage gate…"
+if npx vitest run --coverage >/tmp/vitest_out.txt 2>&1; then
   echo "✅ tests pass"
+  if node scripts/coverage-gate.mjs; then
+    :
+  else
+    fail=1
+  fi
 else
   echo "❌ tests failed:"; tail -30 /tmp/vitest_out.txt; fail=1
 fi

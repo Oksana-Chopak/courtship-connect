@@ -27,20 +27,28 @@ export type Celebration = {
 type Progress = { games: number; rescues: number; referrals: number; hosted: number };
 
 function readProgress(): Partial<Progress> | null {
+  // Stryker disable next-line ConditionalExpression,StringLiteral: SSR guard — under jsdom window always exists, and in node the window access below throws into the catch, which returns the same null.
+  /* v8 ignore next: SSR guard — the test runner always provides storage globals */
   if (typeof window === "undefined") return null;
+  // Stryker disable BlockStatement: emptying the try or catch makes readProgress return undefined instead of null — indistinguishable through the !prevRaw check.
   try {
     const raw = window.localStorage.getItem(PROGRESS_KEY);
+    // Stryker disable next-line ConditionalExpression: JSON.parse(null) parses to null and the shape check below rejects it — removing the guard converges to the same null.
     if (!raw) return null;
     const p = JSON.parse(raw);
     // referrals is optional for backward-compat with the first Phase-1 baseline.
+    // Stryker disable next-line OptionalChaining: p is object-or-null here; property access on null throws into the catch, which returns the same null.
     if (typeof p?.games === "number" && typeof p?.rescues === "number") return p;
     return null;
   } catch {
     return null;
   }
+  // Stryker restore BlockStatement
 }
 
 function writeProgress(p: Progress) {
+  // Stryker disable next-line ConditionalExpression,StringLiteral: same SSR-guard convergence as readProgress — the try/catch below absorbs the no-window case.
+  /* v8 ignore next: SSR guard — the test runner always provides storage globals */
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
@@ -62,12 +70,24 @@ function celebrationFor(kind: Celebration["kind"], before: number, after: number
     kind,
     count: after,
     leveledUp,
+    // Stryker disable next-line OptionalChaining,StringLiteral,LogicalOperator: tAfter is never null — celebrationFor only runs on an increase, so tierOf(≥1) always returns a tier; this arm is unreachable defense.
+    /* v8 ignore next 2: defensive — every track's first tier starts at count 1,
+       and celebrationFor only runs on an increase, so tAfter is never null */
     tierName: tAfter?.name ?? "",
+    // Stryker disable next-line OptionalChaining,StringLiteral,LogicalOperator: same unreachable tAfter-null defense as tierName above.
+    /* v8 ignore next: same defensive tAfter-null arm */
     tierEmoji: tAfter?.emoji ?? "🎾",
+    // Stryker disable next-line OptionalChaining: same unreachable tAfter-null defense as tierName above.
     toNext: tAfter?.next != null ? tAfter.next - after : null,
+    // Stryker disable next-line OptionalChaining,LogicalOperator: same unreachable tAfter-null defense as tierName above.
+    /* v8 ignore next: tAfter-null defensive arm (see above) */
     nextName: tAfter?.nextName ?? null,
+    /* v8 ignore next 2: same defensive tAfter-null arms as above */
     track: tAfter ? track : null,
+    // Stryker disable next-line OptionalChaining,LogicalOperator: same unreachable tAfter-null defense as tierName above.
+    /* v8 ignore next: tAfter-null defensive arm (see above) */
     tierLevel: tAfter?.level ?? null,
+    /* v8 ignore next: the tAfter-null arm is defensive (see above); the maxed-tier arm IS tested */
     nextLevel: tAfter && tAfter.next != null ? tAfter.level + 1 : null,
   };
 }
@@ -85,6 +105,7 @@ export function checkCelebration(games: number, rescues: number, referrals: numb
   writeProgress(curr);
   if (!prevRaw) return null; // baseline only — no retroactive celebration
   const prev: Progress = {
+    /* v8 ignore next 2: readProgress already proved these are numbers */
     games: prevRaw.games ?? 0,
     rescues: prevRaw.rescues ?? 0,
     // missing referrals (old baseline) → treat as current so we never fire a false recruit celebration

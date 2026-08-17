@@ -31,3 +31,10 @@ dist-ssr
 *.sln
 *.sw?
 package-lock.json
+
+# Test tooling artifacts (release test pyramid, 2026-08-16)
+coverage
+reports
+.stryker-tmp
+test-results
+playwright-report

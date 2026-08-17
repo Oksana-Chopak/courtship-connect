@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.ts"
+  },
+  "mutate": [
+    "src/lib/courtship.ts",
+    "src/lib/celebrate.ts",
+    "src/lib/draftGame.ts",
+    "src/lib/reasons.ts",
+    "src/lib/calendar.ts",
+    "src/lib/courts.ts",
+    "src/lib/guest.ts",
+    "src/lib/share.ts",
+    "src/lib/utils.ts",
+    "src/lib/cities.ts",
+    "src/lib/areas.ts"
+  ],
+  "ignoreStatic": true,
+  "concurrency": 2,
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "thresholds": {
+    "high": 100,
+    "low": 99,
+    "break": 99
+  },
+  "tempDirName": ".stryker-tmp",
+  "cleanTempDir": true
+}

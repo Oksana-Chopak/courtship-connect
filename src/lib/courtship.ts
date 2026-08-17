@@ -57,11 +57,13 @@ const MONOGRAM_PALETTE = [
 
 export function monogramColors(seed: string): [string, string] {
   let h = 0;
+  // Stryker disable next-line ArithmeticOperator: flipping + to − negates the whole hash (h₋ ≡ −h₊ by induction from h=0) and Math.abs below erases the sign — the palette pick is provably identical for every input.
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return MONOGRAM_PALETTE[Math.abs(h) % MONOGRAM_PALETTE.length] as [string, string];
 }
 
 export function initialOf(name: string) {
+  // Stryker disable next-line OptionalChaining: trim() always returns a string once name passed the first ?., so the second ?. can never observably fire.
   return (name?.trim()?.charAt(0) || "?").toUpperCase();
 }
 
@@ -71,6 +73,7 @@ export function toE164(raw: string, defaultPrefix = "+46"): string {
   if (!trimmed) return "";
   // Already international
   if (trimmed.startsWith("+")) {
+    // Stryker disable next-line MethodExpression: with or without slice(1) the \D strip removes the leading + — outputs are identical for every input.
     return "+" + trimmed.slice(1).replace(/\D/g, "");
   }
   const digits = trimmed.replace(/\D/g, "");
@@ -119,8 +122,10 @@ export function cityGranularity(city: string): number {
 /** All valid HH:MM slots for a city across the playable day. */
 export function generateSlots(city: string, forDate?: Date, now: Date = new Date()): string[] {
   const step = cityGranularity(city);
+  // Stryker disable next-line ArithmeticOperator: this initial floor is defensive — the emit loop already starts at COURT_DAY_START, so any value ≤ the day start produces the identical slot list.
   let minMinutes = COURT_DAY_START * 60;
   // For today, only offer slots at least ~1h ahead (time to actually reach the court).
+  // Stryker disable next-line ConditionalExpression: forcing the branch with forDate=undefined makes d0 an Invalid Date, NaN !== n0 skips the narrowing — behavior converges.
   if (forDate) {
     const d0 = new Date(forDate); d0.setHours(0, 0, 0, 0);
     const n0 = new Date(now); n0.setHours(0, 0, 0, 0);
@@ -142,6 +147,7 @@ export function generateSlots(city: string, forDate?: Date, now: Date = new Date
 }
 
 /** Snap a Date's time to the nearest valid slot for the city (round mode). */
+// Stryker disable next-line StringLiteral: the default-mode literal only needs to differ from "up" — any other string selects the same nearest branch.
 export function snapToSlot(d: Date, city: string, mode: "nearest" | "up" = "nearest"): Date {
   const step = cityGranularity(city);
   const x = new Date(d);
@@ -154,7 +160,9 @@ export function snapToSlot(d: Date, city: string, mode: "nearest" | "up" = "near
   } else {
     snapped = Math.round(mins / step) * step;
   }
+  // Stryker disable next-line EqualityOperator: at snapped === startMin the clamp assigns the value it already has — <= is indistinguishable from <.
   if (snapped < startMin) snapped = startMin;
+  // Stryker disable next-line EqualityOperator: same self-assignment argument at the upper clamp.
   if (snapped > endMin) snapped = endMin;
   x.setHours(Math.floor(snapped / 60), snapped % 60, 0, 0);
   return x;
@@ -162,12 +170,15 @@ export function snapToSlot(d: Date, city: string, mode: "nearest" | "up" = "near
 
 export const COURT_TYPES = ["indoor", "outdoor"] as const;
 export const DURATIONS = [60, 90, 120] as const;
+// Stryker disable next-line ConditionalExpression: the 60 and 120 fast-paths equal the Math.round fallback ("1h"/"2h") — only the 90 arm is observable and it is pinned by tests.
 export function durationLabel(min: number): string { return min === 60 ? "1h" : min === 90 ? "1.5h" : min === 120 ? "2h" : `${Math.round(min / 60)}h`; }
 export type CourtType = (typeof COURT_TYPES)[number];
 
+// Stryker disable next-line StringLiteral: the default-lang literal only needs to differ from "sv" — any other string selects the EN table.
 export function courtTypeMeta(t: CourtType | string | null | undefined, lang: "en" | "sv" = "en") {
   // Defensive: rows from an RPC missing court_type (or a future value) must
   // degrade to a sane default instead of crashing the whole board render.
+  // Stryker disable next-line ConditionalExpression,StringLiteral: the t === "outdoor" comparison only passes through the exact value the fallback yields anyway — its mutants are equivalent by construction.
   const ct: CourtType = t === "indoor" || t === "outdoor" ? t : "outdoor";
   const en: Record<CourtType, { label: string; emoji: string }> = {
     indoor:  { label: "Indoor",  emoji: "🏠" },
@@ -191,12 +202,14 @@ export const COURT_STATUSES = [
 export const URGENCY_WINDOW_HOURS = 6;
 
 export function isUrgent(playAt: Date | string): boolean {
+  // Stryker disable next-line ConditionalExpression: new Date(aDate).getTime() equals aDate.getTime() — forcing the string arm changes nothing for Date inputs.
   const t = typeof playAt === "string" ? new Date(playAt).getTime() : playAt.getTime();
   return t - Date.now() <= URGENCY_WINDOW_HOURS * 3600 * 1000;
 }
 
 export type CourtStatus = "booked_paid" | "booked" | "will_book" | "public";
 
+// Stryker disable next-line StringLiteral: same default-lang argument as courtTypeMeta — anything ≠ "sv" is the EN table.
 export function courtStatusMeta(s: CourtStatus, lang: "en" | "sv" = "en") {
   const en: Record<CourtStatus, { label: string; tone: "green" | "neutral" }> = {
     booked_paid: { label: "💸 Court booked & paid", tone: "green" },
@@ -246,6 +259,7 @@ export function timeUntil(iso: string): string {
 // the game's local zone on the UTC server runtime instead of leaking UTC
 // (2026-07-20 audit). Falls back to Stockholm (the founding market).
 export function cityTimeZone(city: string | null | undefined): string {
+  // Stryker disable next-line StringLiteral: the nullish seed only matters for null/undefined city, and every non-"Miami" string (any mutant value) hits the same Stockholm default.
   switch ((city ?? "").trim()) {
     case "Miami": return "America/New_York";
     default: return "Europe/Stockholm";
@@ -260,9 +274,14 @@ export function hourRange(start: Date, end: Date): string {
   return `${h(start)}–${h(end)}`;
 }
 
+/** Default UI language when no explicit choice is stored. */
+export const LANG_FALLBACK = "en";
+
 export function whenLabel(iso: string): string {
-  let lang = "en";
-  try { lang = (typeof localStorage !== "undefined" && localStorage.getItem("courtship.lang")) || "en"; } catch { /* ignore */ }
+  let lang: string = LANG_FALLBACK;
+  // Stryker disable next-line ConditionalExpression,StringLiteral: every test environment provides localStorage (typeof is always "object"), so the typeof arm and its "undefined" literal are SSR-only and unobservable here; the courtship.lang key itself stays behaviorally pinned by the SV whenLabel test.
+  /* v8 ignore next: the typeof-localStorage false arm is SSR-only — the test runner always provides storage globals */
+  try { lang = (typeof localStorage !== "undefined" && localStorage.getItem("courtship.lang")) || LANG_FALLBACK; } catch { /* ignore */ }
   const loc = lang === "sv" ? "sv-SE" : "en-GB";
   const d = new Date(iso);
   const today = new Date();
@@ -288,7 +307,7 @@ export function rescuerTier(count: number): { level: number; name: string; emoji
   let idx = 0;
   for (let i = 0; i < RESCUER_TIERS.length; i++) if (count >= RESCUER_TIERS[i].at) idx = i;
   const cur = RESCUER_TIERS[idx];
-  const nx = idx < RESCUER_TIERS.length - 1 ? RESCUER_TIERS[idx + 1] : null;
+  const nx = RESCUER_TIERS[idx + 1] ?? null; // beyond the top tier → null
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
 
@@ -307,7 +326,7 @@ export function activityTier(count: number): { level: number; name: string; emoj
   let idx = 0;
   for (let i = 0; i < ACTIVITY_TIERS.length; i++) if (count >= ACTIVITY_TIERS[i].at) idx = i;
   const cur = ACTIVITY_TIERS[idx];
-  const nx = idx < ACTIVITY_TIERS.length - 1 ? ACTIVITY_TIERS[idx + 1] : null;
+  const nx = ACTIVITY_TIERS[idx + 1] ?? null; // beyond the top tier → null
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
 
@@ -326,7 +345,7 @@ export function recruiterTier(count: number): { level: number; name: string; emo
   let idx = 0;
   for (let i = 0; i < RECRUITER_TIERS.length; i++) if (count >= RECRUITER_TIERS[i].at) idx = i;
   const cur = RECRUITER_TIERS[idx];
-  const nx = idx < RECRUITER_TIERS.length - 1 ? RECRUITER_TIERS[idx + 1] : null;
+  const nx = RECRUITER_TIERS[idx + 1] ?? null; // beyond the top tier → null
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
 
@@ -335,7 +354,9 @@ export function recruiterTier(count: number): { level: number; name: string; emo
 // doesn't wipe a long run. The current week being empty does NOT break the
 // streak (you still have time) — it just isn't counted until you play.
 export function weeklyStreak(playedAtISO: string[]): { weeks: number; playedThisWeek: boolean } {
+  // Stryker disable next-line MethodExpression: dropping either hygiene filter leaves Invalid Dates whose mondayOf() is NaN — NaN never equals a real Monday key, so the walk output is identical.
   const dates = playedAtISO.filter(Boolean).map((s) => new Date(s)).filter((d) => !isNaN(d.getTime()));
+  // Stryker disable next-line ConditionalExpression: with an empty set the walk below finds nothing and returns the same { 0, false } — the early return is a fast path, not a behavior gate.
   if (!dates.length) return { weeks: 0, playedThisWeek: false };
 
   const mondayOf = (d: Date): number => {
@@ -390,6 +411,7 @@ export function tierNameKey(track: "activity" | "rescuer" | "recruiter" | "match
 }
 
 // Full ladders for the "All four ranks" info popover (what each badge is + the count to reach it).
+// Stryker disable next-line ObjectLiteral: static initializer — the runner's shared module registry never re-executes module scope per mutant, so this mutant can't be switched on; the ladder contents are pinned value-by-value in mutation-kills.test.ts.
 export const RANK_LADDERS: Record<string, ReadonlyArray<{ level: number; name: string; emoji: string; at: number }>> = {
   activity: ACTIVITY_TIERS,
   rescuer: RESCUER_TIERS,
@@ -402,12 +424,13 @@ export function matchmakerTier(count: number): { level: number; name: string; em
   let idx = 0;
   for (let i = 0; i < MATCHMAKER_TIERS.length; i++) if (count >= MATCHMAKER_TIERS[i].at) idx = i;
   const cur = MATCHMAKER_TIERS[idx];
-  const nx = idx < MATCHMAKER_TIERS.length - 1 ? MATCHMAKER_TIERS[idx + 1] : null;
+  const nx = MATCHMAKER_TIERS[idx + 1] ?? null; // beyond the top tier → null
   return { level: cur.level, name: cur.name, emoji: cur.emoji, at: cur.at, next: nx ? nx.at : null, nextName: nx ? nx.name : null };
 }
 
 /** Maps get_contact_phone errors to honest, human toasts. */
 export function waErrorKey(message: string | undefined): string {
+  // Stryker disable next-line StringLiteral: the fallback only exists so the regexes get a string; no mutant value matches /no_number|forbidden/i, so the result is wa.failed either way.
   const m = message ?? "";
   if (/no_number/i.test(m)) return "wa.no_number";
   if (/forbidden/i.test(m)) return "wa.locked";

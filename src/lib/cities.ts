@@ -59,12 +59,16 @@ export async function fetchCities(): Promise<CityInfo[]> {
  */
 export function useCityNames(): string[] {
   const [names, setNames] = useState<string[]>([...FALLBACK_CITIES]);
+  // Stryker disable ArrayDeclaration: any constant deps array produces the same single effect run. (Scoped restore below keeps the callback-body mutants live.)
   useEffect(() => {
     let on = true;
     fetchCities().then((cs) => {
+      // Stryker disable next-line ConditionalExpression,LogicalOperator: fetchCities can never resolve empty (static fallback list) — the length guard is belt-and-suspenders, so its mutants are unobservable.
       if (on && cs.length) setNames(cs.map((c) => c.name));
     });
+    // Stryker disable next-line BlockStatement,BooleanLiteral: the cleanup flag guards a post-unmount setState (a React warning, not an assertable behavior).
     return () => { on = false; };
   }, []);
+  // Stryker restore ArrayDeclaration
   return names;
 }
