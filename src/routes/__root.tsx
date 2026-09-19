@@ -40,7 +40,11 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// `error` is `unknown` since @tanstack/react-router 1.170 (anything can be
+// thrown); normalize once so the reporter always gets an Error. Typing it as
+// Error broke `tsc` (and therefore CI) the moment the minor version drifted.
+function ErrorComponent({ error: thrown, reset }: { error: unknown; reset: () => void }) {
+  const error = thrown instanceof Error ? thrown : new Error(String(thrown));
   console.error(error);
   const router = useRouter();
   useEffect(() => {

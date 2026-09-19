@@ -71,13 +71,22 @@ export async function hydrateCallers(rows: EligibleSosRow[]): Promise<EligibleSo
 export async function fetchEligibleSos(): Promise<EligibleSosRow[]> {
   const { data, error } = await (supabase as any).rpc("eligible_sos_for_me");
   if (error) return [];
-  return (data as EligibleSosRow[]) ?? [];
+  // The RPC filters `kind = 'sos'` but does NOT return the column (dropped in the
+  // 2026-06-12 rewrite), while the board Card decides everything urgent from
+  // `sos.kind === "sos"` — red rail, 🚨 label, "Save this set" → claim_sos. Without
+  // the stamp every rescue card rendered as a planned game and "I'm interested"
+  // hit apply_to_game → not_applicable → "turned urgent" toast, forever (P0,
+  // 2026-09-02 screen tour). Stamp the kind the SQL guarantees.
+  return (((data as EligibleSosRow[]) ?? [])).map((r) => ({ ...r, kind: r.kind ?? "sos" }));
 }
 
 export async function fetchOpenGames(): Promise<EligibleSosRow[]> {
   const { data, error } = await (supabase as any).rpc("eligible_open_games_for_me");
   if (error) return [];
-  return (data as EligibleSosRow[]) ?? [];
+  // Symmetric belt: the open-games RPC returns kind today, but the Card's whole
+  // branch logic hangs on it — never let a future column drop flip open games
+  // into rescue cards.
+  return (((data as EligibleSosRow[]) ?? [])).map((r) => ({ ...r, kind: r.kind ?? "open" }));
 }
 
 export type CommunityStats = {
