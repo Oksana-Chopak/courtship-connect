@@ -89,6 +89,14 @@ function AuthPage() {
   const [legalAge, setLegalAge] = useState(false);
   const [legalTerms, setLegalTerms] = useState(false);
   const legalOk = mode !== "signup" || (legalAge && legalTerms);
+  // A greyed-out button with no explanation reads as "broken" (2026-10 funnel
+  // audit). Buttons stay live; a tap with the boxes empty highlights them and
+  // says why — then the person knows exactly what to do.
+  const [legalNudge, setLegalNudge] = useState(false);
+  function nudgeLegal() {
+    setLegalNudge(true);
+    document.getElementById("auth-legal-age")?.focus();
+  }
   // Password recovery: the email link lands back here with a #type=recovery
   // hash — show a set-new-password form instead of bouncing to /board.
   const [recovery, setRecovery] = useState(false);
@@ -141,6 +149,7 @@ function AuthPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!legalOk) { nudgeLegal(); return; }
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -238,6 +247,50 @@ function AuthPage() {
           </p>
         </div>
 
+        {!isNativeShell() && <>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            if (!legalOk) { nudgeLegal(); return; }
+            setBusy(true);
+            try {
+              // Same optional-invite rules as the email path: a valid code is
+              // stored so onboarding stamps signup_code after the OAuth
+              // round-trip; a stale link code is dropped with a soft note; only
+              // a manually TYPED wrong code stops the flow (to be fixed or
+              // cleared). No code at all is perfectly fine.
+              if (mode === "signup") {
+                const codeToUse = await resolveInviteCode();
+                if (codeToUse === null) { setBusy(false); return; }
+              }
+              const result = await lovable.auth.signInWithOAuth("google", {
+                redirect_uri: `${window.location.origin}/auth`,
+              });
+              if (result.error) throw result.error;
+            } catch (err: any) {
+              authErrToast(t, err);
+              setBusy(false);
+            }
+          }}
+          className="cbtn w-full bg-white flex items-center justify-center gap-2"
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.1 17.7 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.5 3-2.2 5.5-4.6 7.2l7.4 5.7c4.3-4 6.9-9.9 6.9-17.2z"/>
+            <path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.6 2.6 10.7l7.8-6z"/>
+            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.3-8.5 2.3-6.3 0-11.7-3.6-13.6-9.1l-7.8 6C6.5 42.6 14.6 48 24 48z"/>
+          </svg>
+          <span className="font-extrabold">{mode === "signup" ? t("auth.google_signup") : t("auth.google_signin")}</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--ink)]/15" />
+          <span className="text-xs font-extrabold uppercase tracking-widest opacity-60">{t("auth.or_email")}</span>
+          <div className="h-px flex-1 bg-[var(--ink)]/15" />
+        </div>
+        </>}
+
         <form onSubmit={submit} className="space-y-3">
           {mode === "signup" && (
             showInvite ? (
@@ -291,9 +344,12 @@ function AuthPage() {
             />
           </div>
           {mode === "signup" && (
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2 pt-1" style={legalNudge && !legalOk ? { outline: "2px solid var(--coral)", outlineOffset: 6, borderRadius: 8 } : undefined}>
+              {legalNudge && !legalOk && (
+                <p className="text-sm font-extrabold" style={{ color: "var(--coral)" }}>{t("auth.legal_nudge")}</p>
+              )}
               <label className="flex items-start gap-2 font-bold text-sm cursor-pointer">
-                <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={legalAge} onChange={(e) => setLegalAge(e.target.checked)} />
+                <input id="auth-legal-age" type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={legalAge} onChange={(e) => setLegalAge(e.target.checked)} />
                 <span>{t("auth.legal_age")}</span>
               </label>
               <label className="flex items-start gap-2 font-bold text-sm cursor-pointer">
@@ -307,54 +363,11 @@ function AuthPage() {
               </label>
             </div>
           )}
-          <button disabled={busy || !legalOk} className="cbtn cbtn-coral w-full" style={{ opacity: legalOk ? 1 : 0.5 }}>
+          <button disabled={busy} className="cbtn cbtn-coral w-full">
             {busy ? "..." : mode === "signup" ? t("auth.create_account") : t("auth.sign_in")}
           </button>
         </form>
 
-        {!isNativeShell() && <>
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-[var(--ink)]/15" />
-          <span className="text-xs font-extrabold uppercase tracking-widest opacity-60">or</span>
-          <div className="h-px flex-1 bg-[var(--ink)]/15" />
-        </div>
-
-        <button
-          type="button"
-          disabled={busy || !legalOk}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              // Same optional-invite rules as the email path: a valid code is
-              // stored so onboarding stamps signup_code after the OAuth
-              // round-trip; a stale link code is dropped with a soft note; only
-              // a manually TYPED wrong code stops the flow (to be fixed or
-              // cleared). No code at all is perfectly fine.
-              if (mode === "signup") {
-                const codeToUse = await resolveInviteCode();
-                if (codeToUse === null) { setBusy(false); return; }
-              }
-              const result = await lovable.auth.signInWithOAuth("google", {
-                redirect_uri: `${window.location.origin}/auth`,
-              });
-              if (result.error) throw result.error;
-            } catch (err: any) {
-              authErrToast(t, err);
-              setBusy(false);
-            }
-          }}
-          className="cbtn w-full bg-white flex items-center justify-center gap-2"
-          style={{ opacity: legalOk ? 1 : 0.5 }}
-        >
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.1 17.7 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.5 3-2.2 5.5-4.6 7.2l7.4 5.7c4.3-4 6.9-9.9 6.9-17.2z"/>
-            <path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.6 2.6 10.7l7.8-6z"/>
-            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.3-8.5 2.3-6.3 0-11.7-3.6-13.6-9.1l-7.8 6C6.5 42.6 14.6 48 24 48z"/>
-          </svg>
-          <span className="font-extrabold">{mode === "signup" ? "Sign up with Google" : "Sign in with Google"}</span>
-        </button>
-        </>}
 
         {mode === "login" && (
           <button

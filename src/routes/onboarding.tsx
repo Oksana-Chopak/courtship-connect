@@ -51,11 +51,11 @@ function Onboarding() {
     // the ConsentGate in the authed shell catches any miss.
     try { await acceptTerms(); } catch { /* gate will catch */ }
     toast.success(t("onboarding.welcome_in"));
-    try {
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-        await Notification.requestPermission();
-      }
-    } catch {}
+    // No blind Notification.requestPermission() here (2026-10 funnel audit):
+    // a prompt with no context gets denied, and a denial can never be re-asked,
+    // which also hid the later "Want to hear the flares?" card forever. The
+    // permission is asked with context instead: the StandaloneNotifPrompt card
+    // on the board (one coral "yes", one "skip") and the Settings toggle.
     const _n = consumeNext();
     if (_n) { window.location.href = _n; return; }
     setDone(true);

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { shareInvite, shareTo } from "@/lib/share";
+import { shareInvite, myGameShareLink, shareMessage } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
 import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier , tierNameKey } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
@@ -404,9 +404,13 @@ function BoardPage() {
           <div className="text-base text-[var(--ink)] font-semibold">{t("rescue.empty_sub")}</div>
           <div className="pt-1">
             <Link to="/sos/new" search={{ planned: undefined }} className="cbtn cbtn-coral inline-block" style={{ minWidth: 220 }}>🎾 {t("board.post_game")}</Link>
-            <div className="mt-3">
-              <button type="button" className="font-extrabold underline text-sm" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
-            </div>
+            {/* members only: a guest has no invite code, and the message went out
+                with an empty one (2026-10 funnel audit) */}
+            {meId && (
+              <div className="mt-3">
+                <button type="button" className="font-extrabold underline text-sm" onClick={() => void shareInvite(t("invite.message"), t("invite.copied"))}>🤗 {t("invite.friend_cta")}</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -485,12 +489,26 @@ function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => voi
   );
 }
 
+/** Board share = the same message the detail page sends: public /g/<id> link
+ *  (value first, signup only at "I'm in") with the time and court spelled out.
+ *  It used to build an invite link to the signup form with a generic text
+ *  (2026-10 funnel audit). */
+async function shareGamePublic(sos: EligibleSosRow, t: (k: string, v?: Record<string, string | number>) => string) {
+  const link = await myGameShareLink(sos.id);
+  const msg = t(sos.kind === "open" ? "share.game_msg" : "share.sos_msg", {
+    when: whenLabel(sos.play_at),
+    court: sos.court_name || sos.court_city || "the court",
+    link,
+  });
+  await shareMessage(msg, t("share.copied"));
+}
+
 function ShareRow({ sos }: { sos: EligibleSosRow }) {
   const { t } = useI18n();
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); void shareTo("/sos/" + sos.id, t("share.game_fwd"), t("invite.copied")); }}
+      onClick={(e) => { e.stopPropagation(); void shareGamePublic(sos, t); }}
       className="absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-extrabold border-2 border-[var(--ink)]"
       style={{ background: "var(--cream2)" }}
       aria-label={t("share.spread")}
@@ -527,7 +545,7 @@ function Card({ sos, onChange, mine, applied, candidates, guest, mePhoto, meName
   const lmMax = levelMeta(sos.level_max);
   const nRackets = String(sos.format).startsWith("doubles") ? 4 : 2;
   const softCoral = "#F0705B";
-  const shareGame = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); void shareTo("/sos/" + sos.id, t("share.game_fwd"), t("invite.copied")); };
+  const shareGame = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); void shareGamePublic(sos, t); };
 
   return (
     <RailShell>

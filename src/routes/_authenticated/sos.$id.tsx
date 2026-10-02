@@ -21,10 +21,12 @@ import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/sos/$id")({
   head: () => ({ meta: [{ title: "SOS — Courtship" }] }),
-  validateSearch: (s: Record<string, unknown>): { claim?: string; join?: string; apply?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { claim?: string; join?: string; apply?: string; posted?: string } => ({
     claim: typeof s.claim === "string" && s.claim ? s.claim : undefined,
     join: typeof s.join === "string" && s.join ? s.join : undefined,
     apply: typeof s.apply === "string" && s.apply ? s.apply : undefined,
+    // just published from the wizard → show the one-time "share it" step
+    posted: typeof s.posted === "string" && s.posted ? s.posted : undefined,
   }),
   component: SosDetail,
 });
@@ -108,7 +110,7 @@ function SosDetail() {
   // 👻 Handover: arriving with ?claim=<token> (from the invite link the admin
   // sent) transfers this ghost game to the freshly signed-up owner — so the
   // first thing they see after onboarding is their own game with candidates.
-  const { claim, join, apply } = Route.useSearch();
+  const { claim, join, apply, posted } = Route.useSearch();
   const navigate2 = useNavigate();
   useEffect(() => {
     if ((!claim && !join && !apply) || !me || !sos) return;
@@ -320,9 +322,24 @@ function SosDetail() {
   if (isCaller) {
     const isOpen = sos.kind === "open";
     const full = sos.status === "claimed";
+    const canShare = !full && (sos as any).broadcast !== false;
     return (
       <div className="space-y-5">
         <Link to="/board" className="text-sm font-extrabold underline">← {t("nav.board")}</Link>
+        {posted && canShare && (() => {
+          // one-shot card: gone after a share or "later" (the URL loses ?posted)
+          const dismissPosted = () => navigate({ to: "/sos/$id", params: { id: sos.id }, search: { claim: undefined, join: undefined, apply: undefined, posted: undefined } as any, replace: true });
+          return (
+            <div className="ccard p-4 space-y-3" style={{ background: "var(--green-pop)" }}>
+              <div className="font-display text-xl leading-tight">{t("posted.title")}</div>
+              <p className="text-sm font-semibold" style={{ opacity: 0.8 }}>{t("posted.sub")}</p>
+              <button className="cbtn cbtn-coral w-full" onClick={async () => { await shareSos(); dismissPosted(); }}>{t("share.button")}</button>
+              <button type="button" className="w-full text-center text-sm font-extrabold underline" style={{ opacity: 0.7 }} onClick={dismissPosted}>
+                {t("posted.later")}
+              </button>
+            </div>
+          );
+        })()}
         {(() => {
           const tone: RailTone = full ? "mine" : isOpen ? "plan" : "sos";
           const d = new Date(sos.play_at);
@@ -514,7 +531,7 @@ function SosDetail() {
         )}
         {/* Share only makes sense for a public game — a private game's /g/<id>
             preview is intentionally hidden, so sharing it would dead-end. */}
-        {!full && (sos as any).broadcast !== false && (
+        {canShare && !posted && (
           <button className="cbtn cbtn-green w-full" onClick={shareSos}>{t("share.button")}</button>
         )}
         <button

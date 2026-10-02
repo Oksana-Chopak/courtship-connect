@@ -11,6 +11,7 @@ import {
   spotsNeeded, whenLabel, hourRange, tierNameKey, RANK_LADDERS, waErrorKey,
   MATCHI_BY_LEVEL, GOALS, EXPERIENCES, SPORTS, CITIES,
   COURT_DAY_START, COURT_DAY_END, DEFAULT_GRANULARITY_MINUTES,
+  defaultPostDate, SLOT_LEAD_MIN,
 } from "./courtship";
 
 afterEach(() => { localStorage.clear(); });
@@ -250,5 +251,43 @@ describe("straggler arms", () => {
     localStorage.setItem("courtship.lang", "");
     const today = new Date(); today.setHours(9, 0, 0, 0);
     expect(whenLabel(today.toISOString())).toMatch(/^Today /);
+  });
+});
+
+describe("defaultPostDate — the day the post wizard opens on", () => {
+  const at = (y: number, mo: number, d: number, h: number, mi: number) => new Date(y, mo - 1, d, h, mi, 17, 250);
+
+  it("is today at local midnight while today still has a bookable slot", () => {
+    const d = defaultPostDate(at(2026, 10, 2, 14, 5));
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2026, 9, 2]);
+    expect([d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()]).toEqual([0, 0, 0, 0]);
+  });
+
+  it("the last 22:00 start is still offered at exactly 21:00 → today (boundary inclusive)", () => {
+    const now = at(2026, 10, 2, COURT_DAY_END - SLOT_LEAD_MIN / 60, 0);
+    expect(defaultPostDate(now).getDate()).toBe(2);
+    // and the wheel agrees: one slot left for today
+    expect(generateSlots("Uppsala", defaultPostDate(now), now)).toEqual(["22:00"]);
+  });
+
+  it("one minute later today has no slot → tomorrow at local midnight", () => {
+    const now = at(2026, 10, 2, 21, 1);
+    expect(generateSlots("Uppsala", now, now)).toEqual([]);
+    const d = defaultPostDate(now);
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2026, 9, 3]);
+    expect([d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()]).toEqual([0, 0, 0, 0]);
+  });
+
+  it("23:30 on the last day of a month rolls into the next month", () => {
+    const d = defaultPostDate(at(2026, 10, 31, 23, 30));
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2026, 10, 1]);
+  });
+
+  it("defaults `now` to the clock", () => {
+    const d = defaultPostDate();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    expect(d.getTime() - today.getTime()).toBeGreaterThanOrEqual(0);
+    expect(d.getTime() - today.getTime()).toBeLessThanOrEqual(24 * 3600e3);
+    expect(d.getHours()).toBe(0);
   });
 });

@@ -23,13 +23,14 @@ describe("SSR guards (no window at all)", () => {
     expect(checkCelebration(5, 1, 0, 0)).toBeNull();
   });
   it("invite/game links degrade to a bare origin server-side", async () => {
-    const { myInviteLink, myGameShareLink, shareInvite } = await import("./share");
+    const { myInviteLink, myGameShareLink, myEventShareLink, shareInvite } = await import("./share");
     rpcMock.mockResolvedValue({ data: "CODE1" });
     expect(await myInviteLink()).toContain("code=CODE1");
     rpcMock.mockResolvedValue({ data: null });
     expect(await myInviteLink()).toBe("");
     rpcMock.mockResolvedValue({ data: "C" });
     expect(await myGameShareLink("g1")).toBe("/g/g1?code=C");
+    expect(await myEventShareLink("e1")).toBe("/e/e1?code=C");
     // shareInvite with an unparsable link ("" origin) exercises the URL catch
     rpcMock.mockResolvedValue({ data: null });
     await expect(shareInvite("m {link} {code}", "copied")).resolves.toBeUndefined();

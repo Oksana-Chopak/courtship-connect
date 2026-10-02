@@ -11,7 +11,7 @@ const toastSuccess = vi.fn();
 const toastErr = vi.fn();
 vi.mock("@/lib/toast", () => ({ toast: { success: (...a: unknown[]) => toastSuccess(...a), error: (...a: unknown[]) => toastErr(...a) } }));
 
-import { rememberNext, consumeNext, myInviteLink, shareInvite, shareTo, copyText, shareMessage, myGameShareLink } from "./share";
+import { rememberNext, consumeNext, myInviteLink, shareInvite, shareTo, copyText, shareMessage, myGameShareLink, myEventShareLink } from "./share";
 
 beforeEach(() => {
   localStorage.clear();
@@ -67,6 +67,12 @@ describe("myInviteLink / myGameShareLink", () => {
     expect(await myGameShareLink("g1")).toBe(`${window.location.origin}/g/g1?code=A%20B`);
     rpcMock.mockRejectedValueOnce(new Error("x"));
     expect(await myGameShareLink("g2")).toBe(`${window.location.origin}/g/g2`);
+  });
+  it("event share link lands on the PUBLIC event page /e/<id> (never /events, which has no route)", async () => {
+    rpcMock.mockResolvedValueOnce({ data: "ZZ9" });
+    expect(await myEventShareLink("e1")).toBe(`${window.location.origin}/e/e1?code=ZZ9`);
+    rpcMock.mockResolvedValueOnce({ data: null });
+    expect(await myEventShareLink("e2")).toBe(`${window.location.origin}/e/e2`);
   });
 });
 

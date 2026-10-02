@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { fetchPublicBoard } from "@/lib/guest";
+import type { EligibleSosRow } from "@/lib/sos";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { rememberNext } from "@/lib/share";
@@ -74,6 +76,14 @@ function PublicGamePage() {
   const navigate = useNavigate();
   const { game } = Route.useLoaderData();
   const state: "ok" | "gone" = game ? "ok" : "gone";
+  const active = game?.status === "active";
+  // Links live in chats longer than games do (2026-10 funnel audit): when this
+  // one is gone or taken, show what IS open right now instead of a dead end.
+  const [others, setOthers] = useState<EligibleSosRow[]>([]);
+  useEffect(() => {
+    if (state === "ok" && active) return;
+    fetchPublicBoard().then((rows) => setOthers(rows.filter((r) => r.id !== id).slice(0, 3))).catch(() => {});
+  }, [state, active, id]);
 
   useEffect(() => {
     void (async () => {
@@ -93,7 +103,6 @@ function PublicGamePage() {
   }
 
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
-  const active = game?.status === "active";
 
   return (
     <div className="min-h-dvh terry-bg" style={{ background: "var(--cream)" }}>
@@ -107,7 +116,9 @@ function PublicGamePage() {
             <div className="text-4xl">🌅</div>
             <div className="font-display text-2xl">{t("g.gone_title")}</div>
             <p className="font-semibold" style={{ opacity: 0.7 }}>{t("g.gone_sub")}</p>
-            <Link to="/post" className="cbtn cbtn-coral inline-block">🎾 {t("g.post_own")}</Link>
+            {others.length > 0 ? <OtherGames rows={others} locale={locale} t={t} /> : (
+              <Link to="/post" className="cbtn cbtn-coral inline-block">🎾 {t("g.post_own")}</Link>
+            )}
           </div>
         )}
 
@@ -126,7 +137,9 @@ function PublicGamePage() {
             <>
               <div className="text-center">
                 <div className="font-display" style={{ fontSize: 26, lineHeight: 1.15 }}>
-                  {game.kind === "sos" ? t("g.hero_sos", { name: game.host_name ?? "A player" }) : t("g.hero_open", { name: game.host_name ?? "A player" })}
+                  {!active ? t("g.hero_taken", { name: game.host_name ?? "A player" })
+                    : game.kind === "sos" ? t("g.hero_sos", { name: game.host_name ?? "A player" })
+                    : t("g.hero_open", { name: game.host_name ?? "A player" })}
                 </div>
               </div>
 
@@ -158,15 +171,45 @@ function PublicGamePage() {
                   <p className="text-center text-sm font-semibold" style={{ opacity: 0.65 }}>{t("g.signup_note")}</p>
                 </div>
               ) : (
-                <div className="ccard p-4 text-center space-y-2">
-                  <div className="font-display text-xl">{t("g.taken")}</div>
-                  <Link to="/post" className="cbtn cbtn-coral inline-block">🎾 {t("g.post_own")}</Link>
+                <div className="ccard p-4 text-center space-y-3">
+                  {others.length > 0 ? <OtherGames rows={others} locale={locale} t={t} /> : (
+                    <>
+                      <div className="font-display text-xl">{t("g.taken")}</div>
+                      <Link to="/post" className="cbtn cbtn-coral inline-block">🎾 {t("g.post_own")}</Link>
+                    </>
+                  )}
                 </div>
               )}
             </>
           );
         })()}
       </div>
+    </div>
+  );
+}
+
+/** Up to three open games as compact rows → their own public pages. One coral
+ *  action per screen: the rows are quiet, "post your own" is the fallback. */
+function OtherGames({ rows, locale, t }: { rows: EligibleSosRow[]; locale: string; t: (k: string, v?: Record<string, string | number>) => string }) {
+  return (
+    <div className="space-y-2 text-left">
+      <div className="csection-label" style={{ textAlign: "center" }}>{t("g.others_title")}</div>
+      {rows.map((r) => {
+        const d = new Date(r.play_at);
+        const when = `${d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" }).replace(".", "")} ${d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`;
+        return (
+          <Link key={r.id} to="/g/$id" params={{ id: r.id }} className="block"
+            style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, padding: "10px 12px", background: "rgba(253,249,238,0.6)", textDecoration: "none", color: "var(--ink)" }}>
+            <span style={{ fontSize: 18 }}>{r.kind === "sos" ? "🚨" : "🎾"}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span className="font-display" style={{ display: "block", fontSize: 17, lineHeight: 1.1, ...clampLines(1) }}>{when}</span>
+              <span style={{ display: "block", fontWeight: 700, fontSize: 13, color: "#8C5A33", ...clampLines(1) }}>📍 {r.court_name ?? r.court_city ?? ""}{r.caller_name ? ` · ${r.caller_name}` : ""}</span>
+            </span>
+            <span style={{ fontSize: 16, color: "rgba(43,33,24,0.35)" }}>›</span>
+          </Link>
+        );
+      })}
+      <Link to="/post" className="block text-center text-sm font-extrabold underline" style={{ opacity: 0.7, paddingTop: 4 }}>🎾 {t("g.post_own")}</Link>
     </div>
   );
 }

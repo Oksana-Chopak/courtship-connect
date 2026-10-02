@@ -127,14 +127,27 @@ export async function shareMessage(message: string, copiedNote: string): Promise
   await copyText(message, copiedNote);
 }
 
-/** Share link for a GAME: lands on the public preview (/g/<id>), value first —
- *  signup is asked only when the guest taps "I'm in". Carries my invite code. */
-export async function myGameShareLink(gameId: string): Promise<string> {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+/** `?code=<mine>` for public share links, or "" when the code can't be fetched —
+ *  the page still works, the invite gate asks later. */
+async function myCodeQuery(): Promise<string> {
   let code: string | null = null;
   try {
     const { data } = await (supabase as any).rpc("ensure_my_invite_code");
     code = (data as string | null) ?? null;
   } catch { /* fine — page still works, invite gate will ask */ }
-  return `${origin}/g/${gameId}${code ? `?code=${encodeURIComponent(code)}` : ""}`;
+  return code ? `?code=${encodeURIComponent(code)}` : "";
+}
+
+/** Share link for a GAME: lands on the public preview (/g/<id>), value first —
+ *  signup is asked only when the guest taps "I'm in". Carries my invite code. */
+export async function myGameShareLink(gameId: string): Promise<string> {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/g/${gameId}${await myCodeQuery()}`;
+}
+
+/** Share link for an EVENT: the public page (/e/<id>) — the old share pointed
+ *  at /events, which has no route (2026-10 funnel audit, 404 for everyone). */
+export async function myEventShareLink(eventId: string): Promise<string> {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/e/${eventId}${await myCodeQuery()}`;
 }

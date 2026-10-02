@@ -114,9 +114,24 @@ export const DEFAULT_GRANULARITY_MINUTES = 60;
 /** Earliest / latest selectable slot of day (24h). */
 export const COURT_DAY_START = 7;  // 07:00
 export const COURT_DAY_END   = 22; // 22:00
+/** For today, the first offered slot is at least this far ahead (time to
+ *  actually reach the court). */
+export const SLOT_LEAD_MIN = 60;
 
 export function cityGranularity(city: string): number {
   return BOOKING_GRANULARITY_MINUTES[city] ?? DEFAULT_GRANULARITY_MINUTES;
+}
+
+/** The day the post wizard opens on: today — or tomorrow once today has no
+ *  bookable slot left (from 21:01 the last 22:00 start is inside the lead
+ *  time). Someone opening the wizard at 22:30 wants to play tomorrow, not
+ *  to scroll an empty wheel into a greyed-out button (2026-10 funnel audit). */
+export function defaultPostDate(now: Date = new Date()): Date {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  const firstStart = now.getHours() * 60 + now.getMinutes() + SLOT_LEAD_MIN;
+  if (firstStart > COURT_DAY_END * 60) d.setDate(d.getDate() + 1);
+  return d;
 }
 
 /** All valid HH:MM slots for a city across the playable day. */
@@ -130,8 +145,7 @@ export function generateSlots(city: string, forDate?: Date, now: Date = new Date
     const d0 = new Date(forDate); d0.setHours(0, 0, 0, 0);
     const n0 = new Date(now); n0.setHours(0, 0, 0, 0);
     if (d0.getTime() === n0.getTime()) {
-      const LEAD_MIN = 60;
-      const nowMin = now.getHours() * 60 + now.getMinutes() + LEAD_MIN;
+      const nowMin = now.getHours() * 60 + now.getMinutes() + SLOT_LEAD_MIN;
       minMinutes = Math.ceil(nowMin / step) * step;
     }
   }

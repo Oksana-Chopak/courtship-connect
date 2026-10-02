@@ -6,7 +6,7 @@ import { notifySos, notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useCityNames } from "@/lib/cities";
-import { COURT_STATUSES, courtStatusMeta, SOS_FORMATS, LEVELS, isUrgent, generateSlots, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, sportMeta, type Sport } from "@/lib/courtship";
+import { COURT_STATUSES, courtStatusMeta, SOS_FORMATS, LEVELS, isUrgent, generateSlots, defaultPostDate, COURT_TYPES, courtTypeMeta, whenLabel, DURATIONS, durationLabel, type City, type CourtType, sportMeta, type Sport } from "@/lib/courtship";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -38,7 +38,8 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
 
   // Default date = Today; NO time preselected (user must pick — the From wheel
   // starts on "—", which prevents an accidental instant send).
-  const [date, setDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+  // today — or tomorrow when today has no bookable slot left (late evening)
+  const [date, setDate] = useState<Date>(() => defaultPostDate());
   const [time, setTime] = useState<string>("");
   const [courtId, setCourtId] = useState<string>("");
   const [courtType, setCourtType] = useState<CourtType>("outdoor");
@@ -436,7 +437,10 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
     } else {
       if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
       else toast.success(t("post.posted_toast"));
-      navigate({ to: "/games" });
+      // Land on the game itself with the one-time "share it" step (2026-10
+      // funnel audit): a posted game nobody's WhatsApp group hears about is
+      // the main reason the board stays quieter than the chat.
+      navigate({ to: "/sos/$id", params: { id: data.id }, search: { posted: "1" } as any });
     }
   }
 
@@ -750,13 +754,16 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
           )}
 
           {/* the one bright moment: filled coral CTA, no border */}
+          {/* No time picked (step 1 skipped, or the slot expired) → the button
+              stays live and takes the person back to the wheel, instead of a
+              greyed-out button with no reason (2026-10 funnel audit). */}
           <button
-            disabled={busy || !canSubmit}
-            onClick={onSubmitClick}
+            disabled={busy || (!!time && !canSubmit)}
+            onClick={() => { if (!time) { setStep(0); return; } onSubmitClick(); }}
             className="w-full font-extrabold"
-            style={{ background: CORAL, color: "#FFF6E8", border: "none", borderRadius: 12, padding: 16, fontSize: 18, opacity: busy || !canSubmit ? 0.55 : 1 }}
+            style={{ background: CORAL, color: "#FFF6E8", border: "none", borderRadius: 12, padding: 16, fontSize: 18, opacity: busy || (!!time && !canSubmit) ? 0.55 : 1 }}
           >
-            {busy ? "…" : guest ? `${t("post_pub.continue")} →` : editing ? t("sos.edit_save") : !time ? t("post.pick_a_time") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
+            {busy ? "…" : !time ? t("post.pick_a_time") : guest ? `${t("post_pub.continue")} →` : editing ? t("sos.edit_save") : urgent ? t("post.cta_urgent") : t("post.cta_planned")}
           </button>
         </div>
       )}

@@ -15,7 +15,7 @@ import {
 } from "@/lib/events";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { shareTo, copyText } from "@/lib/share";
+import { copyText, myEventShareLink, shareMessage } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, ShareIcon, Rackets, EditIcon, DeleteIcon, RF, clampLines } from "@/components/RailKit";
 
@@ -60,6 +60,15 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
     }
     toast.success(isPaid ? t("ev.booked_pay") : t("ev.joined"));
     onChange();
+  }
+
+  // Lands on the PUBLIC event page (/e/<id>): value first, signup at intent.
+  // The previous target (/events) had no route — 404 (2026-10 funnel audit).
+  async function shareEvent() {
+    const link = await myEventShareLink(e.id);
+    const d = new Date(e.starts_at);
+    const when = `${d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" }).replace(".", "")} ${d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`;
+    await shareMessage(t("share.event_msg", { title: e.title, when, place: e.location, link }), t("share.copied"));
   }
 
   async function leave() {
@@ -168,7 +177,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
             <div className="flex items-center gap-5 border-t border-[var(--ink)]/15 pt-3">
               <Link to="/events/new" search={{ id: e.id }} aria-label={t("ev.edit")} title={t("ev.edit")} style={{ padding: 10, margin: -7 }}><EditIcon /></Link>
               <button type="button" aria-label={t("ev.delete")} title={t("ev.delete")} style={{ padding: 10, margin: -7 }} onClick={() => setConfirming(true)}><DeleteIcon /></button>
-              <button type="button" aria-label={t("share.spread")} title={t("share.spread")} style={{ padding: 10, margin: -7 }} onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))}><ShareIcon /></button>
+              <button type="button" aria-label={t("share.spread")} title={t("share.spread")} style={{ padding: 10, margin: -7 }} onClick={() => void shareEvent()}><ShareIcon /></button>
             </div>
           )}
         </div>
@@ -184,7 +193,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
             style={{ flex: 1, textAlign: "center", background: full ? "var(--cream2)" : isPaid ? "#8C5A33" : "var(--green-pop)", color: full ? "var(--ink)" : isPaid ? "#FFF6E8" : "var(--ink)", border: "2px solid var(--ink)", borderRadius: 10, padding: "12px 10px", minHeight: 48, fontWeight: 800, fontSize: 14, opacity: busy ? 0.6 : 1 }}>
             {full ? t("ev.full_label") : isPaid ? t("ev.book_a_spot") : t("ev.express_interest")}
           </button>
-          {!guest && <button type="button" onClick={() => void shareTo("/events", t("share.event_fwd", { title: e.title }), t("invite.copied"))} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
+          {!guest && <button type="button" onClick={() => void shareEvent()} aria-label={t("share.spread")} style={{ padding: 10, margin: -7 }}><ShareIcon /></button>}
         </div>
       )}
       </div>
