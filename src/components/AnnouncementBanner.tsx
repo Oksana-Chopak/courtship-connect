@@ -37,19 +37,21 @@ export function AnnouncementBanner() {
   };
   const isInternal = ann.link?.startsWith("/");
 
+  // Quiet by design (2026-10 crystallization): a note from the founder, not a
+  // second accent — cream card, text link, one ✕.
   return (
-    <div className="ccard p-4 relative" style={{ background: "var(--green-pop)", borderColor: "var(--ink)" }}>
-      <button onClick={dismiss} aria-label={t("install.dismiss")} className="absolute top-2 right-3 text-lg opacity-50">✕</button>
-      <div className="csection-label">📣 {t("ann.tag")}</div>
-      <div className="font-extrabold text-lg mt-1 pr-6 whitespace-pre-line">{ann.body}</div>
+    <div className="rounded-xl border border-[var(--ink)]/20 px-3 py-2.5 relative" style={{ background: "var(--cream2)" }}>
+      <button onClick={dismiss} aria-label={t("install.dismiss")} className="absolute leading-none" style={{ top: 0, right: 0, padding: 12, fontSize: 17, opacity: 0.6 }}>✕</button>
+      <div className="text-xs font-extrabold uppercase tracking-widest" style={{ opacity: 0.55 }}>📣 {t("ann.tag")}</div>
+      <div className="font-semibold text-sm mt-1 pr-6 whitespace-pre-line">{ann.body}</div>
       {ann.link && (
         <a
           href={ann.link}
           target={isInternal ? undefined : "_blank"}
           rel={isInternal ? undefined : "noopener noreferrer"}
-          className="cbtn cbtn-coral mt-3 inline-flex"
+          className="inline-block mt-1.5 text-sm font-extrabold underline"
         >
-          {t("ann.cta")}
+          {t("ann.cta")} →
         </a>
       )}
     </div>

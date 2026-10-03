@@ -46,8 +46,8 @@ test.beforeEach(async ({ page }) => {
 test("landing: brand headline + one coral CTA", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: /look around|join/i })).toBeVisible();
-  // brand headline: "It's a match. Literally."
-  await expect(page.locator("h1")).toContainText(/match/i);
+  // the headline says what the app is for: "A tennis partner — tonight."
+  await expect(page.locator("h1")).toContainText(/tennis partner/i);
 });
 
 test("landing CTA → guest board peek with the join banner", async ({ page }) => {
@@ -60,8 +60,8 @@ test("landing CTA → guest board peek with the join banner", async ({ page }) =
 
 test("guest + on the tab bar routes to the post-first wizard", async ({ page }) => {
   await page.goto("/board");
-  // the FAB is the "What's happening? 🎾" button; for guests it goes straight to /post
-  await page.getByRole("button", { name: /what.s happening/i }).click();
+  // the floating "Post a game" button; for guests it goes straight to /post
+  await page.getByRole("button", { name: /post a game/i }).click();
   await expect(page).toHaveURL(/\/post/);
 });
 

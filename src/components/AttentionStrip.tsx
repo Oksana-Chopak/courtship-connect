@@ -15,6 +15,8 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   const [winners, setWinners] = useState<Record<string, string>>({});
   const [meId, setMeId] = useState<string | null>(null);
   const [flarePrompts, setFlarePrompts] = useState<any[]>([]);
+  const [rowState, setRowState] = useState<Record<string, "ask" | "no" | "confirmed">>({});
+  const setRow = (id: string, st: "ask" | "no" | "confirmed") => setRowState((p) => ({ ...p, [id]: st }));
 
   useEffect(() => {
     (async () => {
@@ -70,8 +72,17 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
     })();
   }, []);
 
-  async function onConfirm(g: GameRow, score?: string) {
-    try { await confirmGame(g.id, score, winners[g.id] || null); toast.success(t("home.confirmed")); setPending((p) => p.filter((x) => x.id !== g.id)); onChange?.(); }
+  function dismissRow(id: string) { setPending((p) => p.filter((x) => x.id !== id)); }
+  // "Yes" counts the game immediately (no form in the way); the row then offers
+  // the optional result. confirm_game is idempotent, so the follow-up is a
+  // second call that only adds score/winner.
+  async function onYes(g: GameRow) {
+    try { await confirmGame(g.id); toast.success(t("home.confirmed")); setRow(g.id, "confirmed"); onChange?.(); }
+    catch (e: any) { oops(e); }
+  }
+  async function saveResult(g: GameRow) {
+    const score = scores[g.id] ?? (g as any).score ?? "";
+    try { await confirmGame(g.id, score, winners[g.id] || null); toast.success(t("home.result_saved")); dismissRow(g.id); onChange?.(); }
     catch (e: any) { oops(e); }
   }
   async function onNoshow(g: GameRow) {
@@ -104,8 +115,13 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
 
   if (pending.length === 0 && flarePrompts.length === 0) return null;
 
+  // One line per game (2026-10 crystallization): "Did you play …?" + Yes / No.
+  // Yes counts the game at once; the optional who-won/score follow-up is a
+  // single line that leaves on save or skip. No → two quiet links.
+  const stateOf = (id: string) => rowState[id] ?? "ask";
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {flarePrompts.map((g) => (
         <div key={g.id} className="ccard p-4 space-y-3" style={{ borderColor: "var(--coral)" }}>
           <div className="font-display text-2xl">{t("home.flare_prompt_title")}</div>
@@ -118,44 +134,44 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
         const meta = pendingMeta[g.id];
         const otherName = meta?.otherName ?? "Player";
         const court = meta?.court ?? "the court";
+        const st = stateOf(g.id);
+        const chip = (on: boolean): React.CSSProperties => ({ border: "2px solid var(--ink)", borderRadius: 999, padding: "6px 10px", fontWeight: 800, fontSize: 13, background: on ? "var(--green-pop)" : "var(--cream2)" });
         return (
-          <div key={g.id} className="ccard p-4 space-y-3" style={{ borderColor: "var(--ink)" }}>
-            <div>
-              <div className="csection-label">{whenLabel(g.played_at)}</div>
-              <div className="font-display text-2xl mt-1 leading-tight">{t("home.pending_q", { court })}</div>
-            </div>
-            <input
-              value={scores[g.id] ?? (g as any).score ?? ""}
-              onChange={(e) => setScores((p) => ({ ...p, [g.id]: e.target.value }))}
-              placeholder={t("score.placeholder")}
-              className="cinput w-full"
-            />
-            <div>
-              <div className="csection-label">{t("won.title")}</div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWinners((p) => ({ ...p, [g.id]: meId && p[g.id] === meId ? "" : meId ?? "" }))}
-                  className="flex-1 rounded-full font-extrabold text-xs py-1.5"
-                  style={{ border: "2px solid var(--ink)", background: meId && winners[g.id] === meId ? "var(--green-pop)" : "var(--cream2)" }}
-                >
-                  {t("won.me")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWinners((p) => ({ ...p, [g.id]: meta?.other && p[g.id] === meta.other ? "" : meta?.other ?? "" }))}
-                  className="flex-1 rounded-full font-extrabold text-xs py-1.5"
-                  style={{ border: "2px solid var(--ink)", background: meta?.other && winners[g.id] === meta.other ? "var(--green-pop)" : "var(--cream2)" }}
-                >
-                  {t("won.other", { name: otherName })}
-                </button>
+          <div key={g.id} className="ccard p-3" style={{ borderColor: "var(--ink)" }}>
+            {st === "ask" && (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0 font-extrabold leading-snug" style={{ fontSize: 14 }}>
+                  {t("home.played_q", { name: otherName, court, when: whenLabel(g.played_at) })}
+                </div>
+                <button type="button" onClick={() => onYes(g)} className="cbtn cbtn-green shrink-0" style={{ padding: "9px 12px", fontSize: 14 }}>✅ {t("home.yes")}</button>
+                <button type="button" onClick={() => setRow(g.id, "no")} className="cbtn cbtn-ghost shrink-0" style={{ padding: "9px 12px", fontSize: 14 }}>{t("home.no")}</button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <button onClick={() => onConfirm(g, scores[g.id] ?? (g as any).score ?? undefined)} className="cbtn cbtn-green w-full">{t("home.yes_we_played")}</button>
-              <button onClick={() => onArchive(g)} className="cbtn cbtn-ghost w-full">{t("home.didnt_happen")}</button>
-              <button onClick={() => onNoshow(g)} className="cbtn cbtn-ghost w-full">{t("home.player_noshow", { name: otherName })}</button>
-            </div>
+            )}
+            {st === "no" && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-extrabold">
+                <button type="button" className="underline" onClick={() => onArchive(g)}>{t("home.didnt_happen")}</button>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <button type="button" className="underline" onClick={() => onNoshow(g)}>{t("home.player_noshow", { name: otherName })}</button>
+                <button type="button" aria-label={t("wiz.back")} className="ml-auto" style={{ opacity: 0.55, padding: "2px 6px" }} onClick={() => setRow(g.id, "ask")}>↩</button>
+              </div>
+            )}
+            {st === "confirmed" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-extrabold" style={{ fontSize: 14 }}>{t("home.counted_short")}</span>
+                <button type="button" style={chip(!!meId && winners[g.id] === meId)} onClick={() => setWinners((p) => ({ ...p, [g.id]: meId && p[g.id] === meId ? "" : meId ?? "" }))}>{t("won.me")}</button>
+                <button type="button" style={chip(!!meta?.other && winners[g.id] === meta.other)} onClick={() => setWinners((p) => ({ ...p, [g.id]: meta?.other && p[g.id] === meta.other ? "" : meta?.other ?? "" }))}>{t("won.other", { name: otherName })}</button>
+                <input
+                  value={scores[g.id] ?? (g as any).score ?? ""}
+                  onChange={(e) => setScores((p) => ({ ...p, [g.id]: e.target.value }))}
+                  placeholder={t("score.short_ph")}
+                  aria-label={t("score.placeholder")}
+                  className="cinput"
+                  style={{ width: 112, padding: "7px 10px", fontSize: 14 }}
+                />
+                <button type="button" className="cbtn cbtn-green" style={{ padding: "8px 12px", fontSize: 14 }} onClick={() => saveResult(g)}>{t("common.save")}</button>
+                <button type="button" className="underline text-sm font-extrabold" style={{ opacity: 0.65 }} onClick={() => dismissRow(g.id)}>{t("home.skip")}</button>
+              </div>
+            )}
           </div>
         );
       })}

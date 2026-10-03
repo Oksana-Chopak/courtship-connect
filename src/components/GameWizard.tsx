@@ -122,16 +122,30 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       if (first) { setCourtId(first.id); if (homeCourt) setCity(homeCourt.city as City); }
       setLevelMin(Math.max(1, lv - 1));
       setLevelMax(Math.min(5, lv + 1));
-      // Default court_type from this user's most recent post
+      // Smart defaults from this user's most recent post (2026-10
+      // crystallization): same court, surface, format, level range, duration
+      // and court status as last time — most posts become "pick a time, post".
+      // Editing and the guest-draft rescue below override these.
       const { data: last } = await (supabase as any)
         .from("sos_requests")
-        .select("court_type")
+        .select("court_type,court_id,format,level_min,level_max,duration_min,court_status")
         .eq("caller_id", u.user.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const lastCt = (last as any)?.court_type as CourtType | undefined;
-      if (lastCt === "indoor" || lastCt === "outdoor") setCourtType(lastCt);
+      const L = (last ?? null) as { court_type?: string; court_id?: string; format?: string; level_min?: number; level_max?: number; duration_min?: number; court_status?: string } | null;
+      if (L && !editing) {
+        if (L.court_type === "indoor" || L.court_type === "outdoor") setCourtType(L.court_type);
+        const lastCourt = L.court_id ? cs.find((c) => c.id === L.court_id) : undefined;
+        if (lastCourt) { setCourtId(lastCourt.id); setCity(lastCourt.city as City); }
+        if (L.format && SOS_FORMATS.some((f) => f.value === L.format)) setFormat(L.format as typeof SOS_FORMATS[number]["value"]);
+        if (typeof L.level_min === "number" && typeof L.level_max === "number" && L.level_min >= 1 && L.level_max <= 5 && L.level_min <= L.level_max) {
+          if (L.level_min === 1 && L.level_max === 5) setAnyone(true);
+          else { setAnyone(false); setLevelMin(L.level_min); setLevelMax(L.level_max); }
+        }
+        if (typeof L.duration_min === "number" && DURATIONS.includes(L.duration_min as typeof DURATIONS[number])) setDuration(L.duration_min);
+        if (L.court_status && COURT_STATUSES.some((c) => c.value === L.court_status)) setCourtStatus(L.court_status as typeof COURT_STATUSES[number]["value"]);
+      }
 
       // Rescue path (2026-08-12 audit P0-1): a guest draft that could NOT
       // auto-publish after signup was kept — prefill everything they typed so

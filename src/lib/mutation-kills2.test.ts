@@ -266,13 +266,39 @@ describe("share: rpc names + exact message assembly", () => {
   });
   it("shareInvite: byte-exact final message (no leftover placeholders, no mangling)", async () => {
     const S = await import("./share");
-    H.queue.push({ data: "ZZZ" });
+    H.queue.push({ data: "ZZZ" }, { data: { name: "  Oksana Chopak " } });
     const share = vi.fn().mockResolvedValue(undefined);
     (navigator as unknown as Record<string, unknown>).share = share;
     await S.shareInvite("Join: {link} code {code}", "copied");
+    // plain invite → the LIVE BOARD with the inviter's first name (trimmed,
+    // first word only) — value first, the code rides into signup
     expect(share.mock.calls[0][0]).toEqual({
-      text: `Join: ${window.location.origin}/auth?code=ZZZ code ZZZ`,
+      text: `Join: ${window.location.origin}/board?code=ZZZ&by=Oksana code ZZZ`,
     });
+    expect(args("from")).toEqual([["profiles"]]);
+    expect(args("select")).toEqual([["name"]]);
+    expect(args("eq")).toEqual([["id", "u-oxy"]]);
+  });
+  it("myInviteLink: the inviter name is capped at 30 chars, and skipped when unknown", async () => {
+    const S = await import("./share");
+    const long = "Abcdefghijklmnopqrstuvwxyzabcdefghij"; // 36 chars, no spaces
+    H.queue.push({ data: "ZZZ" }, { data: { name: long } });
+    expect(await S.myInviteLink()).toBe(`${window.location.origin}/board?code=ZZZ&by=${long.slice(0, 30)}`);
+    for (const bad of [{ data: { name: "" } }, { data: { name: "   " } }, { data: { name: null } }, { data: null }, new Error("net")]) {
+      H.queue.push({ data: "ZZZ" }, bad);
+      expect(await S.myInviteLink()).toBe(`${window.location.origin}/board?code=ZZZ`);
+    }
+  });
+  it("myInviteLink: signed out → no profile lookup at all; a deep-link next → /auth and no lookup either", async () => {
+    const S = await import("./share");
+    H.user = null;
+    H.queue.push({ data: "ZZZ" });
+    expect(await S.myInviteLink()).toBe(`${window.location.origin}/board?code=ZZZ`);
+    expect(args("from")).toEqual([]);
+    H.user = { id: "u-oxy" };
+    H.queue.push({ data: "ZZZ" });
+    expect(await S.myInviteLink("/sos/1?join=t")).toBe(`${window.location.origin}/auth?code=ZZZ&next=%2Fsos%2F1%3Fjoin%3Dt`);
+    expect(args("from")).toEqual([]);
   });
   it("shareInvite with a code-less link: the {code} slot goes out EMPTY, byte-exact", async () => {
     const S = await import("./share");

@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { consumeNext } from "@/lib/share";
-import { peekDraftGame } from "@/lib/draftGame";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileWizard, emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
+import { emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
+import { QuickProfile } from "@/components/QuickProfile";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { useI18n } from "@/lib/i18n";
@@ -21,7 +21,6 @@ function Onboarding() {
   const [uid, setUid] = useState<string | null>(null);
   const [initial, setInitial] = useState<ProfileFormValues | null>(null);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
   // If the invite gate ever rejects the save, we stash the filled-in answers
   // here and let the user drop in a fresh code and finish — instead of a
   // dead-end toast that throws away everything they typed.
@@ -56,9 +55,10 @@ function Onboarding() {
     // which also hid the later "Want to hear the flares?" card forever. The
     // permission is asked with context instead: the StandaloneNotifPrompt card
     // on the board (one coral "yes", one "skip") and the Settings toggle.
+    // No "you're in" interstitial either (2026-10 crystallization): the board —
+    // or the game/event they came for — IS the welcome.
     const _n = consumeNext();
-    if (_n) { window.location.href = _n; return; }
-    setDone(true);
+    window.location.href = _n || "/board";
   }
 
   // "ok" | "invite" (recoverable invite-gate failure) | "other"
@@ -106,19 +106,6 @@ function Onboarding() {
     if (res === "invite") { setPendingProfile(v); setRetryCode(""); }
   }
 
-  // Persist progress on each step so an unfinished onboarding never loses data
-  // (photos, name, etc.). Best-effort: the final submit remains the source of truth.
-  async function saveProgress(v: ProfileFormValues) {
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const code =
-        ((u.user?.user_metadata as any)?.signup_code as string | undefined) ||
-        (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) || "" : "") ||
-        "";
-      await (supabase as any).rpc("save_my_profile", { _data: { ...v, signup_code: code } });
-    } catch { /* ignore — final submit will surface any real error */ }
-  }
-
   async function handleRetry() {
     const code = retryCode.trim().toUpperCase();
     if (code.length < 3) { toast.error(t("auth.invite_bad")); return; }
@@ -134,39 +121,12 @@ function Onboarding() {
 
   if (!uid || !initial) return <div className="terry-bg min-h-screen" />;
 
-  if (done) {
-    return (
-      <div className="terry-bg min-h-screen px-5 py-8 font-body text-[var(--ink)]">
-        <div className="max-w-md mx-auto">
-          <div className="ccard p-6 text-center space-y-4">
-            <div className="text-5xl">🎾</div>
-            <h1 className="font-display text-3xl leading-tight">{t("ob.first_title")}</h1>
-            <p className="font-semibold" style={{ opacity: 0.75 }}>{t("ob.first_sub")}</p>
-            <div className="ccard p-4 text-left" style={{ borderColor: "var(--green-pop)" }}>
-              <div className="csection-label">📈 {t("ob.season_title")}</div>
-              <div className="flex items-center gap-3 mt-2 justify-center" style={{ fontSize: 26 }}>
-                <span>🎾</span><span>🚑</span><span>🤝</span><span>🎪</span>
-              </div>
-              <div className="font-extrabold text-center mt-2" style={{ fontSize: 15 }}>{t("ob.season_line")}</div>
-            </div>
-            {!peekDraftGame() && (
-              <button onClick={() => navigate({ to: "/sos/new", search: { edit: undefined } })} className="cbtn cbtn-coral w-full">🎾 {t("ob.first_post")}</button>
-            )}
-            <button onClick={() => navigate({ to: "/board" })} className={`cbtn w-full ${peekDraftGame() ? "cbtn-coral" : "cbtn-ghost"}`}>{t("ob.first_go")}</button>
-            <button onClick={() => navigate({ to: "/matches", search: { log: true } })} className="cbtn cbtn-ghost w-full">✅ {t("ob.first_log")}</button>
-            <button onClick={() => navigate({ to: "/players" })} className="cbtn cbtn-ghost w-full">{t("ob.first_browse")}</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="terry-bg min-h-screen px-5 py-8 font-body text-[var(--ink)]">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="terry-bg min-h-screen px-5 py-6 font-body text-[var(--ink)]">
+      <div className="max-w-md mx-auto space-y-4">
         <div>
-          <h1 className="font-display text-4xl mt-1">{t("onboarding.title")}</h1>
-          <p className="text-[var(--ink)] font-semibold">{t("onboarding.sub")}</p>
+          <h1 className="font-display text-3xl mt-1">{t("onboarding.title")}</h1>
+          <p className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("onboarding.sub")}</p>
         </div>
 
         {pendingProfile && (
@@ -189,14 +149,7 @@ function Onboarding() {
         )}
 
         <div className="ccard p-5">
-          <ProfileWizard
-            initial={initial}
-            userId={uid}
-            submitLabel={t("wiz.save_see")}
-            busy={busy}
-            onSubmit={handleSubmit}
-            onProgress={saveProgress}
-          />
+          <QuickProfile initial={initial} userId={uid} submitLabel={t("qp.cta")} busy={busy} onSubmit={handleSubmit} />
         </div>
       </div>
     </div>

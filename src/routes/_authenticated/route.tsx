@@ -1,4 +1,5 @@
 import { BallHeart } from "@/components/RailKit";
+import { Avatar } from "@/components/Avatar";
 import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,18 +96,29 @@ function AuthedShell() {
           </Link>
         </div>
       </header>
-      {guest && (
-        <div className="shrink-0 border-b-2 border-[var(--ink)]" style={{ background: "var(--green-pop)" }}>
-          <div className="max-w-md mx-auto px-5 py-2 flex items-center gap-2">
-            <span className="text-sm font-extrabold flex-1 leading-tight">👀 {t("guest.banner")}</span>
-            <Link to="/auth" search={joinSearch(loc.pathname)} className="cbtn cbtn-coral shrink-0" style={{ padding: "7px 14px", fontSize: 13 }}>
-              {t("guest.join")}
-            </Link>
+      {guest && (() => {
+        // Invite landing: /board?code=<invite>&by=<first name> (myInviteLink).
+        // The inviter's name makes the banner personal; the code rides into signup.
+        const sp = (loc.search ?? {}) as Record<string, unknown>;
+        const inviteCode = typeof sp.code === "string" && sp.code ? sp.code : undefined;
+        const inviteBy = typeof sp.by === "string" && sp.by ? sp.by.slice(0, 30) : undefined;
+        return (
+          <div className="shrink-0 border-b-2 border-[var(--ink)]" style={{ background: "var(--green-pop)" }}>
+            <div className="max-w-md mx-auto px-5 py-2 flex items-center gap-2">
+              {inviteBy && <Avatar src={null} name={inviteBy} seed={inviteBy} size={30} />}
+              <span className="text-sm font-extrabold flex-1 leading-tight">
+                {inviteBy ? t("guest.invited_by", { name: inviteBy }) : `👀 ${t("guest.banner")}`}
+              </span>
+              <Link to="/auth" search={{ ...joinSearch(loc.pathname), code: inviteCode } as any} className="cbtn cbtn-coral shrink-0" style={{ padding: "7px 14px", fontSize: 13 }}>
+                {t("guest.join")}
+              </Link>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       <main ref={mainRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-md mx-auto px-5 py-6">
+        {/* extra bottom room so the last card can scroll clear of the floating "Post a game" pill */}
+        <div className="max-w-md mx-auto px-5 pt-6 pb-24">
           <RouteErrorBoundary resetKey={loc.pathname}>
             <Outlet />
           </RouteErrorBoundary>

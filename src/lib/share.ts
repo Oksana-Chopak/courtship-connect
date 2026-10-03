@@ -27,9 +27,28 @@ export function consumeNext(): string | null {
   }
 }
 
+/** First name of the signed-in player — for "{name} invited you" on the invite
+ *  landing. "" whenever anything is missing (signed out, no profile, network). */
+async function myFirstName(): Promise<string> {
+  // Stryker disable BlockStatement: an emptied catch returns undefined, which the caller truth-tests exactly like "" — identical link.
+  try {
+    const { data: u } = await supabase.auth.getUser();
+    // Stryker disable next-line OptionalChaining: a null user throws inside this try and lands in the same "" — observably identical.
+    const uid = u.user?.id;
+    if (!uid) return "";
+    const { data } = await (supabase as any).from("profiles").select("name").eq("id", uid).maybeSingle();
+    const n = String((data && data.name) ?? "").trim().split(" ")[0];
+    return n.slice(0, 30);
+  } catch { return ""; }
+  // Stryker restore BlockStatement
+}
+
 // Signup is open (2026-08-06), but a shared link still carries the user's invite
 // code — it auto-buddies the newcomer with the inviter and credits the referral.
-// An optional `next` deep-links them straight to a specific game once they're in.
+// A plain invite lands on the LIVE BOARD (value first: who's playing, with an
+// "{name} invited you" banner; the code rides along into signup — 2026-10
+// crystallization). An optional `next` deep-links straight through signup to a
+// specific game instead.
 export async function myInviteLink(next?: string): Promise<string> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   let code: string | null = null;
@@ -42,8 +61,13 @@ export async function myInviteLink(next?: string): Promise<string> {
   if (!code) return origin;
   const params = new URLSearchParams({ code });
   const p = safePath(next);
-  if (p) params.set("next", p);
-  return `${origin}/auth?${params.toString()}`;
+  if (p) {
+    params.set("next", p);
+    return `${origin}/auth?${params.toString()}`;
+  }
+  const by = await myFirstName();
+  if (by) params.set("by", by);
+  return `${origin}/board?${params.toString()}`;
 }
 
 // One-tap "invite a friend" — builds my invite link + code and opens the share

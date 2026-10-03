@@ -3,14 +3,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import { FLAGS } from "@/lib/flags";
+import { fetchPublicBoard } from "@/lib/guest";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Courtship — It's a match. Literally." },
-      { name: "description", content: "Tennis partner matching for Uppsala & Stockholm. Free while in beta." },
-      { property: "og:title", content: "Courtship" },
-      { property: "og:description", content: "Find your hitting partner in Uppsala & Stockholm." },
+      { title: "Courtship — a tennis partner, tonight" },
+      { name: "description", content: "Post a game or join one. Tennis partners in Uppsala & Stockholm, free." },
+      { property: "og:title", content: "Courtship — a tennis partner, tonight" },
+      { property: "og:description", content: "Post a game or join one. Uppsala & Stockholm, free." },
     ],
   }),
   component: Index,
@@ -24,6 +25,10 @@ function Index() {
   // off rendering the marketing landing so they don't see a "choose again"
   // screen and get bounced straight into the app instead.
   const [ready, setReady] = useState(false);
+  // Live pulse under the headline: how many games are open right now. Never
+  // advertises a zero — the line simply stays away on a quiet day.
+  const [openGames, setOpenGames] = useState(0);
+  useEffect(() => { fetchPublicBoard().then((rows) => setOpenGames(rows.length)).catch(() => {}); }, []);
 
   useEffect(() => {
     let routed = false;
@@ -90,6 +95,12 @@ function Index() {
         <p style={{ fontWeight: 500, fontSize: 15, color: "rgba(43,33,24,0.6)", marginTop: 14, maxWidth: 268, lineHeight: 1.45 }}>
           {t("brand.subtitle")}
         </p>
+        {openGames > 0 && (
+          <div role="status" style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 999, padding: "6px 12px", background: "rgba(253,249,238,0.7)", fontWeight: 800, fontSize: 13 }}>
+            <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--coral)" }} />
+            {openGames === 1 ? t("index.pulse_one") : t("index.pulse", { n: openGames })}
+          </div>
+        )}
         <div style={{ marginTop: 16 }}>
           <div className="font-display" style={{ fontSize: 16, color: "#8C5A33", whiteSpace: "nowrap" }}>📍 {t("brand.cities")}</div>
           <div style={{ fontWeight: 600, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(43,33,24,0.38)", marginTop: 4 }}>{t("brand.beta_tag")}</div>

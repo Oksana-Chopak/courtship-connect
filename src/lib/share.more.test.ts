@@ -62,6 +62,10 @@ describe("myInviteLink / myGameShareLink", () => {
     rpcMock.mockResolvedValueOnce({ data: null });
     expect(await myInviteLink()).toBe(window.location.origin);
   });
+  it("plain invite lands on the live board; the name lookup failing (no auth mock here) just drops the by= param", async () => {
+    rpcMock.mockResolvedValueOnce({ data: "ABC123" });
+    expect(await myInviteLink()).toBe(`${window.location.origin}/board?code=ABC123`);
+  });
   it("game share link carries the encoded code when available", async () => {
     rpcMock.mockResolvedValueOnce({ data: "A B" });
     expect(await myGameShareLink("g1")).toBe(`${window.location.origin}/g/g1?code=A%20B`);

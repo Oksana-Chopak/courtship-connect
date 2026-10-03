@@ -9,6 +9,7 @@ import { MembershipCard } from "@/components/MembershipCard";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
 import { joinSearch } from "@/lib/guest";
+import { FLAGS } from "@/lib/flags";
 
 export const Route = createFileRoute("/_authenticated/me")({
   head: () => ({ meta: [{ title: "Profile — Courtship" }] }),
@@ -108,6 +109,16 @@ function MePage() {
 
       {/* Matches — friends now live in the Players tab, not here */}
       <MenuRail to="/matches" emoji="🎾" bar="#C9EE3F" bg="#EEF6D6" title={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />
+      <MenuRail to="/matches" search={{ log: true }} emoji="✅" bar="#C9EE3F" bg="#EEF6D6" title={t("plus.log")} sub={t("plus.log_sub")} />
+
+      {/* Everything that used to crowd the tab bar and the "+" sheet (2026-10
+          crystallization): still one tap away, just not in the way. */}
+      <div className="csection-label pt-1">{t("menu.more")}</div>
+      <MenuRail to="/events/new" emoji="🎪" bar="#8C5A33" bg="#F1E7DC" title={t("plus.host")} sub={t("plus.host_sub")} />
+      {FLAGS.swipeDeck && <MenuRail to="/match" emoji="💘" bar="#F0705B" bg="#FCE9E4" title={t("match.title")} sub={t("menu.crush_sub")} />}
+      {FLAGS.luckyServe && <MenuRail to="/lucky" emoji="🎰" bar="#F0705B" bg="#FCE9E4" title={t("menu.lucky")} sub={t("menu.lucky_sub")} />}
+      <MenuRail to="/leaders" emoji="📊" bar="#9B9186" bg="#ECE8E0" title={t("tabs.leaders")} sub={t("menu.leaders_sub")} />
+      <MenuRail to="/coach" emoji="🎓" bar="#9B9186" bg="#ECE8E0" title={t("plus.coach")} sub={t("plus.coach_sub")} />
       <MenuRail to="/plans" emoji="🏆" bar="#8C5A33" bg="#F1E7DC" title={t("menu.plans")} sub={t("menu.plans_sub")} />
 
       {/* Courts Passport — collection lives at the bottom */}
@@ -120,9 +131,9 @@ function MePage() {
   );
 }
 
-function MenuRail({ to, emoji, bar, bg, title, sub }: { to: string; emoji: string; bar: string; bg: string; title: string; sub: string }) {
+function MenuRail({ to, search, emoji, bar, bg, title, sub }: { to: string; search?: Record<string, unknown>; emoji: string; bar: string; bg: string; title: string; sub: string }) {
   return (
-    <Link to={to as any} style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", textDecoration: "none", color: "var(--ink)" }}>
+    <Link to={to as any} search={search as any} style={{ display: "flex", border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, overflow: "hidden", background: "rgba(253,249,238,0.6)", textDecoration: "none", color: "var(--ink)" }}>
       <div style={{ width: 58, flexShrink: 0, background: bg, borderLeft: `4px solid ${bar}`, borderRight: "1px solid rgba(43,33,24,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontSize: 24 }}>{emoji}</span>
       </div>

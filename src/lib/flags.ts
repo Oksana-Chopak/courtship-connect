@@ -5,4 +5,5 @@ export const FLAGS = {
   luckyServe: true,  // 🎰 Lucky Serve roulette
   swipeDeck: true,   // 💘 Mystery Match swipe deck
   guestPeek: true,   // 👀 logged-out visitors can see board/players/leaders (read-only)
+  crushTab: false,   // 💘 Court Crush as its own tab (2026-10: demoted to a row on Me — flip to bring the tab back)
 };

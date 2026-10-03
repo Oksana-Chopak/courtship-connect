@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareInvite, myGameShareLink, shareMessage } from "@/lib/share";
 import { fetchEligibleSos, fetchOpenGames, fetchMyActiveGames, fetchMyUpcomingClaims, withdrawClaim, claimSos, applyToGame, fetchMyApplicationSosIds, fetchApplicantCounts, hydrateCallers, type EligibleSosRow } from "@/lib/sos";
-import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, weeklyStreak, type CourtType, type City, sportMeta, rescuerTier , tierNameKey } from "@/lib/courtship";
+import { whenLabel, hourRange, levelMeta, courtTypeMeta, COURT_TYPES, LEVELS, type CourtType, type City, sportMeta } from "@/lib/courtship";
 import { CourtStatusBadge } from "@/components/CourtStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { fetchApprovedEvents, fetchMyAttendance, joinEvent, type EventRow } from "@/lib/events";
@@ -12,25 +12,27 @@ import { fetchPublicBoard, joinSearch } from "@/lib/guest";
 import { useCityNames } from "@/lib/cities";
 import { EventCard } from "@/components/EventCard";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
+import { TimeRail, RailShell, RailPhoto, Rackets, ShareIcon, EditIcon, DeleteIcon, CalIcon, RF, clampLines, type RailTone } from "@/components/RailKit";
 import { AttentionStrip } from "@/components/AttentionStrip";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { checkCelebration, type Celebration } from "@/lib/celebrate";
-import { fetchMyGameHistory } from "@/lib/games";
 import { InstallBanner, StandaloneNotifPrompt } from "@/components/InstallBanner";
 import { GetStarted } from "@/components/GetStarted";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { CommunityStatsWidget } from "@/components/CommunityStats";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),
   // seg kept optional for backwards-compatible links; the board now shows one merged list.
-  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned"; join_event?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned"; join_event?: string; code?: string; by?: string } => ({
     seg: s.seg === "planned" ? "planned" : s.seg === "urgent" ? "urgent" : undefined,
     // Carried through the guest signup funnel by EventCard — board finishes the join.
     join_event: typeof s.join_event === "string" && s.join_event ? s.join_event : undefined,
+    // Invite landing (2026-10): /board?code=<invite>&by=<first name> — the shell
+    // shows "{by} invited you" and hands the code to signup.
+    code: typeof s.code === "string" && s.code ? s.code : undefined,
+    by: typeof s.by === "string" && s.by ? s.by.slice(0, 30) : undefined,
   }),
   component: BoardPage,
 });
@@ -54,13 +56,9 @@ function BoardPage() {
   const [mySports, setMySports] = useState<string[]>(["tennis"]);
   const [activeSport, setActiveSport] = useState<string>("all");
   const [candCounts, setCandCounts] = useState<Map<string, number>>(new Map());
-  const [cityForStats, setCityForStats] = useState("Uppsala");
   const [gamesPlayed, setGamesPlayed] = useState<number | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const seenClaimedRef = useRef<Set<string> | null>(null);
-  const [streakWeeks, setStreakWeeks] = useState(0);
-  const [playedThisWeek, setPlayedThisWeek] = useState(true);
-  const [rescuesCount, setRescuesCount] = useState(0);
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   const [myName, setMyName] = useState<string>("");
   // Nudge queue (declutter rule): while the GetStarted card is the active
@@ -99,19 +97,18 @@ function BoardPage() {
     // parallel instead of waterfalling. Each personal fetch degrades on its own
     // so one hiccup never blanks the board.
     const profileQ = uid
-      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count,photo_url,name").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
+      ? (supabase as any).from("profiles").select("home_city,games_played,rescues_count,referrals_count,photo_url,name,sports").eq("id", uid).maybeSingle().then((r: any) => r, () => null)
       : Promise.resolve(null);
     const countQ = uid
       ? (supabase as any).from("sos_requests").select("id", { count: "exact", head: true }).eq("caller_id", uid).eq("kind", "open").then((r: any) => r?.count ?? 0, () => 0)
       : Promise.resolve(0);
-    const histQ = uid ? fetchMyGameHistory(uid, 150).catch(() => [] as any[]) : Promise.resolve([] as any[]);
     const claimsQ = uid ? fetchMyUpcomingClaims(uid).catch(() => [] as any[]) : Promise.resolve([] as any[]);
     const myAppsQ = uid ? fetchMyApplicationSosIds(uid) : Promise.resolve(new Set<string>());
 
-    const [u, p, m, ev, att, profRes, hostedCount, hist, claims, myApps] = await Promise.all([
+    const [u, p, m, ev, att, profRes, hostedCount, claims, myApps] = await Promise.all([
       fetchEligibleSos().catch(() => []), fetchOpenGames().catch(() => []), fetchMyActiveGames().catch(() => []),
       fetchApprovedEvents().catch(() => []), fetchMyAttendance().catch(() => ({} as Record<string, string>)),
-      profileQ, countQ, histQ, claimsQ, myAppsQ,
+      profileQ, countQ, claimsQ, myAppsQ,
     ]);
 
     // Enrich caller name+photo in one batch so cards can show host identity
@@ -123,18 +120,11 @@ function BoardPage() {
     setUrgent(hU); setPlanned(hP); setMine(hM); setEvents(ev); setMyAttendance(att);
     const prof = (profRes as any)?.data;
     if (prof) {
-      setCityForStats(prof.home_city ?? "Uppsala");
       setGamesPlayed(prof.games_played ?? 0);
-      setRescuesCount(prof.rescues_count ?? 0);
       setMyPhoto(prof.photo_url ?? null);
       setMyName(prof.name ?? "");
       const cel = checkCelebration(prof.games_played ?? 0, prof.rescues_count ?? 0, prof.referrals_count ?? 0, (hostedCount as number) ?? 0);
       if (cel) setCelebration(cel);
-    }
-    {
-      const st = weeklyStreak((hist as any[]).map((g) => g.played_at));
-      setStreakWeeks(st.weeks);
-      setPlayedThisWeek(st.playedThisWeek);
     }
     setMyClaims(claims as any);
     setAppliedIds(myApps as Set<string>);
@@ -237,51 +227,9 @@ function BoardPage() {
     <div className="space-y-5">
       {celebration && <CelebrationOverlay c={celebration} onClose={() => setCelebration(null)} />}
       {gamesPlayed === 0 && <GetStarted />}
-      {/* Hero — Save my set (SOS), with Plan-a-game / Host under-links */}
-      <div>
-        <p className="text-center font-display leading-tight px-2" style={{ fontSize: 18, marginBottom: 12 }}>{t("tonight.encourage")}</p>
-        {/* Same CTA language as the Home screen (2026-08 board handoff):
-            softCoral fill, NO border, cream text, soft coral shadow, and the
-            shared .cs-pulse heartbeat (defined in styles.css). */}
-        <Link to="/sos/new" search={{ planned: undefined }} className="cs-pulse" style={{ display: "flex", alignItems: "center", gap: 12, background: "#F0705B", color: "#FFF6E8", borderRadius: 12, padding: "16px 18px", boxShadow: "0 10px 22px rgba(240,112,91,0.28)", textDecoration: "none" }}>
-          <BallHeart size={26} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, lineHeight: 1 }}>{t("tonight.sos")}</div>
-            <div style={{ fontWeight: 700, fontSize: 12, opacity: 0.95, marginTop: 3 }}>{t("tonight.sos_sub")}</div>
-          </div>
-          <span style={{ fontSize: 20 }}>→</span>
-        </Link>
-        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px 20px", marginTop: 11 }}>
-          <Link to="/sos/new" search={{ planned: undefined }} className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>📅 {t("tonight.plan_game")}</Link>
-          <Link to="/events/new" className="font-extrabold text-sm underline" style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>🎪 {t("board.host_event")}</Link>
-        </div>
-      </div>
-
-      {/* Mini progress + streak (tap → season). A zero streak is demotivating
-          to advertise, so we hide the 🔥 segment until it's ≥1, and hide the
-          whole pill for brand-new users (GetStarted already welcomes them)
-          instead of showing a row of zeros (2026-07-20 design pass). */}
-      {((gamesPlayed ?? 0) > 0 || streakWeeks > 0) && (() => {
-        const rt = rescuerTier(rescuesCount);
-        const dow = new Date().getDay(); // 5=Fri 6=Sat 0=Sun
-        const atRisk = streakWeeks > 0 && !playedThisWeek && (dow === 5 || dow === 6 || dow === 0);
-        const rescueLine = atRisk
-          ? t("mini.streak_risk")
-          : rt && rt.next != null && rt.nextName ? `${rt.emoji} ${t(tierNameKey("rescuer", rt.level))} · ${t("mini.to_next", { n: rt.next - rescuesCount, name: t(tierNameKey("rescuer", rt.level + 1)) })}` : rt ? `${rt.emoji} ${t(tierNameKey("rescuer", rt.level))}` : t("mini.games", { n: gamesPlayed ?? 0 });
-        return (
-          <Link to="/progress" style={{ display: "flex", alignItems: "center", gap: 10, border: atRisk ? "1.5px solid #F0705B" : "1px solid rgba(43,33,24,0.18)", borderRadius: 12, background: atRisk ? "#FCE9E4" : "rgba(253,249,238,0.6)", padding: "9px 13px", textDecoration: "none", color: "var(--ink)" }}>
-            {streakWeeks > 0 && (
-              <>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><span style={{ fontSize: 17 }}>🔥</span>{t("mini.streak", { n: streakWeeks })}</span>
-                <span style={{ width: 1, height: 20, background: "rgba(43,33,24,0.18)" }} />
-              </>
-            )}
-            <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, color: atRisk ? "#F0705B" : undefined, ...clampLines(1) }}>{rescueLine}</span>
-            <span style={{ fontSize: 16, color: "rgba(43,33,24,0.3)" }}>›</span>
-          </Link>
-        );
-      })()}
-
+      {/* No hero, no pill, no shout (2026-10 crystallization): the board's one job
+          is "who's playing" — the list starts right here. Posting lives on the
+          "+ Post a game" button in the shell; the empty state below has it too. */}
       {mySports.length > 1 && (
         <div className="flex gap-1.5 flex-wrap">
           <button type="button" className={`cchip ${activeSport === "all" ? "cchip-on" : ""}`} onClick={() => setActiveSport("all")}>
@@ -301,22 +249,6 @@ function BoardPage() {
 
       {!newbieNudge && <InstallBanner />}
       {!newbieNudge && <StandaloneNotifPrompt />}
-
-      {/* Quiet status line, not a second coral shout: the hero above owns the
-          accent and the SOS cards below carry the urgency (audit D-16). */}
-      {!loading && urgentOthers.length > 0 && (
-        <div
-          className="rounded-xl px-4 py-2.5"
-          style={{ background: "var(--cream2)", border: "1px solid rgba(43,33,24,0.18)", color: "var(--ink)" }}
-          role="status"
-        >
-          <span className="font-extrabold text-sm">
-            🚨 {t(urgentOthers.length === 1 ? "board.rescue_one" : "board.rescue_many", { n: urgentOthers.length })}
-            {" · "}
-            <span style={{ opacity: 0.7 }}>{t("board.rescue_sub")}</span>
-          </span>
-        </div>
-      )}
 
       {loading && <div className="text-center py-8 text-[var(--ink)]">{t("rescue.listening")}</div>}
 
@@ -415,7 +347,6 @@ function BoardPage() {
         </div>
       )}
 
-      <CommunityStatsWidget city={cityForStats} />
     </div>
   );
 }
