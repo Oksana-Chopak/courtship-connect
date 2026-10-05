@@ -14,9 +14,15 @@
 // profiles.email_level ('off' → nothing), email_digest, suppressed_emails and
 // puts a one-click unsubscribe link in every footer. Copy lives in templates.ts.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { render, TEMPLATES, type Ctx, type GameLine } from "./templates.ts";
+import { render, TEMPLATES, type Ctx, type Contact, type GameLine } from "./templates.ts";
 
 const APP = "https://court-ship.com";
+/** Who signs every email and how players reach her (overridable via secrets). */
+const CONTACT: Contact = {
+  name: Deno.env.get("CONTACT_NAME") ?? "Oksana",
+  whatsapp: (Deno.env.get("CONTACT_WHATSAPP") ?? "+46700266274").replace(/\D/g, ""),
+  email: Deno.env.get("CONTACT_EMAIL") ?? "oksana.chopak@gmail.com",
+};
 const FROM = Deno.env.get("BROADCAST_FROM") ?? "Courtship <onboarding@resend.dev>";
 const BREVO_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
@@ -27,8 +33,9 @@ type AuthUser = { id: string; email: string; created_at: string; last_sign_in_at
 type Profile = {
   id: string; name: string | null; created_at: string; last_seen_at: string | null; installed_at: string | null;
   games_played: number | null; email_level: string | null; email_notifs: boolean | null; email_digest: boolean | null;
-  home_city: string | null;
+  home_city: string | null; home_cities: string[] | null;
 };
+const PROFILE_COLS = "id,name,created_at,last_seen_at,installed_at,games_played,email_level,email_notifs,email_digest,home_city,home_cities";
 type Plan = { user: AuthUser; profile: Profile | null; template: string; reason: string };
 
 function parseFrom(from: string): { name?: string; email: string } {
@@ -41,7 +48,7 @@ async function sendOne(to: string, subject: string, html: string): Promise<{ ok:
     const r = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
-      body: JSON.stringify({ sender: parseFrom(FROM), replyTo: parseFrom(FROM), to: [{ email: to }], subject, htmlContent: html }),
+      body: JSON.stringify({ sender: parseFrom(FROM), replyTo: { email: CONTACT.email, name: CONTACT.name }, to: [{ email: to }], subject, htmlContent: html }),
     });
     return { ok: r.ok, detail: r.ok ? "" : `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200) };
   }
@@ -49,7 +56,7 @@ async function sendOne(to: string, subject: string, html: string): Promise<{ ok:
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
-      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+      body: JSON.stringify({ from: FROM, to: [to], subject, html, reply_to: CONTACT.email }),
     });
     return { ok: r.ok, detail: r.ok ? "" : `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200) };
   }
@@ -90,38 +97,63 @@ async function listAuthUsers(sb: any): Promise<AuthUser[]> {
 const stockholmDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Stockholm" }).format(d); // YYYY-MM-DD
 const isMondayInStockholm = (d: Date) => new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Stockholm", weekday: "short" }).format(d) === "Mon";
 
-function whenLabel(iso: string): string {
+function whenLabels(iso: string): { en: string; sv: string } {
   const d = new Date(iso);
   const tz = "Europe/Stockholm";
   const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz }).format(d);
   const day = stockholmDay(d), today = stockholmDay(new Date()), tomorrow = stockholmDay(new Date(Date.now() + DAY));
-  const label = day === today ? "Today" : day === tomorrow ? "Tomorrow" : new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).format(d);
-  return `${label} ${time}`;
+  const en = day === today ? "Today" : day === tomorrow ? "Tomorrow" : new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).format(d);
+  const sv = day === today ? "Idag" : day === tomorrow ? "Imorgon" : new Intl.DateTimeFormat("sv-SE", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).format(d).replace(/\.$/, "");
+  return { en: `${en} ${time}`, sv: `${sv} ${time}` };
 }
 
-/** Up to 5 open public games, soonest first, with court and host names. */
-async function openGames(sb: any): Promise<{ games: GameLine[]; count: number }> {
-  const { data, count } = await sb.from("sos_requests")
-    .select("id,kind,play_at,court_id,caller_id,broadcast", { count: "exact" })
+type OpenGames = { games: GameLine[]; count: number };
+type OpenByCity = { all: OpenGames; byCity: Map<string, OpenGames> };
+
+/** Upcoming open public games with court + host names, grouped by the
+ *  court's city — an Uppsala player reads Uppsala games, a Stockholm player
+ *  Stockholm games (Oxy, 2026-10-05). `all` is the fallback for a player
+ *  without a city. Each list: soonest first, at most 5. */
+async function openGamesByCity(sb: any): Promise<OpenByCity> {
+  const { data } = await sb.from("sos_requests")
+    .select("id,kind,play_at,court_id,caller_id,broadcast")
     .eq("status", "active").gt("play_at", new Date().toISOString()).neq("broadcast", false)
-    .order("play_at", { ascending: true }).limit(5);
+    .order("play_at", { ascending: true }).limit(80);
   const rows = (data ?? []) as any[];
-  if (!rows.length) return { games: [], count: count ?? 0 };
+  const empty = (): OpenGames => ({ games: [], count: 0 });
+  const out: OpenByCity = { all: empty(), byCity: new Map() };
+  if (!rows.length) return out;
   const courtIds = [...new Set(rows.map((r) => r.court_id).filter(Boolean))];
   const hostIds = [...new Set(rows.map((r) => r.caller_id).filter(Boolean))];
   const [{ data: courts }, { data: hosts }] = await Promise.all([
     courtIds.length ? sb.from("courts").select("id,name,city").in("id", courtIds) : Promise.resolve({ data: [] }),
     hostIds.length ? sb.from("profiles").select("id,name").in("id", hostIds) : Promise.resolve({ data: [] }),
   ]);
-  const cmap = new Map((courts ?? []).map((c: any) => [c.id, c]));
-  const hmap = new Map((hosts ?? []).map((h: any) => [h.id, h.name]));
-  return {
-    count: count ?? rows.length,
-    games: rows.map((r) => {
-      const c: any = cmap.get(r.court_id);
-      return { when: whenLabel(r.play_at), court: c ? `${c.name}${c.city ? " · " + c.city : ""}` : "the court", host: hmap.get(r.caller_id) ?? "A player", url: `${APP}/sos/${r.id}`, sos: r.kind === "sos" };
-    }),
-  };
+  const cmap = new Map<string, any>((courts ?? []).map((c: any) => [c.id, c]));
+  const hmap = new Map<string, string>((hosts ?? []).map((h: any) => [h.id, String(h.name ?? "")]));
+  for (const r of rows) {
+    const c: any = cmap.get(r.court_id);
+    const w = whenLabels(r.play_at);
+    const line: GameLine = { t: new Date(r.play_at).getTime(), when: w.en, whenSv: w.sv, court: c ? `${c.name}${c.city ? " · " + c.city : ""}` : "the court", host: hmap.get(r.caller_id) || "A player", url: `${APP}/sos/${r.id}`, sos: r.kind === "sos" };
+    out.all.count++; if (out.all.games.length < 5) out.all.games.push(line);
+    const city = String(c?.city ?? "").trim();
+    if (!city) continue;
+    const bucket = out.byCity.get(city) ?? empty();
+    bucket.count++; if (bucket.games.length < 5) bucket.games.push(line);
+    out.byCity.set(city, bucket);
+  }
+  return out;
+}
+
+/** What THIS player sees: games in their home city/cities (merged, soonest
+ *  first, max 5); a player without a city sees everything. */
+function gamesFor(og: OpenByCity, p: Profile | null): OpenGames {
+  const cities = [...new Set([...(p?.home_cities ?? []), ...(p?.home_city ? [p.home_city] : [])].map((c) => String(c).trim()).filter(Boolean))];
+  if (!cities.length) return og.all;
+  let count = 0; const games: GameLine[] = [];
+  for (const city of cities) { const b = og.byCity.get(city); if (!b) continue; count += b.count; games.push(...b.games); }
+  games.sort((a, b) => (a.t ?? 0) - (b.t ?? 0)); // two cities merged → soonest first
+  return { games: games.slice(0, 5), count };
 }
 
 type World = {
@@ -134,7 +166,7 @@ type World = {
 async function loadWorld(sb: any): Promise<World> {
   const now = new Date();
   const [{ data: profs }, { data: subs }, { data: bud }, { data: posts }, { data: games }, { data: sends, error: sendsErr }] = await Promise.all([
-    sb.from("profiles").select("id,name,created_at,last_seen_at,installed_at,games_played,email_level,email_notifs,email_digest,home_city"),
+    sb.from("profiles").select(PROFILE_COLS),
     sb.from("push_subscriptions").select("user_id"),
     sb.from("buddies").select("user_low,user_high"),
     sb.from("sos_requests").select("caller_id"),
@@ -198,20 +230,36 @@ function planFor(u: AuthUser, w: World): { template: string; reason: string } | 
   return null;
 }
 
+/** The player's PERSONAL invite link — one code per player, never shared.
+ *  Mirrors public.ensure_my_invite_code(): reuse the active code, else mint
+ *  FIRSTNAME-XXX (50 uses) the same way the app does, so the link in the
+ *  email and the link in the app are the same one. */
 async function inviteLinkFor(sb: any, uid: string, firstName: string): Promise<string | undefined> {
-  const { data } = await sb.from("invite_codes").select("code,active").eq("owner_id", uid).limit(1).maybeSingle();
-  if (!data?.code || data.active === false) return undefined;
-  const q = new URLSearchParams({ code: data.code });
+  let code: string | undefined;
+  const { data } = await sb.from("invite_codes").select("code").eq("owner_id", uid).eq("active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  code = data?.code;
+  if (!code) {
+    let base = (firstName || "PLAYER").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "PLAYER";
+    for (let i = 0; i < 10 && !code; i++) {
+      const candidate = `${base}-${crypto.randomUUID().replace(/-/g, "").slice(0, 3).toUpperCase()}`;
+      const { error } = await sb.from("invite_codes").insert({ code: candidate, uses_remaining: 50, active: true, owner_id: uid });
+      if (!error) code = candidate;
+      else if (!/duplicate|unique|23505/i.test(error.message ?? "")) break;
+    }
+  }
+  if (!code) return undefined;
+  const q = new URLSearchParams({ code });
   if (firstName) q.set("by", firstName);
   return `${APP}/board?${q.toString()}`;
 }
 
-async function buildCtx(sb: any, u: AuthUser, p: Profile | null, template: string, og: { games: GameLine[]; count: number }, token: string): Promise<Ctx> {
+async function buildCtx(sb: any, u: AuthUser, p: Profile | null, template: string, og: OpenByCity, token: string): Promise<Ctx> {
   const firstName = String(p?.name ?? "").trim().split(" ")[0];
+  const mine = gamesFor(og, p);
   const ctx: Ctx = {
-    firstName, app: APP,
+    firstName, app: APP, contact: CONTACT,
     unsubUrl: `${APP}/unsubscribe?token=${token}`, settingsUrl: `${APP}/settings`,
-    openCount: og.count, games: og.games, installed: !!p?.installed_at, city: p?.home_city ?? undefined,
+    openCount: mine.count, games: mine.games, installed: !!p?.installed_at, city: p?.home_city ?? p?.home_cities?.[0] ?? undefined,
   };
   if (template === "invite_14") ctx.inviteLink = await inviteLinkFor(sb, u.id, firstName);
   return ctx;
@@ -248,10 +296,10 @@ Deno.serve(async (req) => {
     if (admin && typeof body.preview === "string") {
       const template = body.preview;
       if (!(TEMPLATES as readonly string[]).includes(template)) return json({ ok: false, error: "unknown_template" }, 400);
-      const { data: p } = await sb.from("profiles").select("id,name,created_at,last_seen_at,installed_at,games_played,email_level,email_notifs,email_digest,home_city").eq("id", admin.id).maybeSingle();
-      const og = await openGames(sb);
+      const { data: p } = await sb.from("profiles").select(PROFILE_COLS).eq("id", admin.id).maybeSingle();
+      const og = await openGamesByCity(sb);
       const ctx = await buildCtx(sb, { id: admin.id, email: admin.email, created_at: p?.created_at ?? new Date().toISOString(), last_sign_in_at: null }, p ?? null, template, og, await unsubToken(sb, admin.email));
-      if (template === "invite_14" && !ctx.inviteLink) ctx.inviteLink = `${APP}/board?code=YOURCODE&by=${encodeURIComponent(ctx.firstName || "Oxy")}`;
+      if (template === "invite_14" && !ctx.inviteLink) ctx.inviteLink = `${APP}/board?code=YOURCODE&by=${encodeURIComponent(ctx.firstName || CONTACT.name)}`;
       const r = render(template, ctx)!;
       const s = await sendOne(admin.email, `[preview] ${r.subject}`, r.html);
       return json({ ok: s.ok, sent: s.ok ? 1 : 0, detail: s.detail || undefined, enabled });
@@ -268,11 +316,11 @@ Deno.serve(async (req) => {
       const { data: au } = await sb.auth.admin.getUserById(body.user_id);
       const email = au?.user?.email;
       if (!email) return json({ ok: true, skipped: "no_email" });
-      const { data: p } = await sb.from("profiles").select("id,name,created_at,last_seen_at,installed_at,games_played,email_level,email_notifs,email_digest,home_city").eq("id", body.user_id).maybeSingle();
+      const { data: p } = await sb.from("profiles").select(PROFILE_COLS).eq("id", body.user_id).maybeSingle();
       const level = p?.email_level ?? (p?.email_notifs === false ? "off" : "important");
       if (level === "off") return json({ ok: true, skipped: "email_off" });
       if ((await dropSuppressed(sb, [email])).has(email)) return json({ ok: true, skipped: "suppressed" });
-      const og = await openGames(sb);
+      const og = await openGamesByCity(sb);
       const ctx = await buildCtx(sb, { id: body.user_id, email, created_at: au!.user!.created_at, last_sign_in_at: null }, p ?? null, template, og, await unsubToken(sb, email));
       const r = render(template, ctx)!;
       const s = await sendOne(email, r.subject, r.html);
@@ -298,12 +346,12 @@ Deno.serve(async (req) => {
     }
 
     const suppressed = await dropSuppressed(sb, plans.map((pl) => pl.user.email));
-    const og = await openGames(sb);
+    const og = await openGamesByCity(sb);
     let sent = 0; const failures: string[] = []; const sentCounts: Record<string, number> = {};
     for (const pl of plans.slice(0, DAILY_CAP)) {
       if (suppressed.has(pl.user.email)) continue;
-      if (pl.template === "digest" && og.count === 0) continue; // never a digest of nothing
       const ctx = await buildCtx(sb, pl.user, pl.profile, pl.template, og, await unsubToken(sb, pl.user.email));
+      if (pl.template === "digest" && !ctx.openCount) continue; // never a digest of nothing — in THEIR city
       const r = render(pl.template, ctx);
       if (!r) continue;
       const s = await sendOne(pl.user.email, r.subject, r.html);

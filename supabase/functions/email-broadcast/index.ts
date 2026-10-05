@@ -24,6 +24,22 @@ const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
 const BREVO_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 
+/** Who signs and how players reach her — same block as the lifecycle emails. */
+const CONTACT = {
+  name: Deno.env.get("CONTACT_NAME") ?? "Oksana",
+  whatsapp: (Deno.env.get("CONTACT_WHATSAPP") ?? "+46700266274").replace(/\D/g, ""),
+  email: Deno.env.get("CONTACT_EMAIL") ?? "oksana.chopak@gmail.com",
+};
+function contactBlock(): string {
+  const wa = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(`Hej ${CONTACT.name}! `)}`;
+  return `<div style="margin-top:18px;padding-top:12px;border-top:1px solid rgba(43,33,24,.15);font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5">
+      <div style="font-weight:bold">Frågor? Skriv direkt till mig · Questions? Write to me directly</div>
+      <div style="margin-top:8px"><a href="${wa}" style="display:inline-block;border:2px solid #2B2118;border-radius:10px;padding:7px 12px;color:#2B2118;font-weight:bold;text-decoration:none;background:#fff">💬 WhatsApp</a>
+        <span style="color:#8C5A33">&nbsp;·&nbsp;</span><a href="mailto:${CONTACT.email}" style="color:#2B2118;font-weight:bold">${CONTACT.email}</a></div>
+      <div style="margin-top:8px;font-family:Georgia,serif;font-size:14px">— ${CONTACT.name}, Courtship</div>
+    </div>`;
+}
+
 /** "Name <email>" → Brevo sender object; bare address works too. */
 function parseFrom(from: string): { name?: string; email: string } {
   const m = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
@@ -48,6 +64,7 @@ async function sendBatch(batch: Mail[]): Promise<{ sent: string[]; failed: Array
           headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
           body: JSON.stringify({
             sender: parseFrom(m.from),
+            replyTo: { email: CONTACT.email, name: CONTACT.name },
             to: m.to.map((email) => ({ email })),
             subject: m.subject,
             htmlContent: m.html,
@@ -120,12 +137,13 @@ function html(bodyText: string, unsubUrl: string): string {
     <div style="font-size:22px;font-weight:bold;margin-bottom:18px;">🎾 Courtship</div>
     <div style="background:#FDF9EE;border:2px solid #2B2118;border-radius:14px;padding:22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">
       ${paragraphs}
+      ${contactBlock()}
     </div>
-    <p style="font-size:12px;color:#8C5A33;margin-top:16px;font-family:Arial,Helvetica,sans-serif;">
-      You're getting this because you have a Courtship account.
-      Reply to this email to reach Oksana directly.
-      <a href="${unsubUrl}" style="color:#8C5A33">Unsubscribe</a> or manage emails in
-      <a href="${APP}/settings" style="color:#8C5A33">Settings</a>.
+    <p style="font-size:12px;color:#8C5A33;margin-top:16px;font-family:Arial,Helvetica,sans-serif;line-height:1.5">
+      Du får det här för att du har ett Courtship-konto. Svara på mejlet så når du ${CONTACT.name} direkt.
+      <a href="${unsubUrl}" style="color:#8C5A33">Avsluta prenumeration</a> · <a href="${APP}/settings" style="color:#8C5A33">Inställningar</a><br>
+      You're getting this because you have a Courtship account. Reply to this email to reach ${CONTACT.name} directly.
+      <a href="${unsubUrl}" style="color:#8C5A33">Unsubscribe</a> · <a href="${APP}/settings" style="color:#8C5A33">Settings</a>
     </p>
   </div></body></html>`;
 }

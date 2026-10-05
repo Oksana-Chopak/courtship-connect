@@ -15,6 +15,22 @@ const NOTIFY_SECRET = Deno.env.get("NOTIFY_SECRET") ?? "";
 
 const BREVO_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 
+/** Who signs and how players reach her — same block as the lifecycle emails. */
+const CONTACT = {
+  name: Deno.env.get("CONTACT_NAME") ?? "Oksana",
+  whatsapp: (Deno.env.get("CONTACT_WHATSAPP") ?? "+46700266274").replace(/\D/g, ""),
+  email: Deno.env.get("CONTACT_EMAIL") ?? "oksana.chopak@gmail.com",
+};
+function contactBlock(): string {
+  const wa = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(`Hej ${CONTACT.name}! `)}`;
+  return `<div style="margin-top:18px;padding-top:12px;border-top:1px solid rgba(43,33,24,.15);font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5">
+      <div style="font-weight:bold">Frågor? Skriv direkt till mig · Questions? Write to me directly</div>
+      <div style="margin-top:8px"><a href="${wa}" style="display:inline-block;border:2px solid #2B2118;border-radius:10px;padding:7px 12px;color:#2B2118;font-weight:bold;text-decoration:none;background:#fff">💬 WhatsApp</a>
+        <span style="color:#8C5A33">&nbsp;·&nbsp;</span><a href="mailto:${CONTACT.email}" style="color:#2B2118;font-weight:bold">${CONTACT.email}</a></div>
+      <div style="margin-top:8px;font-family:Georgia,serif;font-size:14px">— ${CONTACT.name}, Courtship</div>
+    </div>`;
+}
+
 /** "Name <email>" → Brevo sender object; bare address works too. */
 function parseFrom(from: string): { name?: string; email: string } {
   const m = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
@@ -35,6 +51,7 @@ async function sendBatch(batch: Array<{ from: string; to: string[]; subject: str
         headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
         body: JSON.stringify({
           sender: parseFrom(m.from),
+          replyTo: { email: CONTACT.email, name: CONTACT.name },
           to: m.to.map((email) => ({ email })),
           subject: m.subject,
           htmlContent: m.html,
@@ -80,10 +97,12 @@ function html(title: string, body: string, url: string, unsubUrl: string) {
   <div style="max-width:460px;margin:0 auto;background:#FDF9EE;border:2px solid #2B2118;border-radius:16px;padding:22px">
     <div style="font-size:22px;font-weight:bold">${esc(title)}</div>
     <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.45;margin-top:10px">${esc(body)}</div>
-    <a href="${link}" style="display:inline-block;margin-top:16px;background:#FF5747;color:#FFF6E8;font-family:Arial,sans-serif;font-weight:bold;text-decoration:none;border:2px solid #2B2118;border-radius:12px;padding:10px 18px">Open Courtship 🎾</a>
-    <div style="font-family:Arial,sans-serif;font-size:11px;color:#8a7f70;margin-top:18px">You get these because game activity involves you.
-      <a href="${APP}/settings" style="color:#8a7f70">Turn email notifications off in Settings</a>
-      or <a href="${unsubUrl}" style="color:#8a7f70">unsubscribe with one click</a>.</div>
+    <a href="${link}" style="display:inline-block;margin-top:16px;background:#FF5747;color:#FFF6E8;font-family:Arial,sans-serif;font-weight:bold;text-decoration:none;border:2px solid #2B2118;border-radius:12px;padding:10px 18px">Öppna Courtship · Open Courtship 🎾</a>
+    ${contactBlock()}
+    <div style="font-family:Arial,sans-serif;font-size:11px;color:#8a7f70;margin-top:16px;line-height:1.5">Du får det här för att det rör ett spel du är med i.
+      <a href="${APP}/settings" style="color:#8a7f70">Stäng av mejlnotiser i Inställningar</a> · <a href="${unsubUrl}" style="color:#8a7f70">avsluta med ett klick</a>.<br>
+      You get these because game activity involves you.
+      <a href="${APP}/settings" style="color:#8a7f70">Turn email notifications off in Settings</a> or <a href="${unsubUrl}" style="color:#8a7f70">unsubscribe with one click</a>.</div>
   </div></body></html>`;
 }
 

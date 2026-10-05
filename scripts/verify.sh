@@ -49,6 +49,31 @@ if [ "$fail" -ne 0 ]; then
   echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
 fi
 
+# 3b. Edge functions (Deno): every email/push function type-checks, so a broken
+#     import or a renamed field can't reach Lovable's deploy. Deno is installed
+#     on the spot in CI; locally it runs when `deno` is on PATH (set
+#     DENO_IMPORT_MAP to a map file if esm.sh is unreachable where you are).
+DENO_BIN="$(command -v deno || true)"
+if [ -z "$DENO_BIN" ] && [ -x "$HOME/.deno/bin/deno" ]; then DENO_BIN="$HOME/.deno/bin/deno"; fi
+if [ -z "$DENO_BIN" ] && [ -n "${CI:-}" ]; then
+  # pinned release zip from GitHub (deno.land is not reachable from every network)
+  mkdir -p "$HOME/.deno/bin" && curl -fsSL "https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-unknown-linux-gnu.zip" -o /tmp/deno.zip \
+    && unzip -oq /tmp/deno.zip -d "$HOME/.deno/bin" && DENO_BIN="$HOME/.deno/bin/deno" || { echo "❌ deno install failed"; exit 1; }
+fi
+if [ -n "$DENO_BIN" ]; then
+  echo "→ Edge functions type-check (deno)…"
+  MAP_ARG=""; [ -n "${DENO_IMPORT_MAP:-}" ] && MAP_ARG="--import-map=${DENO_IMPORT_MAP}"
+  # --no-config: the repo's package.json is the web app's, not the functions' (Deno would try to resolve all of it)
+  if "$DENO_BIN" check --no-config --no-lock --node-modules-dir=none $MAP_ARG supabase/functions/*/index.ts >/tmp/deno_check.txt 2>&1; then
+    echo "✅ $(ls -d supabase/functions/*/ | wc -l | tr -d ' ') edge functions type-check"
+    [ -n "${CI:-}" ] && echo "::notice title=Edge functions::$(ls -d supabase/functions/*/ | wc -l | tr -d ' ') functions type-check (deno)"
+  else
+    echo "❌ edge function type errors:"; grep -v "Download" /tmp/deno_check.txt | tail -30; echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
+  fi
+else
+  echo "↷ edge functions: deno not found, skipped (install deno or run in CI)"
+fi
+
 # 4. The screens themselves (Playwright, production build, Supabase mocked):
 #    the guest funnel + "no dictionary key ever shows as text" (2026-10-05, the
 #    "ct.sub_in" leak). Runs when a Chromium is at hand — always in CI (where it
