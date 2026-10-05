@@ -74,6 +74,9 @@ function UsersEmails() {
   const [subj, setSubj] = useState("");
   const [bodyTxt, setBodyTxt] = useState("");
   const [sending, setSending] = useState(false);
+  // The last blast's outcome stays on screen (a toast is gone before you can
+  // read "3 failed") — per address, never per batch (Lovable scan 2026-10-05).
+  const [result, setResult] = useState<{ sent: number; total: number; skipped: number; failed: Array<{ to: string; detail: string }> } | null>(null);
   const emails = (rows ?? []).map((r) => r.email).filter(Boolean);
   async function sendBroadcast(test: boolean) {
     setSending(true);
@@ -83,8 +86,11 @@ function UsersEmails() {
       });
       if (error) { toast.error(String(error.message ?? error)); return; }
       if (!data?.ok && data?.error) { toast.error(String(data.error)); return; }
-      toast.success(test ? t("admin.email_test_sent") : t("admin.email_sent_n", { sent: data?.sent ?? 0, total: data?.total ?? 0 }));
-      if (!test) { setSubj(""); setBodyTxt(""); }
+      if (test) { toast.success(t("admin.email_test_sent")); return; }
+      const r = { sent: Number(data?.sent ?? 0), total: Number(data?.total ?? 0), skipped: Number(data?.skipped ?? 0), failed: Array.isArray(data?.failed) ? data.failed : [] };
+      setResult(r);
+      if (r.failed.length === 0) { toast.success(t("admin.email_sent_n", { sent: r.sent, total: r.total })); setSubj(""); setBodyTxt(""); }
+      else toast.warning(t("admin.broadcast_failed_n", { n: r.failed.length }), { duration: 9000 });
     } catch (e: any) {
       toast.error(String(e?.message ?? e));
     } finally { setSending(false); }
@@ -134,6 +140,18 @@ function UsersEmails() {
             {sending ? "…" : `${t("admin.broadcast_send")}${rows ? ` (${rows.length})` : ""}`}
           </button>
         </div>
+        {result && (
+          <div className="rounded-xl p-3 text-sm" style={{ background: "var(--cream2)", border: "1px solid rgba(43,33,24,0.2)" }}>
+            <div className="font-extrabold">{t("admin.broadcast_result", { sent: result.sent, total: result.total })}{result.skipped > 0 ? ` · ${t("admin.broadcast_skipped", { n: result.skipped })}` : ""}</div>
+            {result.failed.length > 0 && (
+              <div className="mt-1 space-y-0.5" style={{ opacity: 0.8 }}>
+                <div className="font-bold">{t("admin.broadcast_failed_n", { n: result.failed.length })}</div>
+                {result.failed.slice(0, 10).map((f) => <div key={f.to} className="break-all">{f.to} — {f.detail}</div>)}
+                <div className="font-semibold">{t("admin.broadcast_retry_hint")}</div>
+              </div>
+            )}
+          </div>
+        )}
         <div className="text-xs font-semibold" style={{ opacity: 0.6 }}>
           {t("admin.broadcast_hint")}
         </div>

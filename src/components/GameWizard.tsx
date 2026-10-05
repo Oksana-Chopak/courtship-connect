@@ -341,12 +341,16 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
           return;
         }
       } else if (/does not exist|schema cache/i.test(error.message ?? "")) {
-        // pre-SQL fallback: the old direct update (will work once RLS allows, harmless otherwise)
+        // pre-SQL fallback: the old direct update (will work once RLS allows, harmless otherwise).
+        // Carries the window + Any-surface too, so even this last-resort path never
+        // drops what the host just set (Lovable scan 2026-10-05).
         const r2 = await (supabase as any).from("sos_requests").update({
           play_at: playAt.toISOString(), court_id: courtId, format,
           level_min: anyone ? 1 : levelMin, level_max: anyone ? 5 : levelMax,
           court_status: courtStatus, note: note.trim() || null,
           court_type: courtType, duration_min: duration,
+          play_until: wantsWindow ? playUntil!.toISOString() : null,
+          court_type_any: effCtAny,
         }).eq("id", editId).eq("caller_id", uid);
         error = r2.error;
       }

@@ -1,17 +1,21 @@
 // Supabase Edge Function: email-broadcast
-// Admin-only email blast to every registered user, via Resend.
+// Admin-only email blast to every registered user, via Brevo (Resend fallback).
 //
 // Body: { subject: string, body: string, test?: boolean }
 //   test=true → sends ONLY to the calling admin (dry-run before the real blast).
 //
-// Secrets: RESEND_API_KEY (required), BROADCAST_FROM (optional; defaults to
-//   Resend's shared onboarding sender until the court-ship.com domain is
-//   verified in Resend — then set e.g. "Courtship <hello@court-ship.com>").
+// Secrets: BREVO_API_KEY (or RESEND_API_KEY), BROADCAST_FROM
+//   (e.g. "Courtship <hello@court-ship.com>" — the verified Brevo sender).
 //
 // Security: platform JWT-gated + we re-verify the caller's own profiles row
 // has is_admin=true using the service role. Non-admins get 403.
-// Batching: Resend allows up to 100 recipients per /emails/batch call; each
-// user gets an INDIVIDUAL email (no exposed recipient lists, no BCC leaks).
+// Each user gets an INDIVIDUAL email (no exposed recipient lists, no BCC leaks).
+//
+// Counting + re-runs (Lovable scan 2026-10-05): every delivery is counted per
+// address, never per batch, and every success is written to email_send_log
+// (template 'broadcast', key = hash of subject+body). Sending the SAME
+// subject+body again only reaches the addresses that did not get it — so a
+// re-run after a partial failure is a retry, never a duplicate.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -26,38 +30,75 @@ function parseFrom(from: string): { name?: string; email: string } {
   return m ? { name: m[1] || undefined, email: m[2] } : { email: from.trim() };
 }
 
-/** Send a batch through whichever provider is configured. Brevo (ex-Sendinblue)
- *  wins when both keys exist — single-sender verification works without DNS,
- *  which is how this project actually sends (2026-08-14). Brevo has no batch
- *  endpoint, so it loops; Resend keeps the original /emails/batch call. */
-async function sendBatch(batch: Array<{ from: string; to: string[]; subject: string; html: string }>): Promise<{ ok: boolean; detail: string }> {
+type Mail = { from: string; to: string[]; subject: string; html: string };
+
+/** Send a batch through whichever provider is configured and report PER
+ *  ADDRESS. Brevo (ex-Sendinblue) wins when both keys exist — single-sender
+ *  verification works without DNS, which is how this project actually sends.
+ *  Brevo has no batch endpoint, so it loops (one failure never hides the other
+ *  99 deliveries); Resend keeps the original /emails/batch call. */
+async function sendBatch(batch: Mail[]): Promise<{ sent: string[]; failed: Array<{ to: string; detail: string }> }> {
+  const sent: string[] = [];
+  const failed: Array<{ to: string; detail: string }> = [];
   if (BREVO_KEY) {
-    let okAll = true;
-    let detail = "";
     for (const m of batch) {
-      const r = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
-        body: JSON.stringify({
-          sender: parseFrom(m.from),
-          to: m.to.map((email) => ({ email })),
-          subject: m.subject,
-          htmlContent: m.html,
-        }),
-      });
-      if (!r.ok) {
-        okAll = false;
-        if (!detail) detail = `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200);
+      try {
+        const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
+          body: JSON.stringify({
+            sender: parseFrom(m.from),
+            to: m.to.map((email) => ({ email })),
+            subject: m.subject,
+            htmlContent: m.html,
+          }),
+        });
+        if (r.ok) sent.push(m.to[0]);
+        else failed.push({ to: m.to[0], detail: `${r.status} ${await r.text().catch(() => "")}`.slice(0, 160) });
+      } catch (e) {
+        failed.push({ to: m.to[0], detail: String(e).slice(0, 160) });
       }
     }
-    return { ok: okAll, detail };
+    return { sent, failed };
   }
   const r = await fetch("https://api.resend.com/emails/batch", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
     body: JSON.stringify(batch),
   });
-  return { ok: r.ok, detail: r.ok ? "" : `${r.status} ${await r.text().catch(() => "")}`.slice(0, 200) };
+  if (r.ok) sent.push(...batch.map((m) => m.to[0]));
+  else {
+    const detail = `${r.status} ${await r.text().catch(() => "")}`.slice(0, 160);
+    failed.push(...batch.map((m) => ({ to: m.to[0], detail })));
+  }
+  return { sent, failed };
+}
+
+/** Stable key for "this exact email": same subject + body → same key. */
+async function broadcastKey(subject: string, body: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${subject}\n\n${body}`));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
+
+/** Addresses that already received this exact email (ledger = email_send_log). */
+async function alreadySent(sb: any, key: string, emails: string[]): Promise<Set<string>> {
+  const done = new Set<string>();
+  if (!emails.length) return done;
+  try {
+    const { data } = await sb.from("email_send_log").select("recipient_email")
+      .eq("template_name", "broadcast").eq("status", "sent").contains("metadata", { key });
+    for (const r of data ?? []) done.add(r.recipient_email);
+  } catch (_) { /* ledger unavailable → treat as fresh */ }
+  return done;
+}
+
+async function recordSent(sb: any, key: string, emails: string[], subject: string): Promise<void> {
+  if (!emails.length) return;
+  try {
+    await sb.from("email_send_log").insert(emails.map((e) => ({
+      template_name: "broadcast", recipient_email: e, status: "sent", metadata: { key, subject: subject.slice(0, 120) },
+    })));
+  } catch (_) { /* counting is best-effort; the send already happened */ }
 }
 
 const FROM = Deno.env.get("BROADCAST_FROM") ?? "Courtship <onboarding@resend.dev>";
@@ -124,7 +165,7 @@ async function unsubTokens(sb: any, emails: string[]): Promise<Map<string, strin
 Deno.serve(async (req) => {
   try {
     if (!RESEND_KEY && !BREVO_KEY) {
-      return new Response(JSON.stringify({ ok: false, error: "RESEND_API_KEY not configured" }), { status: 500 });
+      return new Response(JSON.stringify({ ok: false, error: "No email provider key (BREVO_API_KEY) configured" }), { status: 500 });
     }
     // Identify the caller from their JWT, then hard-verify is_admin.
     const auth = req.headers.get("Authorization") ?? "";
@@ -167,24 +208,37 @@ Deno.serve(async (req) => {
       }
       emails = await dropSuppressed(sb, [...new Set(emails)]);
     }
-    if (!emails.length) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
+    if (!emails.length) return new Response(JSON.stringify({ ok: true, sent: 0, total: 0, skipped: 0, failed: [] }), { status: 200 });
+
+    // Re-run safety: the same subject+body never reaches an address twice
+    // (a test send to yourself is exempt — you may want to see it again).
+    const key = await broadcastKey(String(subject), String(body));
+    const total = emails.length;
+    const done = test ? new Set<string>() : await alreadySent(sb, key, emails);
+    emails = emails.filter((e) => !done.has(e));
 
     const tokens = await unsubTokens(sb, emails);
     let sent = 0;
-    const failures: string[] = [];
+    const failed: Array<{ to: string; detail: string }> = [];
     // Individual emails, batched 100 per Resend batch call.
     for (let i = 0; i < emails.length; i += 100) {
-      const batch = emails.slice(i, i + 100).map((to) => ({
+      const batch: Mail[] = emails.slice(i, i + 100).map((to) => ({
         from: FROM,
         to: [to],
         subject: String(subject),
         html: html(String(body), `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`),
       }));
       const r = await sendBatch(batch);
-      if (r.ok) sent += batch.length;
-      else failures.push(`batch ${i / 100}: ${r.detail}`.slice(0, 200));
+      sent += r.sent.length;
+      failed.push(...r.failed);
+      if (!test) await recordSent(sb, key, r.sent, String(subject));
     }
-    return new Response(JSON.stringify({ ok: failures.length === 0, sent, total: emails.length, failures }), { status: 200 });
+    return new Response(JSON.stringify({
+      ok: failed.length === 0, sent, total, skipped: done.size,
+      failed: failed.slice(0, 50), from: FROM,
+      // kept for older clients
+      failures: failed.slice(0, 50).map((f) => `${f.to}: ${f.detail}`),
+    }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }

@@ -46,9 +46,27 @@ export async function fetchPendingPostGameChecks(uid: string): Promise<GameRow[]
   });
 }
 
+/** The app game (born from an SOS / open post) that a manual "Log a game"
+ *  entry is really about: same opponent, not yet confirmed by me, within
+ *  ±26h of the logged time. Logging it as a NEW row would leave the original
+ *  asking "did this happen?" for a week (Lovable scan 2026-10-05) — so we
+ *  confirm the original instead. Pure; the caller fetches the candidates. */
+export function findSameGame(rows: GameRow[], uid: string, otherId: string, playedAtISO: string, windowMs = 26 * 3600e3): GameRow | null {
+  const at = new Date(playedAtISO).getTime();
+  for (const g of rows) {
+    const other = g.player_a === uid ? g.player_b : g.player_a;
+    if (other !== otherId) continue;
+    if (Math.abs(new Date(g.played_at).getTime() - at) > windowMs) continue;
+    return g;
+  }
+  return null;
+}
+
 /** Log a game you played (even one not arranged through the app). Creates a
  *  game already confirmed on your side; the other player confirms theirs, then
- *  it counts for both (via the existing bump trigger). Needs the log_game RPC. */
+ *  it counts for both (via the existing bump trigger). Needs the log_game RPC.
+ *  If the game already exists as an unconfirmed app game with that opponent
+ *  around that time, it is confirmed (with the score) instead of duplicated. */
 export async function logGame(
   otherId: string | null,
   playedAtISO: string,
@@ -56,7 +74,22 @@ export async function logGame(
   winner?: string | null,
   courtId?: string | null,
   guestName?: string | null,
-): Promise<{ courtSaved: boolean }> {
+): Promise<{ courtSaved: boolean; merged?: boolean }> {
+  if (otherId) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id;
+      if (uid) {
+        const same = findSameGame(await fetchPendingPostGameChecks(uid), uid, otherId, playedAtISO);
+        if (same) {
+          await confirmGame(same.id, score, winner);
+          return { courtSaved: true, merged: true };
+        }
+      }
+    } catch {
+      /* lookup is best-effort — fall through to a normal log */
+    }
+  }
   const params: Record<string, any> = {
     _other_id: otherId,
     _played_at: playedAtISO,

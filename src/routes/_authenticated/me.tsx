@@ -81,8 +81,15 @@ function MePage() {
 
   return (
     <div className="space-y-4">
-      {/* Identity + settings gear */}
-      <div className="ccard p-4 flex items-center gap-3">
+      {/* Identity card — the WHOLE card opens the profile (Oxy, 2026-10-05:
+          "not only the gear"); the gear stays as the visual hint of where a tap leads. */}
+      <Link
+        to="/settings"
+        className="ccard p-4 flex items-center gap-3"
+        style={{ textDecoration: "none", color: "var(--ink)" }}
+        aria-label={t("settings.title")}
+        data-testid="me-identity"
+      >
         <Avatar src={profile.photo_url} name={profile.name} seed={uid} size={64} />
         <div className="flex-1 min-w-0">
           <div className="font-display text-2xl leading-none truncate">{profile.name || "🎾"}{profile.member_tier ? " 🏆" : ""}</div>
@@ -92,15 +99,14 @@ function MePage() {
             <span className="text-sm">· {vibeEmoji(profile.vibe)}</span>
           </div>
         </div>
-        <Link
-          to="/settings"
+        <span
+          aria-hidden="true"
           className="shrink-0 flex items-center justify-center rounded-full"
           style={{ width: 40, height: 40, background: "var(--cream2)", border: "2px solid var(--ink)" }}
-          aria-label={t("settings.title")}
         >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-        </Link>
-      </div>
+        </span>
+      </Link>
 
       {/* YOUR SEASON — right under the name, the point of the profile */}
       <SeasonPanel />

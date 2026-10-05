@@ -46,4 +46,22 @@ fi
 if [ "$fail" -ne 0 ]; then
   echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
 fi
+
+# 4. The screens themselves (Playwright, production build, Supabase mocked):
+#    the guest funnel + "no dictionary key ever shows as text" (2026-10-05, the
+#    "ct.sub_in" leak). Runs when a Chromium is at hand — always in CI (where it
+#    is installed on the spot), locally when PW_CHROMIUM_PATH points at one, or
+#    when you ask for it with VERIFY_E2E=1. Skip explicitly with VERIFY_E2E=0.
+if [ "${VERIFY_E2E:-}" != "0" ] && { [ -n "${CI:-}" ] || [ -n "${PW_CHROMIUM_PATH:-}" ] || [ "${VERIFY_E2E:-}" = "1" ]; }; then
+  echo "→ Screens (Playwright e2e on the production build)…"
+  if [ -n "${CI:-}" ] && [ -z "${PW_CHROMIUM_PATH:-}" ]; then
+    npx playwright install --with-deps chromium >/tmp/pw_install.txt 2>&1 || { echo "❌ playwright install failed:"; tail -20 /tmp/pw_install.txt; exit 1; }
+  fi
+  export HOST="${HOST:-127.0.0.1}"
+  if npm run -s build:e2e >/tmp/e2e_build.txt 2>&1 && npx playwright test >/tmp/e2e_out.txt 2>&1; then
+    echo "✅ screens pass ($(grep -o '[0-9]* passed' /tmp/e2e_out.txt | tail -1))"
+  else
+    echo "❌ screens failed:"; tail -40 /tmp/e2e_build.txt /tmp/e2e_out.txt; echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
+  fi
+fi
 echo ""; echo "🎾 All checks passed."
