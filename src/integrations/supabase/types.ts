@@ -569,6 +569,68 @@ export type Database = {
         }
         Relationships: []
       }
+      lifecycle_sends: {
+        Row: {
+          id: string
+          sent_at: string
+          template: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          sent_at?: string
+          template: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          sent_at?: string
+          template?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      membership_claims: {
+        Row: {
+          amount_sek: number
+          created_at: string
+          id: string
+          period: string
+          resolved_at: string | null
+          status: string
+          tier: string
+          user_id: string
+        }
+        Insert: {
+          amount_sek: number
+          created_at?: string
+          id?: string
+          period: string
+          resolved_at?: string | null
+          status?: string
+          tier: string
+          user_id: string
+        }
+        Update: {
+          amount_sek?: number
+          created_at?: string
+          id?: string
+          period?: string
+          resolved_at?: string | null
+          status?: string
+          tier?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           accepted_terms_at: string | null
@@ -594,9 +656,12 @@ export type Database = {
           home_city: string
           home_courts: string | null
           id: string
+          installed_at: string | null
           is_admin: boolean
           lang: string
           last_name: string | null
+          last_seen_at: string | null
+          last_standalone_at: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           member_since: string | null
@@ -640,9 +705,12 @@ export type Database = {
           home_city?: string
           home_courts?: string | null
           id: string
+          installed_at?: string | null
           is_admin?: boolean
           lang?: string
           last_name?: string | null
+          last_seen_at?: string | null
+          last_standalone_at?: string | null
           level: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           member_since?: string | null
@@ -686,9 +754,12 @@ export type Database = {
           home_city?: string
           home_courts?: string | null
           id?: string
+          installed_at?: string | null
           is_admin?: boolean
           lang?: string
           last_name?: string | null
+          last_seen_at?: string | null
+          last_standalone_at?: string | null
           level?: number
           looking_for?: Database["public"]["Enums"]["looking_for_t"]
           member_since?: string | null
@@ -1053,6 +1124,18 @@ export type Database = {
         Args: { _a: string; _b: string; _source: string }
         Returns: undefined
       }
+      _email_users: {
+        Args: {
+          _body: string
+          _ids: string[]
+          _kind?: string
+          _tag: string
+          _title: string
+          _url: string
+        }
+        Returns: undefined
+      }
+      _notify_headers: { Args: never; Returns: Json }
       _push_users: {
         Args: {
           _body: string
@@ -1094,6 +1177,16 @@ export type Database = {
           created_at: string
           signups: number
           uses_remaining: number
+        }[]
+      }
+      admin_lifecycle_status: {
+        Args: never
+        Returns: {
+          enabled: boolean
+          last_sent: string
+          sent_30d: number
+          sent_7d: number
+          template: string
         }[]
       }
       admin_list_coach_requests: {
@@ -1150,6 +1243,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_membership_claims: {
+        Args: never
+        Returns: {
+          amount_sek: number
+          created_at: string
+          id: string
+          last_name: string
+          name: string
+          period: string
+          resolved_at: string
+          status: string
+          tier: string
+          user_id: string
+        }[]
+      }
       admin_players_list: {
         Args: never
         Returns: {
@@ -1158,6 +1266,7 @@ export type Database = {
           buddy_radius_km: number
           buddy_sos_optin: boolean
           created_at: string
+          email_level: string
           fav_shot: string
           formats: string[]
           games_played: number
@@ -1166,17 +1275,26 @@ export type Database = {
           home_city: string
           home_courts: string
           id: string
+          installed_at: string
           is_admin: boolean
           last_name: string
+          last_seen_at: string
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
+          member_since: string
+          member_tier: string
           name: string
           phone_e164: string
           play_times: string[]
+          push_on: boolean
           rescues_count: number
           signup_code: string
           vibe: Database["public"]["Enums"]["vibe_t"]
         }[]
+      }
+      admin_resolve_claim: {
+        Args: { _approve: boolean; _id: string }
+        Returns: undefined
       }
       admin_resolve_report: {
         Args: { _id: string; _note?: string; _status: string }
@@ -1198,6 +1316,7 @@ export type Database = {
         Args: { _active: boolean; _code: string }
         Returns: undefined
       }
+      admin_set_lifecycle: { Args: { _on: boolean }; Returns: undefined }
       admin_set_member: {
         Args: { _tier: string; _user: string }
         Returns: undefined
@@ -1249,6 +1368,10 @@ export type Database = {
           ok: boolean
           reason: string
         }[]
+      }
+      claim_membership: {
+        Args: { _amount: number; _period: string; _tier: string }
+        Returns: string
       }
       claim_sos: {
         Args: { _sos_id: string }
@@ -1445,9 +1568,12 @@ export type Database = {
           home_city: string
           home_courts: string | null
           id: string
+          installed_at: string | null
           is_admin: boolean
           lang: string
           last_name: string | null
+          last_seen_at: string | null
+          last_standalone_at: string | null
           level: number
           looking_for: Database["public"]["Enums"]["looking_for_t"]
           member_since: string | null
@@ -1530,6 +1656,17 @@ export type Database = {
         Returns: number
       }
       my_invite_uses: { Args: never; Returns: number }
+      my_membership_claims: {
+        Args: never
+        Returns: {
+          amount_sek: number
+          created_at: string
+          id: string
+          period: string
+          status: string
+          tier: string
+        }[]
+      }
       my_open_coach_request: {
         Args: never
         Returns: {
@@ -1818,6 +1955,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      touch_presence: { Args: { _standalone?: boolean }; Returns: undefined }
       unsubscribe_email: { Args: { _token: string }; Returns: boolean }
       update_my_event: {
         Args: { _data: Json; _id: string }
@@ -1868,12 +2006,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1897,11 +2035,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1922,11 +2060,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1947,11 +2085,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1964,11 +2102,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
