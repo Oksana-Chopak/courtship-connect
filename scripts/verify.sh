@@ -34,6 +34,8 @@ fi
 echo "→ Unit + contract tests with the logic-layer coverage gate…"
 if npx vitest run --coverage >/tmp/vitest_out.txt 2>&1; then
   echo "✅ tests pass"
+  # Visible from the GitHub API as a check annotation (job logs are not reachable from everywhere).
+  [ -n "${CI:-}" ] && echo "::notice title=Unit + contract tests::$(sed 's/\x1b\[[0-9;]*m//g' /tmp/vitest_out.txt | grep -o 'Tests *[0-9]* passed ([0-9]*)' | tail -1)"
   if node scripts/coverage-gate.mjs; then
     :
   else
@@ -52,6 +54,7 @@ fi
 #    "ct.sub_in" leak). Runs when a Chromium is at hand — always in CI (where it
 #    is installed on the spot), locally when PW_CHROMIUM_PATH points at one, or
 #    when you ask for it with VERIFY_E2E=1. Skip explicitly with VERIFY_E2E=0.
+SCREENS="skipped"
 if [ "${VERIFY_E2E:-}" != "0" ] && { [ -n "${CI:-}" ] || [ -n "${PW_CHROMIUM_PATH:-}" ] || [ "${VERIFY_E2E:-}" = "1" ]; }; then
   echo "→ Screens (Playwright e2e on the production build)…"
   if [ -n "${CI:-}" ] && [ -z "${PW_CHROMIUM_PATH:-}" ]; then
@@ -60,8 +63,12 @@ if [ "${VERIFY_E2E:-}" != "0" ] && { [ -n "${CI:-}" ] || [ -n "${PW_CHROMIUM_PAT
   export HOST="${HOST:-127.0.0.1}"
   if npm run -s build:e2e >/tmp/e2e_build.txt 2>&1 && npx playwright test >/tmp/e2e_out.txt 2>&1; then
     echo "✅ screens pass ($(grep -o '[0-9]* passed' /tmp/e2e_out.txt | tail -1))"
+    SCREENS="$(grep -o '[0-9]* passed' /tmp/e2e_out.txt | tail -1)"
+    [ -n "${CI:-}" ] && echo "::notice title=Screens (Playwright)::${SCREENS} on the production build"
   else
     echo "❌ screens failed:"; tail -40 /tmp/e2e_build.txt /tmp/e2e_out.txt; echo ""; echo "🚫 Checks failed — do not deploy."; exit 1
   fi
 fi
 echo ""; echo "🎾 All checks passed."
+[ -n "${CI:-}" ] && echo "::notice title=Gate::tsc + hooks + unit/contract + coverage 100/100/100 green · screens: ${SCREENS}"
+exit 0
