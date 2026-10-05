@@ -57,6 +57,23 @@ export function swishDigits(raw: string): string {
 }
 
 
+/** "I've sent the Swish" — a claim the admin confirms (admin_resolve_claim). */
+export type MyClaim = { id: string; tier: "founding" | "pro"; period: "monthly" | "yearly"; amount_sek: number; status: "pending" | "approved" | "dismissed"; created_at: string };
+
+export async function claimMembership(tier: "founding" | "pro", period: "monthly" | "yearly", amountSek: number): Promise<string> {
+  const { data, error } = await (supabase as any).rpc("claim_membership", { _tier: tier, _period: period, _amount: amountSek });
+  if (error) throw new Error(error.message);
+  return String(data ?? "");
+}
+
+export async function fetchMyClaims(): Promise<MyClaim[]> {
+  try {
+    const { data, error } = await (supabase as any).rpc("my_membership_claims");
+    if (error) return [];
+    return ((data as MyClaim[]) ?? []);
+  } catch { return []; }
+}
+
 export function tierBadge(tier: string | null | undefined): string | null {
   if (!tier) return null;
   if (tier === "pro") return "PRO";

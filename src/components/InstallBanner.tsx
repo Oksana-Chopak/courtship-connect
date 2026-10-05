@@ -12,7 +12,7 @@ function isIOS(): boolean {
   return /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
 }
 
-function isStandalone(): boolean {
+export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia?.("(display-mode: standalone)").matches ||

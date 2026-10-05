@@ -35,6 +35,10 @@ type PlayerRow = {
   bio: string | null; fav_shot: string | null; games_played: number | null;
   rescues_count: number; ghost_badge: boolean | null; is_admin: boolean | null;
   signup_code: string | null; created_at: string;
+  // admin_players_list v3 (PACKAGE3 sql) — undefined until it is applied
+  member_tier?: string | null; member_since?: string | null;
+  installed_at?: string | null; last_seen_at?: string | null;
+  push_on?: boolean | null; email_level?: string | null;
 };
 type CityStats = {
   sos_created_week: number;
@@ -298,6 +302,10 @@ function AdminPage() {
 
       <UsersEmails />
 
+      <MembersAndInstalls players={players} onChange={load} />
+
+      <LifecycleEmailsCard />
+
       {pendingEvents.length > 0 && (
         <div>
           <div className="csection-label mb-2">🎉 {t("admin.pending_events")}</div>
@@ -440,6 +448,14 @@ function AdminPage() {
                   <div className="text-xs text-[var(--ink)]/40">
                     🎮 {p.games_played ?? 0} · 🚑 {p.rescues_count ?? 0}{p.buddy_optin === "yes" ? ` · ${t("admin.player_buddy_km", { n: p.buddy_radius_km ?? 10 })}` : ""}{p.ghost_badge ? " · 🪦" : ""} · {new Date(p.created_at).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB")}
                   </div>
+                  {p.installed_at !== undefined && (
+                    <div className="text-xs font-bold" style={{ color: "rgba(43,33,24,0.6)" }}>
+                      {p.installed_at ? t("admin.p_installed", { d: shortDate(p.installed_at, lang) }) : t("admin.p_not_installed")}
+                      {" · "}{p.push_on ? t("admin.p_push") : t("admin.p_no_push")}
+                      {p.last_seen_at ? ` · ${t("admin.p_seen", { d: shortDate(p.last_seen_at, lang) })}` : ""}
+                      {p.member_tier ? ` · ${p.member_tier === "pro" ? "💼 PRO" : "🏆 " + p.member_tier}` : ""}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -636,6 +652,196 @@ function LegalQueues() {
         </div>
       </Collapsible>
     </>
+  );
+}
+
+function shortDate(iso: string, lang: string): string {
+  return new Date(iso).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "short" });
+}
+
+type Claim = { id: string; user_id: string; name: string | null; last_name: string | null; tier: string; period: string; amount_sek: number; status: string; created_at: string; resolved_at: string | null };
+
+/** Who paid (Swish claims to confirm), who is a member, who installed the
+ *  home-screen shortcut and who has push on — the questions Oxy asked on
+ *  2026-10-05. Needs the PACKAGE3 sql (admin_players_list v3 + claims). */
+function MembersAndInstalls({ players, onChange }: { players: PlayerRow[]; onChange: () => void }) {
+  const { t, lang } = useI18n();
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [sqlMissing, setSqlMissing] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  async function loadClaims() {
+    const { data, error } = await (supabase as any).rpc("admin_membership_claims");
+    if (error) { setSqlMissing(/does not exist|schema cache/i.test(error.message || "")); setClaims([]); return; }
+    setClaims((data as Claim[]) ?? []);
+  }
+  useEffect(() => { void loadClaims(); }, []);
+  async function resolve(id: string, approve: boolean) {
+    const { error } = await (supabase as any).rpc("admin_resolve_claim", { _id: id, _approve: approve });
+    if (error) { toast.error(error.message); return; }
+    toast.success(approve ? t("admin.claim_approved") : t("admin.claim_dismissed"));
+    await loadClaims();
+    onChange();
+  }
+  const total = players.length;
+  const tracked = players.length > 0 && players[0].installed_at !== undefined;
+  const installed = players.filter((p) => !!p.installed_at).length;
+  const pushOn = players.filter((p) => !!p.push_on).length;
+  const members = players.filter((p) => !!p.member_tier);
+  const pending = claims.filter((c) => c.status === "pending");
+  const fmtName = (c: Claim) => [c.name, c.last_name].filter(Boolean).join(" ") || "—";
+  return (
+    <div className="ccard p-4 space-y-3">
+      <div className="csection-label">💸 {t("admin.members_title")}</div>
+      {(sqlMissing || !tracked) && (
+        <div className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("admin.members_sql_missing")}</div>
+      )}
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label={t("admin.installed")} value={tracked ? `${installed}/${total}` : "—"} />
+        <Stat label={t("admin.push_on")} value={tracked ? `${pushOn}/${total}` : "—"} />
+        <Stat label={t("admin.members")} value={members.length} />
+      </div>
+      <div>
+        <div className="font-extrabold text-sm mb-1">{t("admin.claims_pending")}{pending.length ? ` · ${pending.length}` : ""}</div>
+        {pending.length === 0 ? (
+          <div className="text-sm font-semibold" style={{ opacity: 0.6 }}>{t("admin.no_claims")}</div>
+        ) : (
+          <div className="space-y-2">
+            {pending.map((c) => (
+              <div key={c.id} className="rounded-xl p-3" style={{ border: "1.5px solid var(--coral)", background: "var(--cream2)" }}>
+                <div className="font-extrabold">{fmtName(c)}</div>
+                <div className="text-sm font-semibold" style={{ opacity: 0.75 }}>
+                  {c.tier === "pro" ? "💼 Pro" : "🏆 Founding"} · {c.period} · {c.amount_sek} kr · {shortDate(c.created_at, lang)}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button type="button" className="cbtn cbtn-green flex-1 text-sm" onClick={() => void resolve(c.id, true)}>✓ {t("admin.claim_approve")}</button>
+                  <button type="button" className="cbtn cbtn-ghost flex-1 text-sm" onClick={() => void resolve(c.id, false)}>{t("admin.claim_dismiss")}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {members.length > 0 && (
+        <div>
+          <div className="font-extrabold text-sm mb-1">{t("admin.members")} · {members.length}</div>
+          <div className="space-y-1">
+            {members.map((p) => (
+              <div key={p.id} className="flex items-baseline justify-between gap-2 border-t border-[var(--ink)]/10 pt-1 text-sm">
+                <span className="font-extrabold truncate">{[p.name, p.last_name].filter(Boolean).join(" ") || "—"}</span>
+                <span className="shrink-0" style={{ opacity: 0.7 }}>{p.member_tier === "pro" ? "💼 Pro" : "🏆 " + p.member_tier}{p.member_since ? ` · ${t("admin.member_since", { d: shortDate(p.member_since, lang) })}` : ""}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {tracked && total - installed > 0 && (
+        <div>
+          <button type="button" className="font-extrabold text-sm underline" onClick={() => setShowAll(!showAll)}>
+            {showAll ? t("admin.hide") : t("admin.not_installed_list", { n: total - installed })}
+          </button>
+          {showAll && (
+            <div className="mt-1 text-sm font-semibold" style={{ opacity: 0.75 }}>
+              {players.filter((p) => !p.installed_at).map((p) => [p.name, p.last_name].filter(Boolean).join(" ") || "—").join(" · ")}
+            </div>
+          )}
+        </div>
+      )}
+      {claims.some((c) => c.status !== "pending") && (
+        <div className="text-xs font-semibold" style={{ opacity: 0.55 }}>
+          {t("admin.claims_history", { n: claims.filter((c) => c.status !== "pending").length })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const LIFECYCLE_TEMPLATES = ["welcome_0", "welcome_1", "install_3", "community_7", "invite_14", "push_off", "fading", "sleeping", "unfinished", "digest"] as const;
+
+/** Switch + window into the lifecycle emails (Edge Function `lifecycle-emails`):
+ *  a dry run shows who would get what today; a preview sends any template to
+ *  the admin's own inbox. Everything stays off until the switch is flipped. */
+function LifecycleEmailsCard() {
+  const { t, lang } = useI18n();
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [stats, setStats] = useState<Array<{ template: string | null; sent_7d: number; sent_30d: number; last_sent: string | null }>>([]);
+  const [sqlMissing, setSqlMissing] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [dry, setDry] = useState<any>(null);
+  const [preview, setPreview] = useState<string>("welcome_0");
+  async function loadStatus() {
+    const { data, error } = await (supabase as any).rpc("admin_lifecycle_status");
+    if (error) { setSqlMissing(/does not exist|schema cache/i.test(error.message || "")); return; }
+    const rows = (data as any[]) ?? [];
+    setEnabled(rows.length ? !!rows[0].enabled : false);
+    setStats(rows.filter((r) => r.template));
+  }
+  useEffect(() => { void loadStatus(); }, []);
+  async function flip(on: boolean) {
+    const { error } = await (supabase as any).rpc("admin_set_lifecycle", { _on: on });
+    if (error) { toast.error(error.message); return; }
+    setEnabled(on);
+    toast.success(on ? t("admin.lc_on_toast") : t("admin.lc_off_toast"));
+  }
+  async function call(body: Record<string, unknown>, label: string) {
+    setBusy(label);
+    try {
+      const { data, error } = await (supabase as any).functions.invoke("lifecycle-emails", { body });
+      if (error) { toast.error(String(error.message ?? error)); return null; }
+      if (data && data.ok === false && data.error) { toast.error(String(data.error)); return null; }
+      return data;
+    } catch (e: any) { toast.error(String(e?.message ?? e)); return null; }
+    finally { setBusy(null); }
+  }
+  async function dryRun() {
+    const d = await call({ dry: true }, "dry");
+    if (d) setDry(d);
+  }
+  async function sendPreview() {
+    const d = await call({ preview }, "preview");
+    if (d?.ok) toast.success(t("admin.lc_preview_sent"));
+  }
+  return (
+    <div className="ccard p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="csection-label">📬 {t("admin.lc_title")}</div>
+        {enabled !== null && (
+          <button type="button" onClick={() => void flip(!enabled)} className="cchip" style={{ background: enabled ? "var(--green-pop)" : "var(--cream2)" }}>
+            {enabled ? t("admin.lc_on") : t("admin.lc_off")}
+          </button>
+        )}
+      </div>
+      {sqlMissing && <div className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t("admin.members_sql_missing")}</div>}
+      <div className="text-sm font-semibold" style={{ opacity: 0.75 }}>{t("admin.lc_sub")}</div>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" disabled={busy !== null} className="cbtn cbtn-ghost text-sm" onClick={() => void dryRun()}>{busy === "dry" ? "…" : t("admin.lc_dry")}</button>
+        <div className="flex gap-1">
+          <select className="cinput" style={{ padding: "6px 8px", fontSize: 13 }} value={preview} onChange={(e) => setPreview(e.target.value)}>
+            {LIFECYCLE_TEMPLATES.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+          <button type="button" disabled={busy !== null} className="cbtn cbtn-ghost text-sm shrink-0" onClick={() => void sendPreview()}>{busy === "preview" ? "…" : t("admin.lc_preview")}</button>
+        </div>
+      </div>
+      {dry && (
+        <div className="rounded-xl p-3 text-sm" style={{ background: "var(--cream2)", border: "1px solid rgba(43,33,24,0.2)" }}>
+          <div className="font-extrabold">{t("admin.lc_dry_result", { n: Object.values(dry.planned ?? {}).reduce((a: number, b: any) => a + Number(b), 0), users: dry.users ?? 0 })}</div>
+          <div className="font-semibold mt-1" style={{ opacity: 0.8 }}>
+            {Object.entries(dry.planned ?? {}).map(([k, v]) => `${k}: ${v}`).join(" · ") || t("admin.lc_nothing_today")}
+          </div>
+          {Array.isArray(dry.sample) && dry.sample.length > 0 && (
+            <div className="mt-2 space-y-0.5" style={{ opacity: 0.75 }}>
+              {dry.sample.slice(0, 15).map((r: any, i: number) => <div key={i}>{r.name} → <b>{r.template}</b> <span style={{ opacity: 0.7 }}>({r.reason})</span></div>)}
+            </div>
+          )}
+        </div>
+      )}
+      {stats.length > 0 && (
+        <div className="text-xs font-semibold space-y-0.5" style={{ opacity: 0.7 }}>
+          {stats.map((r) => (
+            <div key={r.template ?? "?"}>{r.template}: {t("admin.lc_stat", { a: r.sent_7d, b: r.sent_30d })}{r.last_sent ? ` · ${new Date(r.last_sent).toLocaleDateString(lang === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "short" })}` : ""}</div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

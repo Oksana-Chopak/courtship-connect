@@ -1,5 +1,6 @@
 import { BallHeart } from "@/components/RailKit";
 import { Avatar } from "@/components/Avatar";
+import { isStandalone } from "@/components/InstallBanner";
 import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,20 @@ function AuthedShell() {
   // permission — without this, a granted user can have no live subscription
   // and never receive SOS pushes.
   useEffect(() => { if (!guest) void ensurePushSubscribed(); }, [guest]);
+  // Presence + install tracking (admin "who installed the shortcut", lifecycle
+  // emails): one quiet ping per 6h per mode. Standalone = opened from the
+  // home-screen icon. The RPC may not exist pre-SQL — errors are swallowed.
+  useEffect(() => {
+    if (guest) return;
+    const standalone = isStandalone();
+    const key = `courtship.presence.${standalone ? "app" : "web"}`;
+    try {
+      const last = Number(localStorage.getItem(key) || "0");
+      if (Date.now() - last < 6 * 3600e3) return;
+      localStorage.setItem(key, String(Date.now()));
+    } catch { /* storage blocked → ping anyway */ }
+    void (async () => { try { await (supabase as any).rpc("touch_presence", { _standalone: standalone }); } catch { /* pre-SQL */ } })();
+  }, [guest]);
   // Reverse registration: a game drafted on /post (before the account existed)
   // publishes the moment its author lands in the authed shell — then we take
   // them straight to their live game so they can share it.

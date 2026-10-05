@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { fetchMemberLinks, fetchMyTier, fetchSwishNumber, type MemberLinks, type MemberTier } from "@/lib/membership";
+import { fetchMemberLinks, fetchMyTier, fetchSwishNumber, claimMembership, fetchMyClaims, type MemberLinks, type MemberTier, type MyClaim } from "@/lib/membership";
+import { toast } from "@/lib/toast";
 import { SwishPayBlock } from "@/components/SwishPayBlock";
 import { RF } from "@/components/RailKit";
 
@@ -41,19 +42,24 @@ function PlansPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [plan, setPlan] = useState<"yearly" | "monthly">("yearly");
   const [loaded, setLoaded] = useState(false);
+  // "I've sent the Swish" claims — so Oxy sees who paid without guessing
+  const [claims, setClaims] = useState<MyClaim[]>([]);
+  const [claiming, setClaiming] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
-      const [l, mt, sw] = await Promise.all([
+      const [l, mt, sw, cl] = await Promise.all([
         fetchMemberLinks(),
         uid ? fetchMyTier(uid) : Promise.resolve({ tier: null as MemberTier, since: null }),
         fetchSwishNumber(),
+        fetchMyClaims(),
       ]);
       setLinks(l);
       setTier(mt.tier);
       setSwish(sw);
+      setClaims(cl);
       if (uid) {
         try {
           const { data } = await (supabase as any).from("profiles").select("is_admin,name").eq("id", uid).maybeSingle();
@@ -70,6 +76,28 @@ function PlansPage() {
   const proAmount = proPlan === "yearly" ? 2490 : 249;
   const proTag = `Courtship PRO${proPlan === "yearly" ? " YEAR" : ""} ${myName || ""}`.trim();
   const foundingTag = `Courtship FOUNDING${plan === "yearly" ? " YEAR" : ""} ${myName || ""}`.trim();
+  const locale = lang === "sv" ? "sv-SE" : "en-GB";
+  const pendingClaim = (tr: "founding" | "pro") => claims.find((c) => c.tier === tr && c.status === "pending");
+  async function sendClaim(tr: "founding" | "pro", period: "yearly" | "monthly", amount: number) {
+    setClaiming(tr);
+    try {
+      await claimMembership(tr, period, amount);
+      setClaims(await fetchMyClaims());
+      toast.success(t("mem.claim_thanks"));
+    } catch (e: any) {
+      toast.error(e?.message ?? t("mem.claim_err"));
+    } finally { setClaiming(null); }
+  }
+  // One line under the Swish block: the claim button, or the claim's status.
+  const ClaimLine = ({ tr, period, amount }: { tr: "founding" | "pro"; period: "yearly" | "monthly"; amount: number }) => {
+    const c = pendingClaim(tr);
+    if (c) return <div className="text-sm font-extrabold text-center" style={{ color: "#5a7d1a" }}>✓ {t("mem.claim_sent", { date: new Date(c.created_at).toLocaleDateString(locale, { day: "numeric", month: "short" }) })}</div>;
+    return (
+      <button type="button" disabled={claiming === tr} onClick={() => void sendClaim(tr, period, amount)} className="cbtn cbtn-ghost w-full" style={{ fontSize: 14 }}>
+        {claiming === tr ? "…" : t("mem.claim_cta")}
+      </button>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -119,6 +147,7 @@ function PlansPage() {
         ) : swish ? (
           <>
             <SwishPayBlock number={swish} amountSek={foundingAmount} message={foundingTag} />
+            <ClaimLine tr="founding" period={plan} amount={foundingAmount} />
             <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("mem.swish_note")}</div>
           </>
         ) : isAdmin ? (
@@ -151,6 +180,7 @@ function PlansPage() {
         ) : swish ? (
           <>
             <SwishPayBlock number={swish} amountSek={proAmount} message={proTag} />
+            <ClaimLine tr="pro" period={proPlan} amount={proAmount} />
             <div className="text-[11px] font-semibold text-center text-[var(--ink)]/55">{t("plans.p_swish_note")}</div>
           </>
         ) : isAdmin ? (
