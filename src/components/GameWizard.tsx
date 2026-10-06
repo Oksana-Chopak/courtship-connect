@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeSosCount } from "@/lib/sos";
-import { notifySos, notifyUsers } from "@/lib/push";
+import { notifyUsers } from "@/lib/push";
 import { fetchBuddyIds } from "@/lib/buddies";
 import { fetchCourtsForPicker, type CourtFull } from "@/lib/courts";
 import { useCityNames } from "@/lib/cities";
@@ -448,7 +448,9 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       });
     }
     if (urgent) {
-      if (!invitedMode) void notifySos(data.id);
+      // The SOS fan-out is fired by the DB (trg_notify_sos_on_insert → sos-notify,
+      // Package 3.3): it works even if this tab closes now, and a second call
+      // from here would double-buzz the same players.
       if (createWindowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
       else toast.success(t("post.sos_toast"));
       navigate({ to: "/sos/$id", params: { id: data.id } });

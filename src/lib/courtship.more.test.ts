@@ -53,6 +53,9 @@ describe("monogram / initials", () => {
     const long = monogramColors("x".repeat(64));
     expect(long[0]).toMatch(/^#/);
     expect(monogramColors("")).toHaveLength(2);
+    // a row without an id (deleted account) never crashes a screen (2026-10-06 /leaders)
+    expect(monogramColors(undefined)).toEqual(monogramColors(""));
+    expect(monogramColors(null)).toEqual(monogramColors(""));
   });
   it("initialOf uppercases, trims and survives empties", () => {
     expect(initialOf("anna")).toBe("A");

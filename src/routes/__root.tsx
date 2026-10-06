@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { installErrorCapture, reportClientError } from "@/lib/health";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { tStatic } from "@/lib/i18n";
 import { Toaster } from "sonner";
@@ -49,6 +50,7 @@ function ErrorComponent({ error: thrown, reset }: { error: unknown; reset: () =>
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportClientError("boundary", error);
   }, [error]);
 
   return (
@@ -143,6 +145,7 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    installErrorCapture(); // uncaught errors + rejected promises → Admin Health
     if (!("serviceWorker" in navigator)) return;
     const host = window.location.hostname;
     const isPreview =

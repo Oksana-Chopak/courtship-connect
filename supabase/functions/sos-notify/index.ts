@@ -58,14 +58,35 @@ function shouldNotify(payload: any): string | null {
   return null;
 }
 
+
+// ── CORS (2026-10-06) ────────────────────────────────────────────────────────
+// Browsers send a preflight (OPTIONS) before any call that carries the
+// Authorization header — i.e. every supabase.functions.invoke() from the app.
+// Without these headers the browser refuses the call before it even leaves:
+// "Failed to send a request to the Edge Function". Server-side callers
+// (pg_net from DB triggers, pg_cron) never needed them, which is why the
+// DB-driven pushes worked while every button in the app silently did not.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-notify-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  const h = new Headers(init.headers ?? {});
+  for (const [k, v] of Object.entries(corsHeaders)) h.set(k, v);
+  if (!h.has("content-type")) h.set("content-type", "application/json");
+  return new Response(JSON.stringify(body), { ...init, headers: h });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
-      return new Response(JSON.stringify({ ok: false, error: "VAPID keys not configured" }), { status: 500 });
+      return jsonResponse({ ok: false, error: "VAPID keys not configured" }, { status: 500 });
     }
     const payload = await req.json().catch(() => ({}));
     const sosId = shouldNotify(payload);
-    if (!sosId) return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 });
+    if (!sosId) return jsonResponse({ ok: true, skipped: true }, { status: 200 });
 
     const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -77,7 +98,7 @@ Deno.serve(async (req) => {
       .eq("id", sosId)
       .maybeSingle();
     if (!sos || sos.kind !== "sos" || sos.status !== "active") {
-      return new Response(JSON.stringify({ ok: true, skipped: "not_active_sos" }), { status: 200 });
+      return jsonResponse({ ok: true, skipped: "not_active_sos" }, { status: 200 });
     }
     let courtName = "the court";
     if (sos.court_id) {
@@ -96,7 +117,7 @@ Deno.serve(async (req) => {
 
     // Targets (one row per device) from the SQL policy function
     const { data: targets, error } = await sb.rpc("sos_push_targets", { _sos_id: sosId });
-    if (error) return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
+    if (error) return jsonResponse({ ok: false, error: error.message }, { status: 500 });
 
     const rows = (targets ?? []) as Array<{ user_id: string; endpoint: string; p256dh: string; auth: string }>;
     const notifiedUsers = new Set<string>();
@@ -124,11 +145,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ ok: true, targets: rows.length, sent, pruned }), {
+    return jsonResponse({ ok: true, targets: rows.length, sent, pruned }, {
       status: 200,
       headers: { "content-type": "application/json" },
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), { status: 500 });
+    return jsonResponse({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 });

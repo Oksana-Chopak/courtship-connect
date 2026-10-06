@@ -55,14 +55,17 @@ const MONOGRAM_PALETTE = [
   ["#2B2118", "#C9EE3F"], // ink on green
 ];
 
-export function monogramColors(seed: string): [string, string] {
+export function monogramColors(seed: string | null | undefined): [string, string] {
+  // A row without an id (deleted account, half-loaded join) must not take the
+  // whole screen down — it crashed /leaders on 2026-10-06. "" → palette[0].
+  seed = seed ?? "";
   let h = 0;
   // Stryker disable next-line ArithmeticOperator: flipping + to − negates the whole hash (h₋ ≡ −h₊ by induction from h=0) and Math.abs below erases the sign — the palette pick is provably identical for every input.
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return MONOGRAM_PALETTE[Math.abs(h) % MONOGRAM_PALETTE.length] as [string, string];
 }
 
-export function initialOf(name: string) {
+export function initialOf(name: string | null | undefined) {
   // Stryker disable next-line OptionalChaining: trim() always returns a string once name passed the first ?., so the second ?. can never observably fire.
   return (name?.trim()?.charAt(0) || "?").toUpperCase();
 }

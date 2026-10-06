@@ -133,19 +133,49 @@ async function unsubTokens(sb: any, emails: string[]): Promise<Map<string, strin
   return map;
 }
 
+
+// ── CORS (2026-10-06) ────────────────────────────────────────────────────────
+// Browsers send a preflight (OPTIONS) before any call that carries the
+// Authorization header — i.e. every supabase.functions.invoke() from the app.
+// Without these headers the browser refuses the call before it even leaves:
+// "Failed to send a request to the Edge Function". Server-side callers
+// (pg_net from DB triggers, pg_cron) never needed them, which is why the
+// DB-driven pushes worked while every button in the app silently did not.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-notify-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  const h = new Headers(init.headers ?? {});
+  for (const [k, v] of Object.entries(corsHeaders)) h.set(k, v);
+  if (!h.has("content-type")) h.set("content-type", "application/json");
+  return new Response(JSON.stringify(body), { ...init, headers: h });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     // Hardening: with NOTIFY_SECRET set, anonymous (anon-role) callers must
     // present the shared secret; signed-in members pass as before. With the
     // secret unset, behavior is unchanged — safe to deploy in any order.
     if (NOTIFY_SECRET && callerRole(req) === "anon" && req.headers.get("x-notify-secret") !== NOTIFY_SECRET) {
-      return new Response(JSON.stringify({ ok: false, error: "forbidden" }), { status: 401 });
+      // Also accept the DB-side secret (internal_config.notify_secret, Package 3)
+      // so a drift between the Lovable secret and the DB never silently refuses mail.
+      const given = req.headers.get("x-notify-secret") ?? "";
+      let dbSecret = "";
+      try {
+        const sb0 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+        const { data } = await sb0.from("internal_config").select("value").eq("key", "notify_secret").maybeSingle();
+        dbSecret = data?.value ?? "";
+      } catch { /* no table */ }
+      if (!dbSecret || given !== dbSecret) return jsonResponse({ ok: false, error: "forbidden" }, { status: 401 });
     }
     const { user_ids, title, body, url, kind } = await req.json().catch(() => ({}));
     if (!Array.isArray(user_ids) || !user_ids.length || !title) {
-      return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
+      return jsonResponse({ ok: true, sent: 0 }, { status: 200 });
     }
-    if (!RESEND_KEY && !BREVO_KEY) return new Response(JSON.stringify({ ok: true, skipped: "no BREVO_API_KEY / RESEND_API_KEY" }), { status: 200 });
+    if (!RESEND_KEY && !BREVO_KEY) return jsonResponse({ ok: true, skipped: "no BREVO_API_KEY / RESEND_API_KEY" }, { status: 200 });
 
     const ids = [...new Set((user_ids as string[]).filter(Boolean))].slice(0, 200);
     // Event category decides who gets EMAIL (push is unaffected — BATCH13):
@@ -189,10 +219,10 @@ Deno.serve(async (req) => {
       const e = data?.user?.email;
       if (e) emails.push(e);
     }
-    if (!emails.length) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
+    if (!emails.length) return jsonResponse({ ok: true, sent: 0 }, { status: 200 });
 
     const finalEmails = await dropSuppressed(sb, [...new Set(emails)]);
-    if (!finalEmails.length) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200 });
+    if (!finalEmails.length) return jsonResponse({ ok: true, sent: 0 }, { status: 200 });
     const tokens = await unsubTokens(sb, finalEmails);
     const batch = finalEmails.slice(0, 100).map((to) => ({
       from: FROM, to: [to], subject: String(title),
@@ -200,8 +230,8 @@ Deno.serve(async (req) => {
         `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`),
     }));
     const r = await sendBatch(batch);
-    return new Response(JSON.stringify({ ok: r.ok, sent: r.ok ? batch.length : 0, detail: r.detail || undefined }), { status: 200 });
+    return jsonResponse({ ok: r.ok, sent: r.ok ? batch.length : 0, detail: r.detail || undefined }, { status: 200 });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e).slice(0, 200) }), { status: 200 });
+    return jsonResponse({ ok: false, error: String(e).slice(0, 200) }, { status: 200 });
   }
 });

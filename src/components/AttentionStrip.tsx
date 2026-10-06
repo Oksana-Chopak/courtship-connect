@@ -5,7 +5,6 @@ import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { whenLabel, URGENCY_WINDOW_HOURS } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
-import { notifySos } from "@/lib/push";
 
 export function AttentionStrip({ onChange }: { onChange?: () => void }) {
   const { t } = useI18n();
@@ -107,7 +106,7 @@ export function AttentionStrip({ onChange }: { onChange?: () => void }) {
     }
     const row = Array.isArray(data) ? data[0] : data;
     if (error || !row?.ok) { oops(error ?? new Error(String(row?.reason ?? "flare_failed"))); return; }
-    void notifySos(sosId);
+    // the flare itself (flared_at update) makes the DB fan the SOS out (trg_notify_on_flare)
     toast.success(t("post.flare_fired"));
     setFlarePrompts((p) => p.filter((x) => x.id !== sosId));
     onChange?.();

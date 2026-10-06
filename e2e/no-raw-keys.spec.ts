@@ -8,19 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 const SB = "**/*.supabase.co/**";
 
-// Every namespace of the dictionaries (src/lib/i18n.tsx), generated 2026-10-05.
-// A leaked key looks like "ct.sub_in" or "common.save": namespace, dot, then a
-// snake_case word or ≥4 letters — so "e.g." and "19.30" never trip it.
-const NS = "act|admin|ann|app|auth|board|brand|buddy|cal|cancel|cand|ce|celebrate|city|claim|coach|common|consent|court|crush|ct|date|e|emailn|empty|err|ev|exp|feat|feedback|fmt|g|games|goal|gs|guest|help|hero|hist|home|index|install|inv|invite|lang|lb|lead|legal|lf|log|lucky|lvl|match|matches|me|mem|menu|mini|mm|nav|nf|ob|onboarding|optin|passport|people|plans|player|players|plus|post|post_pub|posted|privacyc|prof|prog|ptime|push|qp|rail|reason|rec|report|rescue|score|settings|share|slot|soon|sos|sport|stats|streak|support|swish|tabs|tier|tonight|unlogged|unsub|vibe|wa|withdraw|wiz|won";
-const RAW_KEY = new RegExp(`(?:^|[\\s(>"'\u2014\u00b7])((?:${NS})\\.(?:[a-z0-9]+(?:_[a-z0-9]+)+|[a-z]{4,})(?:\\.[a-z0-9_]+)*)(?=$|[\\s.,;:!?)<"'])`, "im");
-// Case-insensitive on purpose: the board's surface labels are CSS-uppercased,
-// so a leaked "ct.sub_in" reads "CT.SUB_IN" on screen.
-
-/** The first leaked key in a screen's text, or null. */
-export function findRawKey(text: string): string | null {
-  const hit = text.match(RAW_KEY);
-  return hit ? hit[1] : null;
-}
+import { findRawKey } from "./helpers";
 
 const soon = (h: number) => new Date(Date.now() + h * 3600e3).toISOString();
 

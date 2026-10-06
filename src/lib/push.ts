@@ -120,9 +120,10 @@ export async function ensurePushSubscribed(): Promise<void> {
   }
 }
 
-// Ask the backend to fan this SOS out to eligible rescuers. Fire-and-forget:
-// the SOS is already live on the board, so a push hiccup must never block the
-// user. Replaces a Supabase dashboard webhook — works purely via Lovable.
+// Ask the backend to fan this SOS out to eligible rescuers. Fire-and-forget.
+// Since Package 3.3 the DB does this itself on INSERT / flare
+// (trg_notify_sos_on_insert, trg_notify_on_flare) — kept only for tooling;
+// the app no longer calls it (a second call would double-buzz).
 export async function notifySos(sosId: string): Promise<void> {
   try {
     await (supabase as any).functions.invoke("sos-notify", { body: { sos_id: sosId } });

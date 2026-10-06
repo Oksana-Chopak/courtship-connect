@@ -180,10 +180,31 @@ async function unsubTokens(sb: any, emails: string[]): Promise<Map<string, strin
   return map;
 }
 
+
+// ── CORS (2026-10-06) ────────────────────────────────────────────────────────
+// Browsers send a preflight (OPTIONS) before any call that carries the
+// Authorization header — i.e. every supabase.functions.invoke() from the app.
+// Without these headers the browser refuses the call before it even leaves:
+// "Failed to send a request to the Edge Function". Server-side callers
+// (pg_net from DB triggers, pg_cron) never needed them, which is why the
+// DB-driven pushes worked while every button in the app silently did not.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-notify-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  const h = new Headers(init.headers ?? {});
+  for (const [k, v] of Object.entries(corsHeaders)) h.set(k, v);
+  if (!h.has("content-type")) h.set("content-type", "application/json");
+  return new Response(JSON.stringify(body), { ...init, headers: h });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!RESEND_KEY && !BREVO_KEY) {
-      return new Response(JSON.stringify({ ok: false, error: "No email provider key (BREVO_API_KEY) configured" }), { status: 500 });
+      return jsonResponse({ ok: false, error: "No email provider key (BREVO_API_KEY) configured" }, { status: 500 });
     }
     // Identify the caller from their JWT, then hard-verify is_admin.
     const auth = req.headers.get("Authorization") ?? "";
@@ -191,13 +212,13 @@ Deno.serve(async (req) => {
     const sb = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: caller } = await sb.auth.getUser(jwt);
     const uid = caller?.user?.id;
-    if (!uid) return new Response(JSON.stringify({ ok: false, error: "not_authenticated" }), { status: 401 });
+    if (!uid) return jsonResponse({ ok: false, error: "not_authenticated" }, { status: 401 });
     const { data: me } = await sb.from("profiles").select("is_admin").eq("id", uid).maybeSingle();
-    if (!me?.is_admin) return new Response(JSON.stringify({ ok: false, error: "not_admin" }), { status: 403 });
+    if (!me?.is_admin) return jsonResponse({ ok: false, error: "not_admin" }, { status: 403 });
 
     const { subject, body, test } = await req.json().catch(() => ({}));
     if (!subject || !body) {
-      return new Response(JSON.stringify({ ok: false, error: "subject and body required" }), { status: 400 });
+      return jsonResponse({ ok: false, error: "subject and body required" }, { status: 400 });
     }
 
     // Recipients: every auth user who hasn't opted out (test → only the
@@ -217,7 +238,7 @@ Deno.serve(async (req) => {
       let page = 1;
       while (true) {
         const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
-        if (error) return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
+        if (error) return jsonResponse({ ok: false, error: error.message }, { status: 500 });
         emails.push(...(data.users ?? [])
           .filter((u) => !optedOut.has(u.id))
           .map((u) => u.email).filter(Boolean) as string[]);
@@ -226,7 +247,7 @@ Deno.serve(async (req) => {
       }
       emails = await dropSuppressed(sb, [...new Set(emails)]);
     }
-    if (!emails.length) return new Response(JSON.stringify({ ok: true, sent: 0, total: 0, skipped: 0, failed: [] }), { status: 200 });
+    if (!emails.length) return jsonResponse({ ok: true, sent: 0, total: 0, skipped: 0, failed: [] }, { status: 200 });
 
     // Re-run safety: the same subject+body never reaches an address twice
     // (a test send to yourself is exempt — you may want to see it again).
@@ -251,13 +272,13 @@ Deno.serve(async (req) => {
       failed.push(...r.failed);
       if (!test) await recordSent(sb, key, r.sent, String(subject));
     }
-    return new Response(JSON.stringify({
+    return jsonResponse({
       ok: failed.length === 0, sent, total, skipped: done.size,
       failed: failed.slice(0, 50), from: FROM,
       // kept for older clients
       failures: failed.slice(0, 50).map((f) => `${f.to}: ${f.detail}`),
-    }), { status: 200 });
+    }, { status: 200 });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    return jsonResponse({ ok: false, error: String(e) }, { status: 500 });
   }
 });

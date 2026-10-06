@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { reportClientError } from "@/lib/health";
 
 // OPTIONAL: set this to your support WhatsApp number (e.g. "+46701234567") to give
 // users a one-tap "Message us" button on errors. Leave empty to fall back to
@@ -64,6 +65,7 @@ function detail(raw: unknown): string {
  * Never leak raw technical errors to users — route them through here instead.
  */
 export function oops(raw?: unknown) {
+  reportClientError("shown", raw); // Oxy sees every error a player saw (Health card)
   const c = COPY[lang()];
   const title = c.titles[Math.floor(Math.random() * c.titles.length)];
   const d = detail(raw);

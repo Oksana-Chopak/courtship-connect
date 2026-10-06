@@ -265,11 +265,20 @@ async function buildCtx(sb: any, u: AuthUser, p: Profile | null, template: strin
   return ctx;
 }
 
+// CORS (2026-10-06): the Admin buttons call this function from the browser, which
+// sends a preflight (OPTIONS) first — without these headers the call never leaves
+// the browser ("Failed to send a request to the Edge Function").
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-notify-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 function json(b: unknown, status = 200): Response {
-  return new Response(JSON.stringify(b), { status, headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "content-type": "application/json" } });
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const body = await req.json().catch(() => ({}));
