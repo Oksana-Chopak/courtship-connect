@@ -18,6 +18,10 @@ export default defineConfig({
     // honors prefers-reduced-motion (a11y), so tests run that variant — it also
     // keeps Playwright's "element is stable" check deterministic.
     contextOptions: { reducedMotion: "reduce" },
+    // Players live in Stockholm while the production server renders in UTC.
+    // Testing in the players' zone against a UTC server is what surfaces
+    // hydration mismatches (React #418 on /e and /g, 2026-10-16).
+    timezoneId: "Europe/Stockholm",
     // The sandbox ships one pinned Chromium at this path; point Playwright at it
     // instead of downloading a matching build (network-restricted environment).
     launchOptions: process.env.PW_CHROMIUM_PATH
@@ -25,7 +29,8 @@ export default defineConfig({
       : undefined,
   },
   webServer: {
-    command: "HOST=127.0.0.1 PORT=4173 node .output/server/index.mjs",
+    // TZ=UTC like production; the preload feeds the SSR loaders (see the file).
+    command: "TZ=UTC HOST=127.0.0.1 PORT=4173 node --import ./e2e/ssr-fetch-mock.mjs .output/server/index.mjs",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: true,
     timeout: 60_000,

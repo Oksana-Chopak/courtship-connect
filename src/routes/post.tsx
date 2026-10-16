@@ -6,6 +6,11 @@ import { BallHeart } from "@/components/RailKit";
 import { GameWizard } from "@/components/GameWizard";
 
 export const Route = createFileRoute("/post")({
+  // Client-only, like the member wizard (/_authenticated is ssr:false): the
+  // wizard's defaults, day chips and time wheel all come from "now" in the
+  // player's zone, which the UTC server cannot know — server-rendering it made
+  // React throw #418 and re-render the funnel's first screen (2026-10-16).
+  ssr: false,
   component: PostGamePage,
 });
 

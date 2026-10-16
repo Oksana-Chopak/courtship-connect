@@ -92,6 +92,11 @@ for (const role of ["guest", "member", "admin"] as Role[]) {
         const errors = collectErrors(page);
         if (s.client) await gotoClient(page, s.path); else await page.goto(s.path);
         await settle(page);
+        // A screen that hops (e.g. /e/<id> → /board?join_event for a member, then
+        // the join) may still be loading after the network settles — give it the
+        // seconds a real thumb would, then audit. A screen that NEVER renders its
+        // content still fails here.
+        await expect(page.locator("body")).toContainText(s.expect, { timeout: 10_000 }).catch(() => {});
         const text = await auditScreen(page, `${role} ${s.path}`, errors);
         expect(text, `${role} ${s.path}: expected content`).toMatch(s.expect);
         if (s.not) expect(text, `${role} ${s.path}: must NOT show`).not.toMatch(s.not);

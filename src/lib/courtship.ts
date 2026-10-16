@@ -291,6 +291,52 @@ export function hourRange(start: Date, end: Date): string {
   return `${h(start)}–${h(end)}`;
 }
 
+// ── Court-local clock ───────────────────────────────────────────────────────
+// A moment as the COURT's own clock shows it — identical on the UTC server, in
+// a Stockholm browser and in a New York one. The server-rendered share pages
+// (/e/<id>, /g/<id>) printed UTC on the server and local time in the browser,
+// so React threw #418 and re-rendered the newcomer's first screen (prod,
+// 2026-10-16); and a game in Uppsala at 18:00 is "18:00" for every reader.
+
+function zonedNumbers(d: Date, tz: string): { y: number; m: number; d: number; h: number; min: number } {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23",
+  }).formatToParts(d);
+  const n = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { y: n("year"), m: n("month"), d: n("day"), h: n("hour"), min: n("minute") };
+}
+
+/** Rail labels for an instant in its city's zone. `rel` is "today"/"tmrw" when
+ *  the court's calendar says so (translate it), else null (use `weekday`). */
+export function courtClock(iso: string, city: string | null | undefined, locale: string, now: Date = new Date()): {
+  rel: "today" | "tmrw" | null; weekday: string; dateStr: string; time: string;
+} {
+  const tz = cityTimeZone(city);
+  const d = new Date(iso);
+  const at = zonedNumbers(d, tz);
+  const t0 = zonedNumbers(now, tz);
+  // calendar arithmetic, not "+24h" — a 23/25-hour DST day must not skip a date
+  const dayKey = (y: number, m: number, day: number) => new Date(Date.UTC(y, m - 1, day)).toISOString().slice(0, 10);
+  const key = dayKey(at.y, at.m, at.d);
+  const rel = key === dayKey(t0.y, t0.m, t0.d) ? "today" : key === dayKey(t0.y, t0.m, t0.d + 1) ? "tmrw" : null;
+  return {
+    rel,
+    weekday: d.toLocaleDateString(locale, { weekday: "short", timeZone: tz }),
+    dateStr: d.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: tz }).replace(".", ""),
+    time: d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz }),
+  };
+}
+
+/** hourRange() on the court's clock: "16–19", "9:30–11". */
+export function courtHourRange(startIso: string, endIso: string, city: string | null | undefined): string {
+  const tz = cityTimeZone(city);
+  const h = (iso: string) => {
+    const z = zonedNumbers(new Date(iso), tz);
+    return z.min ? `${z.h}:${String(z.min).padStart(2, "0")}` : `${z.h}`;
+  };
+  return `${h(startIso)}–${h(endIso)}`;
+}
+
 /** Default UI language when no explicit choice is stored. */
 export const LANG_FALLBACK = "en";
 

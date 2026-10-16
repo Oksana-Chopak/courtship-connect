@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { rememberNext } from "@/lib/share";
 import { BallHeart, RF, RailShell, TimeRail, clampLines } from "@/components/RailKit";
-import { cityTimeZone } from "@/lib/courtship";
+import { cityTimeZone, courtClock } from "@/lib/courtship";
 import type { EventRow } from "@/lib/events";
 
 const SITE = "https://court-ship.com";
@@ -110,12 +110,11 @@ function PublicEventPage() {
 
         {event && upcoming && (() => {
           // Same rail as the board's event card (RailKit) — one look everywhere.
-          const d = new Date(event.starts_at);
-          const now = new Date();
-          const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
-          const day = d.toDateString() === now.toDateString() ? t("rail.today") : d.toDateString() === tmr.toDateString() ? t("rail.tmrw") : d.toLocaleDateString(locale, { weekday: "short" });
-          const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
-          const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+          // The event's own clock — same text on the UTC server and in any browser
+          // (React #418 on shared links, 2026-10-16).
+          const c = courtClock(event.starts_at, event.city, locale);
+          const day = c.rel === "today" ? t("rail.today") : c.rel === "tmrw" ? t("rail.tmrw") : c.weekday;
+          const { dateStr, time } = c;
           const hours = event.duration_min != null ? `${Math.round(event.duration_min / 60 * 10) / 10}h` : undefined;
           return (
             <>

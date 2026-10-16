@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { rememberNext } from "@/lib/share";
 import { BallHeart, RF, clampLines, type RailTone } from "@/components/RailKit";
-import { courtTypeMeta, hourRange, cityTimeZone } from "@/lib/courtship";
+import { courtTypeMeta, cityTimeZone, courtClock, courtHourRange } from "@/lib/courtship";
 import { formatLabel } from "@/lib/sos";
 import { Avatar } from "@/components/Avatar";
 
@@ -123,13 +123,12 @@ function PublicGamePage() {
         )}
 
         {state === "ok" && game && (() => {
-          const d = new Date(game.play_at);
-          const winEnd = game.play_until ? new Date(game.play_until) : null;
-          const now = new Date();
-          const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
-          const day = d.toDateString() === now.toDateString() ? t("rail.today") : d.toDateString() === tmr.toDateString() ? t("rail.tmrw") : d.toLocaleDateString(locale, { weekday: "short" });
-          const dateStr = d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
-          const time = winEnd ? hourRange(d, winEnd) : d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+          // The court's own clock — same text on the UTC server and in any browser
+          // (React #418 on shared links, 2026-10-16).
+          const c = courtClock(game.play_at, game.court_city, locale);
+          const day = c.rel === "today" ? t("rail.today") : c.rel === "tmrw" ? t("rail.tmrw") : c.weekday;
+          const dateStr = c.dateStr;
+          const time = game.play_until ? courtHourRange(game.play_at, game.play_until, game.court_city) : c.time;
           const tone: RailTone = game.kind === "sos" ? "sos" : "plan";
           const ctMeta = courtTypeMeta(game.court_type, lang);
           const isRange = time.includes("–");
@@ -195,8 +194,8 @@ function OtherGames({ rows, locale, t }: { rows: EligibleSosRow[]; locale: strin
     <div className="space-y-2 text-left">
       <div className="csection-label" style={{ textAlign: "center" }}>{t("g.others_title")}</div>
       {rows.map((r) => {
-        const d = new Date(r.play_at);
-        const when = `${d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" }).replace(".", "")} ${d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`;
+        const c = courtClock(r.play_at, r.court_city, locale);
+        const when = `${c.weekday} ${c.dateStr} ${c.time}`;
         return (
           <Link key={r.id} to="/g/$id" params={{ id: r.id }} className="block"
             style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(43,33,24,0.18)", borderRadius: 12, padding: "10px 12px", background: "rgba(253,249,238,0.6)", textDecoration: "none", color: "var(--ink)" }}>
