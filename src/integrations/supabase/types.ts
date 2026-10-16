@@ -152,6 +152,39 @@ export type Database = {
         }
         Relationships: []
       }
+      client_errors: {
+        Row: {
+          at: string
+          details: string | null
+          id: string
+          kind: string
+          message: string
+          ua: string | null
+          user_id: string | null
+          where_: string
+        }
+        Insert: {
+          at?: string
+          details?: string | null
+          id?: string
+          kind: string
+          message: string
+          ua?: string | null
+          user_id?: string | null
+          where_: string
+        }
+        Update: {
+          at?: string
+          details?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          ua?: string | null
+          user_id?: string | null
+          where_?: string
+        }
+        Relationships: []
+      }
       coach_requests: {
         Row: {
           admin_note: string | null
@@ -1149,6 +1182,18 @@ export type Database = {
       }
       accept_terms: { Args: { _version: string }; Returns: undefined }
       active_sos_count: { Args: { _uid: string }; Returns: number }
+      admin_client_errors: {
+        Args: { _hours?: number }
+        Returns: {
+          kind: string
+          last_at: string
+          message: string
+          n: number
+          sample: string
+          users: number
+          where_: string
+        }[]
+      }
       admin_courts_list: {
         Args: never
         Returns: {
@@ -1169,6 +1214,7 @@ export type Database = {
       }
       admin_dashboard: { Args: never; Returns: Json }
       admin_delete_invite_code: { Args: { _code: string }; Returns: undefined }
+      admin_health: { Args: never; Returns: Json }
       admin_invite_codes: {
         Args: never
         Returns: {
@@ -1834,6 +1880,16 @@ export type Database = {
       }
       release_applicants: { Args: { _sos_id: string }; Returns: number }
       remove_buddy: { Args: { _other: string }; Returns: undefined }
+      report_client_error: {
+        Args: {
+          _details?: string
+          _kind: string
+          _message: string
+          _ua?: string
+          _where: string
+        }
+        Returns: undefined
+      }
       report_noshow: { Args: { _game_id: string }; Returns: undefined }
       report_user: {
         Args: { _details?: string; _reason: string; _target: string }
