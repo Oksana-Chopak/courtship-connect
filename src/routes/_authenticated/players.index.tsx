@@ -134,11 +134,20 @@ function Players() {
           <h1 className="font-display text-4xl leading-none">{t("players.title")}</h1>
           <p className="text-[var(--ink)] font-semibold mt-1">{t("players.sub")}</p>
         </div>
-        {/* Leaders now lives behind this badge — its bottom-nav slot went to Court Crush. */}
-        <Link to="/leaders" className="shrink-0 inline-flex items-center gap-1.5 font-extrabold rounded-full"
-          style={{ fontSize: 13, border: "1.5px solid rgba(43,33,24,0.28)", background: "rgba(253,249,238,0.6)", color: "var(--ink)", padding: "7px 12px" }}>
-          🏆 {t("tabs.leaders")}
-        </Link>
+        <div className="shrink-0 flex flex-col items-end gap-1.5">
+          {/* Leaders now lives behind this badge — its bottom-nav slot went to Court Crush. */}
+          <Link to="/leaders" className="inline-flex items-center gap-1.5 font-extrabold rounded-full"
+            style={{ fontSize: 13, border: "1.5px solid rgba(43,33,24,0.28)", background: "rgba(253,249,238,0.6)", color: "var(--ink)", padding: "7px 12px" }}>
+            🏆 {t("tabs.leaders")}
+          </Link>
+          {/* Find a coach — the hypothesis under test needs a door people pass
+              by: it hid on Me → More after the 2026-10-03 crystallization and
+              requests stopped. Same quiet pill as Leaders (no accent). */}
+          <Link to="/coach" className="inline-flex items-center gap-1.5 font-extrabold rounded-full"
+            style={{ fontSize: 13, border: "1.5px solid rgba(43,33,24,0.28)", background: "rgba(253,249,238,0.6)", color: "var(--ink)", padding: "7px 12px" }}>
+            🎓 {t("plus.coach")}
+          </Link>
+        </div>
       </div>
 
       {mySports.length > 1 && (

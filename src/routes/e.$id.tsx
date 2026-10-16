@@ -71,9 +71,12 @@ function PublicEventPage() {
 
   useEffect(() => {
     void (async () => {
-      // signed in → the board finishes the join and shows the event in context
+      // Signed in → the event in context on the board, highlighted. OPENING a
+      // link is not joining: this used to send members to /board?join_event,
+      // which booked them (a paid event → "not paid") just for looking, and
+      // pinged the host "X joined" (2026-10-16). Joining is the card's button.
       const { data: sess } = await supabase.auth.getSession();
-      if (sess.session) navigate({ to: "/board", search: { join_event: id } as any, replace: true });
+      if (sess.session) navigate({ to: "/board", search: { focus_event: id } as any, replace: true });
     })();
   }, [id]);
 

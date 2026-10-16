@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "@/lib/toast";
-import { whatsappLink, durationLabel, sportMeta } from "@/lib/courtship";
+import { whatsappLink, durationLabel, sportMeta, courtClock } from "@/lib/courtship";
 import { shortCourtName } from "@/lib/courts";
 import {
   joinEvent,
@@ -19,15 +19,14 @@ import { copyText, myEventShareLink, shareMessage } from "@/lib/share";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { TimeRail, RailShell, ShareIcon, Rackets, EditIcon, DeleteIcon, RF, clampLines } from "@/components/RailKit";
 
-export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void; guest?: boolean }) {
+export function EventCard({ e, meId, myStatus, onChange, guest, focus }: { e: EventRow; meId: string | null; myStatus?: string; onChange: () => void; guest?: boolean; focus?: boolean }) {
   const { t, lang } = useI18n();
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
-  const _d = new Date(e.starts_at);
-  const _now = new Date();
-  const _tmr = new Date(_now); _tmr.setDate(_now.getDate() + 1);
-  const railDay = _d.toDateString() === _now.toDateString() ? t("rail.today") : _d.toDateString() === _tmr.toDateString() ? t("rail.tmrw") : _d.toLocaleDateString(locale, { weekday: "short" });
-  const railTime = _d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
-  const railDate = _d.toLocaleDateString(locale, { day: "numeric", month: "short" }).replace(".", "");
+  // The event's own clock (same as /e/<id>), whatever zone the phone is in.
+  const clock = courtClock(e.starts_at, e.city, locale);
+  const railDay = clock.rel === "today" ? t("rail.today") : clock.rel === "tmrw" ? t("rail.tmrw") : clock.weekday;
+  const railTime = clock.time;
+  const railDate = clock.dateStr;
   const isHost = !!meId && e.host_id === meId;
   const isPaid = (e.price_sek ?? 0) > 0;
   const left = e.capacity != null ? Math.max(0, e.capacity - e.spots_taken) : null;
@@ -101,6 +100,7 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
   }
 
   return (
+    <div id={`ev-${e.id}`} style={focus ? { borderRadius: 14, boxShadow: "0 0 0 3px var(--green-pop), 0 0 0 5px var(--ink)", transition: "box-shadow .3s" } : undefined}>
     <RailShell>
       <TimeRail day={railDay} time={railTime} ct="🎉" tone="event" dateStr={railDate} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 13px" }}>
@@ -145,12 +145,26 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
 
       {isHost ? (
         <div className="mt-3 space-y-2">
+          {/* Who's coming — the host's reason to open this card (2026-10-16:
+              "I can't see who joined, or whether they paid"). Always visible,
+              with a count and, for paid events, who still owes the Swish. The
+              app can't see Swish payments: the host ticks "Mark paid" once the
+              money shows up in her Swish app. */}
+          <div className="border-t border-[var(--ink)]/15 pt-2">
+            <div className="csection-label">
+              {t("ev.whos_coming", { n: attendees?.length ?? e.spots_taken })}
+              {isPaid && attendees && attendees.length > 0 && ` · ${t("ev.paid_count", { paid: attendees.filter((a) => a.status === "paid").length, due: attendees.filter((a) => a.status === "booked").length })}`}
+            </div>
+            {attendees && attendees.length === 0 && (
+              <div className="text-sm font-semibold mt-1" style={{ opacity: 0.65 }}>{t("ev.nobody_yet")}</div>
+            )}
+          </div>
           {attendees && attendees.length > 0 && attendees.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/15 pt-2">
+            <div key={a.id} className="flex items-center justify-between gap-2 border-t border-[var(--ink)]/10 pt-2">
               <div className="min-w-0">
                 <div className="font-extrabold truncate">{a.name}</div>
                 {a.phone && (
-                  <a href={whatsappLink(a.phone, a.name)} target="_blank" rel="noopener noreferrer" className="text-sm font-extrabold underline" style={{ color: "var(--coral)" }}>
+                  <a href={whatsappLink(a.phone, a.name)} target="_blank" rel="noopener noreferrer" className="text-sm font-extrabold underline" style={{ color: "var(--ink)", opacity: 0.75 }}>
                     💬 {t("ev.message")}
                   </a>
                 )}
@@ -158,7 +172,10 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
               {a.status === "paid" ? (
                 <span className="text-sm font-extrabold shrink-0">✓ {t("ev.paid")}</span>
               ) : a.status === "booked" ? (
-                <button className="cbtn cbtn-green text-sm shrink-0" onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
+                <div className="shrink-0 text-right">
+                  <div className="text-xs font-extrabold" style={{ color: "#8C5A33" }}>{t("ev.not_paid_yet")}</div>
+                  <button type="button" className="cbtn cbtn-ghost text-sm" style={{ padding: "6px 10px", minHeight: 40 }} onClick={() => markPaid(a.id)}>{t("ev.mark_paid")}</button>
+                </div>
               ) : (
                 <span className="text-sm text-[var(--ink)] shrink-0">{t("ev.interested")}</span>
               )}
@@ -198,11 +215,16 @@ export function EventCard({ e, meId, myStatus, onChange, guest }: { e: EventRow;
       )}
       </div>
     </RailShell>
+    </div>
   );
 }
 
 function SwishBox({ e }: { e: EventRow }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // Title + date: weekly events share a title, so the organizer can tell which
+  // session a Swish was for (2026-10-16).
+  const c = courtClock(e.starts_at, e.city, lang === "sv" ? "sv-SE" : "en-GB");
+  const payMsg = `${e.title} ${c.dateStr}`;
   const [number, setNumber] = useState<string>("");
   useEffect(() => {
     let cancelled = false;
@@ -224,7 +246,7 @@ function SwishBox({ e }: { e: EventRow }) {
       ) : (
         <div className="text-sm text-[var(--ink)]">{t("ev.no_swish")}</div>
       )}
-      <div className="text-sm text-[var(--ink)]">✏️ {t("ev.pay_msg", { msg: e.title })}</div>
+      <div className="text-sm text-[var(--ink)]">✏️ {t("ev.pay_msg", { msg: payMsg })}</div>
       <div className="text-xs text-[var(--ink)] opacity-80">{t("ev.pay_confirm_note")}</div>
     </div>
   );

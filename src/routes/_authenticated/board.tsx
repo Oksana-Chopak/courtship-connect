@@ -25,10 +25,13 @@ import { toast } from "@/lib/toast";
 export const Route = createFileRoute("/_authenticated/board")({
   head: () => ({ meta: [{ title: "Board — Courtship" }] }),
   // seg kept optional for backwards-compatible links; the board now shows one merged list.
-  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned"; join_event?: string; code?: string; by?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { seg?: "urgent" | "planned"; join_event?: string; focus_event?: string; code?: string; by?: string } => ({
     seg: s.seg === "planned" ? "planned" : s.seg === "urgent" ? "urgent" : undefined,
     // Carried through the guest signup funnel by EventCard — board finishes the join.
     join_event: typeof s.join_event === "string" && s.join_event ? s.join_event : undefined,
+    // Show one event in context (shared link opened by a member, the host's
+    // "X joined" notification): scroll to its card and ring it. Never joins.
+    focus_event: typeof s.focus_event === "string" && s.focus_event ? s.focus_event : undefined,
     // Invite landing (2026-10): /board?code=<invite>&by=<first name> — the shell
     // shows "{by} invited you" and hands the code to signup.
     code: typeof s.code === "string" && s.code ? s.code : undefined,
@@ -172,22 +175,48 @@ function BoardPage() {
   // promise EventCard makes when a signed-out visitor taps join (mirrors the
   // /sos/<id>?apply=1 game path — the tapped thing is never lost in the funnel).
   const joinEventParam = (Route.useSearch() as { join_event?: string }).join_event;
+  const focusEventParam = (Route.useSearch() as { focus_event?: string }).focus_event;
+  const [focusEvent, setFocusEvent] = useState<string | null>(null);
   const joinEventDoneRef = useRef(false);
   const navigateBoard = useNavigate();
   useEffect(() => {
-    if (!meId || !joinEventParam || joinEventDoneRef.current) return;
+    if (!meId || !joinEventParam || joinEventDoneRef.current || loading) return;
     joinEventDoneRef.current = true;
     (async () => {
+      // The organizer opening her own event's link must not book herself.
+      const own = events.find((x) => x.id === joinEventParam);
+      if (own && own.host_id === meId) {
+        setFocusEvent(joinEventParam);
+        navigateBoard({ to: "/board", search: { seg: undefined }, replace: true });
+        return;
+      }
       const r = await joinEvent(joinEventParam);
       if (r.ok) toast.success(t("ev.joined"));
       else if (r.reason === "already_in") toast.success(t("ev.already_in"));
       else if (r.reason === "full") toast.error(t("ev.full_label"));
       else if (r.reason === "past") toast.error(t("ev.past"));
       // Clear the param so refresh / back never re-fires the join.
+      setFocusEvent(joinEventParam);
       navigateBoard({ to: "/board", search: { seg: undefined }, replace: true });
       load();
     })();
-  }, [meId, joinEventParam, navigateBoard, load, t]);
+    // events: only read for the host guard once loaded (see the loading gate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meId, joinEventParam, navigateBoard, load, t, loading]);
+
+  // Focus: take the param once, drop it from the URL, ring the card for a while.
+  useEffect(() => {
+    if (!focusEventParam) return;
+    setFocusEvent(focusEventParam);
+    navigateBoard({ to: "/board", search: { seg: undefined }, replace: true });
+  }, [focusEventParam, navigateBoard]);
+  useEffect(() => {
+    if (!focusEvent || loading) return;
+    const el = typeof document !== "undefined" ? document.getElementById(`ev-${focusEvent}`) : null;
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const tm = setTimeout(() => setFocusEvent(null), 6000);
+    return () => clearTimeout(tm);
+  }, [focusEvent, loading]);
 
   async function onWithdraw(sos: EligibleSosRow) {
     if (typeof window !== "undefined" && !window.confirm(t("home.cant_make_confirm"))) return;
@@ -289,7 +318,7 @@ function BoardPage() {
             {timeline.map((it) => (
               <div key={it.id}>
                 {it.kind === "event" ? (
-                  <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} guest={!meId} />
+                  <EventCard e={it.e} meId={meId} myStatus={myAttendance[it.e.id]} onChange={load} guest={!meId} focus={focusEvent === it.e.id} />
                 ) : it.kind === "mine" ? (
                   <Card sos={it.r} onChange={load} mine candidates={candCounts.get(it.r.id) ?? 0} mePhoto={myPhoto} meName={myName} />
                 ) : (
