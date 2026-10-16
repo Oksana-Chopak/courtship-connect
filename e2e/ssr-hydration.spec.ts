@@ -24,6 +24,10 @@ for (const path of SSR_PATHS) {
     const all = [...errors.pageErrors, ...errors.consoleErrors];
     expect(all.filter((e) => HYDRATION.test(e)), `${path}: hydration error`).toEqual([]);
     expect(errors.pageErrors, `${path}: uncaught exception`).toEqual([]);
+    // the share pages must really have rendered their data on the server —
+    // a silent "gone" page hydrates cleanly and would hide the bug
+    const must = /^\/e\/e-1/.test(path) ? "Sunday Americano" : /^\/g\/g-/.test(path) ? "UTK-hallen" : null;
+    if (must) await expect(page.getByText(must).first()).toBeVisible();
   });
 }
 

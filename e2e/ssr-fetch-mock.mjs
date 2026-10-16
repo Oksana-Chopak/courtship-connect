@@ -5,6 +5,18 @@
 // #418 reached production (2026-10-16) because UTC server text ≠ Stockholm
 // browser text. Only *.supabase.co is intercepted; everything else passes.
 const realFetch = globalThis.fetch;
+
+// CI runs Node 20, which has no global WebSocket; supabase-js ≥2.10x then
+// throws while CREATING the client, so every SSR loader silently returned
+// null and the share pages rendered "gone" (the time assertions failed only
+// in CI). The server never opens a realtime socket — a stub constructor is
+// enough. Production renders on a runtime with WebSocket (verified: prod SSR
+// HTML carries the event). Node 22+ keeps its native one.
+if (typeof globalThis.WebSocket === "undefined") {
+  globalThis.WebSocket = class WebSocketUnavailableInE2E {
+    constructor() { throw new Error("realtime is not available in the e2e SSR server"); }
+  };
+}
 const inH = (h) => new Date(Date.now() + h * 3600e3).toISOString();
 const json = (v) => new Response(JSON.stringify(v), { status: 200, headers: { "content-type": "application/json" } });
 
