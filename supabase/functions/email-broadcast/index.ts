@@ -2,6 +2,9 @@
 // Admin-only email blast to every registered user, via Brevo (Resend fallback).
 //
 // Body: { subject: string, body: string, test?: boolean }
+//   body is plain text with a few conventions (see ./render.ts): blank line =
+//   paragraph, "# Heading", **bold**, "---" = the "In English" divider,
+//   [Text](https://…) = link — alone on its line = the coral button.
 //   test=true → sends ONLY to the calling admin (dry-run before the real blast).
 //
 // Secrets: BREVO_API_KEY (or RESEND_API_KEY), BROADCAST_FROM
@@ -17,6 +20,7 @@
 // subject+body again only reaches the addresses that did not get it — so a
 // re-run after a partial failure is a retry, never a duplicate.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { APP, html, type Contact } from "./render.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -25,20 +29,11 @@ const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const BREVO_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 
 /** Who signs and how players reach her — same block as the lifecycle emails. */
-const CONTACT = {
+const CONTACT: Contact = {
   name: Deno.env.get("CONTACT_NAME") ?? "Oksana",
   whatsapp: (Deno.env.get("CONTACT_WHATSAPP") ?? "+46700266274").replace(/\D/g, ""),
   email: Deno.env.get("CONTACT_EMAIL") ?? "oksana.chopak@gmail.com",
 };
-function contactBlock(): string {
-  const wa = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(`Hej ${CONTACT.name}! `)}`;
-  return `<div style="margin-top:18px;padding-top:12px;border-top:1px solid rgba(43,33,24,.15);font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5">
-      <div style="font-weight:bold">Frågor? Skriv direkt till mig · Questions? Write to me directly</div>
-      <div style="margin-top:8px"><a href="${wa}" style="display:inline-block;border:2px solid #2B2118;border-radius:10px;padding:7px 12px;color:#2B2118;font-weight:bold;text-decoration:none;background:#fff">💬 WhatsApp</a>
-        <span style="color:#8C5A33">&nbsp;·&nbsp;</span><a href="mailto:${CONTACT.email}" style="color:#2B2118;font-weight:bold">${CONTACT.email}</a></div>
-      <div style="margin-top:8px;font-family:Georgia,serif;font-size:14px">— ${CONTACT.name}, Courtship</div>
-    </div>`;
-}
 
 /** "Name <email>" → Brevo sender object; bare address works too. */
 function parseFrom(from: string): { name?: string; email: string } {
@@ -120,33 +115,9 @@ async function recordSent(sb: any, key: string, emails: string[], subject: strin
 
 const FROM = Deno.env.get("BROADCAST_FROM") ?? "Courtship <onboarding@resend.dev>";
 
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-const APP = "https://court-ship.com";
-
-/** Minimal branded HTML wrapper (cream/ink, Courtship tone). */
-function html(bodyText: string, unsubUrl: string): string {
-  const paragraphs = bodyText
-    .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 14px;line-height:1.55;">${esc(p).replace(/\n/g, "<br>")}</p>`)
-    .join("");
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#F6F0E1;">
-  <div style="max-width:560px;margin:0 auto;padding:28px 20px;font-family:Georgia,serif;color:#2B2118;">
-    <div style="font-size:22px;font-weight:bold;margin-bottom:18px;">🎾 Courtship</div>
-    <div style="background:#FDF9EE;border:2px solid #2B2118;border-radius:14px;padding:22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">
-      ${paragraphs}
-      ${contactBlock()}
-    </div>
-    <p style="font-size:12px;color:#8C5A33;margin-top:16px;font-family:Arial,Helvetica,sans-serif;line-height:1.5">
-      Du får det här för att du har ett Courtship-konto. Svara på mejlet så når du ${CONTACT.name} direkt.
-      <a href="${unsubUrl}" style="color:#8C5A33">Avsluta prenumeration</a> · <a href="${APP}/settings" style="color:#8C5A33">Inställningar</a><br>
-      You're getting this because you have a Courtship account. Reply to this email to reach ${CONTACT.name} directly.
-      <a href="${unsubUrl}" style="color:#8C5A33">Unsubscribe</a> · <a href="${APP}/settings" style="color:#8C5A33">Settings</a>
-    </p>
-  </div></body></html>`;
-}
+// The brand frame + the plain-text conventions (headings, links, the coral
+// button, the "In English" divider) live in ./render.ts — pure, unit-tested,
+// and the same code renders the preview Oxy sees before a blast.
 
 /** ePrivacy/CAN-SPAM: skip addresses on the suppression list. */
 async function dropSuppressed(sb: any, emails: string[]): Promise<string[]> {
@@ -265,7 +236,7 @@ Deno.serve(async (req) => {
         from: FROM,
         to: [to],
         subject: String(subject),
-        html: html(String(body), `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`),
+        html: html(String(body), `${APP}/unsubscribe?token=${tokens.get(to) ?? ""}`, CONTACT),
       }));
       const r = await sendBatch(batch);
       sent += r.sent.length;
