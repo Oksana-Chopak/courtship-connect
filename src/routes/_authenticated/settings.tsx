@@ -145,7 +145,7 @@ function SettingsPage() {
                   // (2026-07-20 audit — account-leak across sign-in).
                   try { await unsubscribeFromPush(); } catch { /* best-effort */ }
                   try {
-                    ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next"]
+                    ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next", "courtship.invite"]
                       .forEach((k) => localStorage.removeItem(k));
                   } catch { /* ignore */ }
                   await supabase.auth.signOut();
@@ -212,7 +212,7 @@ function PrivacyDataSection() {
     }
     try { await unsubscribeFromPush(); } catch { /* device may already be gone server-side */ }
     try {
-      ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next"]
+      ["courtship.draftGame", "courtship.progress", "courtship.getstarted.dismissed", "courtship.signup_code", "courtship.next", "courtship.invite"]
         .forEach((k) => localStorage.removeItem(k));
     } catch { /* ignore */ }
     await supabase.auth.signOut();

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { consumeNext } from "@/lib/share";
+import { consumeNext, rememberedInvite, forgetInvite } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { emptyProfile, rowToProfile, type ProfileFormValues } from "@/components/ProfileWizard";
@@ -44,6 +44,7 @@ function Onboarding() {
   }, [navigate]);
 
   async function finishSuccess() {
+    forgetInvite(); // the profile now carries the invite (or none) — done
     try { localStorage.removeItem(SIGNUP_CODE_KEY); } catch {}
     // Legal pack: persist the Terms/Privacy acceptance + 18+ attestation the
     // user gave at sign-up, now that the profile row exists. Best-effort —
@@ -98,6 +99,8 @@ function Onboarding() {
       signupCode =
         ((u.user?.user_metadata as any)?.signup_code as string | undefined) ||
         (typeof window !== "undefined" ? localStorage.getItem(SIGNUP_CODE_KEY) || "" : "") ||
+        // invite link opened before a Google signup that skipped the code field
+        rememberedInvite()?.code ||
         "";
     } catch {}
     const res = await saveProfile(v, signupCode);

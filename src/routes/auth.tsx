@@ -6,7 +6,7 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "@/lib/toast";
 import { oops } from "@/lib/oops";
 import { LangToggle, useI18n } from "@/lib/i18n";
-import { rememberNext, consumeNext } from "@/lib/share";
+import { rememberNext, consumeNext, rememberInvite, rememberedInvite, forgetInvite } from "@/lib/share";
 
 /** Newcomers must not read raw Supabase strings ("Invalid login credentials")
  *  on their very first screen (2026-08-12 audit P1-12). Known codes map to
@@ -83,6 +83,18 @@ function AuthPage() {
   // Nobody types a code to get in — codes exist for attribution (auto-buddy +
   // referral credit for the inviter), not as a gate.
   const [showInvite, setShowInvite] = useState(!!code);
+  // The code that came from an invite LINK — this URL's ?code= or, when the
+  // guest wandered (a game, "+ Post", another tab) before signing up, the one
+  // remembered when they landed. Stale link codes never block; typed ones do.
+  const [linkCode, setLinkCode] = useState((code ?? "").toUpperCase());
+  useEffect(() => {
+    if (code) { rememberInvite(code); return; }
+    const saved = rememberedInvite();
+    if (!saved) return;
+    setLinkCode(saved.code);
+    setInvite((v) => v || saved.code);
+    setShowInvite(true);
+  }, [code]);
   const [busy, setBusy] = useState(false);
   // Legal pack: sign-up requires an 18+ attestation and Terms/Privacy consent
   // (recorded server-side via accept_terms at the end of onboarding).
@@ -138,7 +150,7 @@ function AuthPage() {
       try { localStorage.setItem("courtship.signup_code", codeVal); } catch {}
       return codeVal;
     }
-    if (code && codeVal === code.trim().toUpperCase()) {
+    if (linkCode && codeVal === linkCode) {
       toast.message(t("auth.invite_link_dead"));
       try { localStorage.removeItem("courtship.signup_code"); } catch {}
       return "";
@@ -164,6 +176,7 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        forgetInvite(); // attached to this account (user_metadata) — done
         // No email round-trip: new users are auto-confirmed at the DB level
         // (trigger), but signUp may still withhold a session — so grab one by
         // signing in and go straight to onboarding. Falls back to the email
@@ -303,7 +316,7 @@ function AuthPage() {
                   value={invite}
                   onChange={(e) => setInvite(e.target.value)}
                 />
-                {!!code && invite === (code ?? "").toUpperCase() && invite.length > 0 && (
+                {!!linkCode && invite.trim().toUpperCase() === linkCode && (
                   <p className="text-xs font-bold mt-1" style={{ opacity: 0.65 }}>{t("auth.invite_applied")}</p>
                 )}
               </div>

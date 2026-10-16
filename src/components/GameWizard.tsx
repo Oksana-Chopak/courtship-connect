@@ -356,9 +356,10 @@ export function GameWizard({ guest = false, editId }: { guest?: boolean; editId?
       }
       setBusy(false);
       if (error) { oops(error); return; }
+      // One honest message: a dropped field is a warning, never "saved ✓" next to it.
       if (windowDropped) toast.warning(t("sos.window_not_saved"), { duration: 9000 });
       if (ctAnyDropped) toast.warning(t("sos.batch_not_saved"), { duration: 9000 });
-      else toast.success(t("sos.edit_saved"));
+      if (!windowDropped && !ctAnyDropped) toast.success(t("sos.edit_saved"));
       navigate({ to: "/sos/$id", params: { id: editId } });
       return;
     }

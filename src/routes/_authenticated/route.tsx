@@ -12,6 +12,7 @@ import { FLAGS } from "@/lib/flags";
 import { useI18n } from "@/lib/i18n";
 import { joinSearch } from "@/lib/guest";
 import { peekDraftGame, publishDraftGame } from "@/lib/draftGame";
+import { rememberInvite, rememberedInvite } from "@/lib/share";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -58,6 +59,13 @@ function AuthedShell() {
   const { t } = useI18n();
   const guest = !user;
   const mainRef = useRef<HTMLElement>(null);
+  // Invite landing: /board?code=<invite>&by=<first name> (myInviteLink). The code
+  // is remembered on arrival, so it still reaches signup after the guest taps a
+  // game, "+ Post a game" or another tab (Lovable scan 2026-10-16).
+  const sp = (loc.search ?? {}) as Record<string, unknown>;
+  const urlCode = guest && typeof sp.code === "string" && sp.code ? sp.code : undefined;
+  const urlBy = guest && typeof sp.by === "string" && sp.by ? sp.by.slice(0, 30) : undefined;
+  useEffect(() => { if (urlCode) rememberInvite(urlCode, urlBy); }, [urlCode, urlBy]);
   // App-shell scrolls inside <main>, not the window, so the fixed-position bar
   // can't jump with the mobile toolbar/keyboard. Reset to top on each new page.
   useEffect(() => {
@@ -112,11 +120,11 @@ function AuthedShell() {
         </div>
       </header>
       {guest && (() => {
-        // Invite landing: /board?code=<invite>&by=<first name> (myInviteLink).
-        // The inviter's name makes the banner personal; the code rides into signup.
-        const sp = (loc.search ?? {}) as Record<string, unknown>;
-        const inviteCode = typeof sp.code === "string" && sp.code ? sp.code : undefined;
-        const inviteBy = typeof sp.by === "string" && sp.by ? sp.by.slice(0, 30) : undefined;
+        // The inviter's name makes the banner personal on every guest page, not
+        // just the landing one; the code rides into signup from either source.
+        const saved = urlCode ? null : rememberedInvite();
+        const inviteCode = urlCode ?? saved?.code;
+        const inviteBy = urlCode ? urlBy : saved?.by || undefined;
         return (
           <div className="shrink-0 border-b-2 border-[var(--ink)]" style={{ background: "var(--green-pop)" }}>
             <div className="max-w-md mx-auto px-5 py-2 flex items-center gap-2">

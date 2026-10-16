@@ -100,3 +100,28 @@ test("auth screen: invite code is OPTIONAL (no code field until asked)", async (
   // no invite input rendered by default — open signup (2026-08-06)
   await expect(page.locator("#auth-invite")).toHaveCount(0);
 });
+
+// Lovable scan 2026-10-16: the invite code lived only in /board?code=…, so a
+// guest who wandered (another tab, a game, "+ Post") before signing up reached
+// signup without it — no auto-buddy, no referral credit for the inviter.
+test("invite landing: the code survives a tab switch and reaches signup", async ({ page }) => {
+  await page.goto("/board?code=ANNA-X7K&by=Anna");
+  await expect(page.getByText(/Anna invited you/i)).toBeVisible();
+  // wander off the landing page — the address no longer carries the code
+  await page.getByRole("link", { name: /players/i }).first().click();
+  await expect(page).toHaveURL(/\/players(?!.*code=)/);
+  // the banner stays personal and its Join carries the remembered code
+  await expect(page.getByText(/Anna invited you/i)).toBeVisible();
+  await page.getByRole("link", { name: /^join$/i }).click();
+  await expect(page).toHaveURL(/\/auth/);
+  await expect(page.getByLabel(/invite code/i)).toHaveValue("ANNA-X7K");
+  await expect(page.getByText(/invite is attached/i)).toBeVisible();
+});
+
+test("invite landing: signup opened WITHOUT a code in the URL still gets it", async ({ page }) => {
+  await page.goto("/board?code=ANNA-X7K&by=Anna");
+  await expect(page.getByText(/Anna invited you/i)).toBeVisible();
+  // e.g. "I'm in" on a game or "+ Post a game" → signup with only ?next=…
+  await page.goto("/auth?mode=signup&next=%2Fboard");
+  await expect(page.getByLabel(/invite code/i)).toHaveValue("ANNA-X7K");
+});

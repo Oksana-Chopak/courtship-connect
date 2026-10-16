@@ -27,6 +27,45 @@ export function consumeNext(): string | null {
   }
 }
 
+// Invite memory (Lovable scan 2026-10-16): a plain invite lands on
+// /board?code=…&by=…, and the code used to live ONLY in that address. A guest
+// who tapped "I'm in" on a game, "+ Post a game" or another tab before signing
+// up reached signup without it — no auto-buddy with the inviter, no referral
+// credit. The guest shell remembers the code here; signup and onboarding read
+// it back. 30 days, latest invite wins, wiped on sign-out.
+const INVITE_KEY = "courtship.invite";
+const INVITE_TTL_MS = 30 * 24 * 3600e3;
+
+export function rememberInvite(code: string | null | undefined, by?: string | null): void {
+  const c = String(code ?? "").trim().toUpperCase().slice(0, 40);
+  if (!c) return;
+  const b = String(by ?? "").trim().slice(0, 30);
+  try {
+    localStorage.setItem(INVITE_KEY, JSON.stringify({ code: c, by: b, at: Date.now() }));
+  } catch {
+    /* storage blocked — the URL still carries the code on this page */
+  }
+}
+
+export function rememberedInvite(now: number = Date.now()): { code: string; by: string } | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(INVITE_KEY) ?? "null");
+    if (!v || typeof v.code !== "string" || !v.code) return null;
+    if (typeof v.at !== "number" || now - v.at > INVITE_TTL_MS) return null;
+    return { code: v.code, by: typeof v.by === "string" ? v.by : "" };
+  } catch {
+    return null;
+  }
+}
+
+export function forgetInvite(): void {
+  try {
+    localStorage.removeItem(INVITE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** First name of the signed-in player — for "{name} invited you" on the invite
  *  landing. "" whenever anything is missing (signed out, no profile, network). */
 async function myFirstName(): Promise<string> {

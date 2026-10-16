@@ -308,7 +308,7 @@ function BoardPage() {
           fLevel={fLevel} setFLevel={setFLevel}
           fType={fType} setFType={setFType}
           count={timeline.length}
-          onClear={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); }}
+          onClear={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); setActiveSport("all"); }}
           onClose={() => setFiltersOpen(false)}
         />
       )}
@@ -323,7 +323,7 @@ function BoardPage() {
           <div className="text-3xl">🔍</div>
           <div className="font-display text-xl">{t("board.f_empty_title")}</div>
           <div className="flex gap-2 justify-center pt-1">
-            <button type="button" className="cbtn cbtn-coral" onClick={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); }}>✕ {t("board.f_clear")}</button>
+            <button type="button" className="cbtn cbtn-coral" onClick={() => { setCtFilter("any"); setFCity(null); setFLevel(null); setFType("any"); setActiveSport("all"); }}>✕ {t("board.f_clear")}</button>
             <button type="button" className="cbtn cbtn-ghost" onClick={() => setFiltersOpen(true)}>{t("players.filters")} ▾</button>
           </div>
         </div>
