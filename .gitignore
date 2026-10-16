@@ -30,7 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-package-lock.json
+# package-lock.json is COMMITTED on purpose (2026-10-16): CI installs with npm and a
+# floating tree let npm 10 crash on a transitive peer set ("Cannot read properties of
+# null (reading 'edgesOut')"). Lovable builds with bun.lock; this lock pins the gate.
 
 # Test tooling artifacts (release test pyramid, 2026-08-16)
 coverage
