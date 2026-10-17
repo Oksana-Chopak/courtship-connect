@@ -13,7 +13,7 @@ import { fetchEventContacts, type AttendeeContact, type EventRow } from "@/lib/e
 export function MyEvents({ uid }: { uid: string }) {
   const { t, lang } = useI18n();
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
-  const [rows, setRows] = useState<Array<{ e: EventRow; people: AttendeeContact[] }> | null>(null);
+  const [rows, setRows] = useState<Array<{ e: EventRow; people: AttendeeContact[]; cancelled: Array<{ name: string; at: string }> }> | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -27,17 +27,41 @@ export function MyEvents({ uid }: { uid: string }) {
         .order("starts_at", { ascending: true });
       const evs = ((data as EventRow[] | null) ?? []);
       const withPeople = await Promise.all(evs.map(async (e) => ({ e, people: await fetchEventContacts(e.id).catch(() => [] as AttendeeContact[]) })));
-      if (alive) setRows(withPeople);
+      // Who signed up and later cancelled (event_attendance_log, 2026-10-17:
+      // "three emails, nobody on the list") — so a "joined" email never points
+      // at an empty list without an explanation. Pre-SQL the table is missing:
+      // the error is ignored and the section simply has no cancellations.
+      const cancelledBy = new Map<string, Array<{ name: string; at: string }>>();
+      if (evs.length) {
+        const { data: log } = await (supabase as any)
+          .from("event_attendance_log")
+          .select("event_id,user_id,action,at")
+          .in("event_id", evs.map((e) => e.id))
+          .order("at", { ascending: true });
+        const last = new Map<string, { event_id: string; user_id: string; action: string; at: string }>();
+        for (const r of ((log as any[]) ?? [])) last.set(`${r.event_id}:${r.user_id}`, r);
+        const gone = [...last.values()].filter((r) => r.action === "left");
+        if (gone.length) {
+          const { data: dir } = await (supabase as any).rpc("players_directory", { _ids: [...new Set(gone.map((r) => r.user_id))] });
+          const nameById = new Map<string, string>(((dir as any[]) ?? []).map((d) => [d.id, d.name]));
+          for (const r of gone) {
+            const list = cancelledBy.get(r.event_id) ?? [];
+            list.push({ name: nameById.get(r.user_id) ?? t("myev.someone"), at: r.at });
+            cancelledBy.set(r.event_id, list);
+          }
+        }
+      }
+      if (alive) setRows(withPeople.map((x) => ({ ...x, cancelled: cancelledBy.get(x.e.id) ?? [] })));
     })();
     return () => { alive = false; };
-  }, [uid]);
+  }, [uid, t]);
 
   if (!rows || rows.length === 0) return null;
 
   return (
     <div className="ccard p-4 space-y-3">
       <div className="font-display text-xl">🎪 {t("myev.title")}</div>
-      {rows.map(({ e, people }) => {
+      {rows.map(({ e, people, cancelled }) => {
         const c = courtClock(e.starts_at, e.city, locale);
         const day = c.rel === "today" ? t("rail.today") : c.rel === "tmrw" ? t("rail.tmrw") : c.weekday;
         const paid = (e.price_sek ?? 0) > 0;
@@ -64,6 +88,11 @@ export function MyEvents({ uid }: { uid: string }) {
                   </div>
                 ))}
                 {paid && due > 0 && <div className="text-xs font-bold mt-1" style={{ opacity: 0.6 }}>{t("myev.mark_hint")}</div>}
+              </div>
+            )}
+            {cancelled.length > 0 && (
+              <div className="text-xs font-semibold mt-1" style={{ opacity: 0.6 }}>
+                {cancelled.map((c) => t("myev.cancelled", { name: c.name, when: new Date(c.at).toLocaleString(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" }) })).join(" · ")}
               </div>
             )}
           </Link>

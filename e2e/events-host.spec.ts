@@ -18,6 +18,12 @@ async function asHost(page: Page): Promise<string[]> {
     const url = route.request().url();
     const json = (v: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(v) });
     if (url.includes("/rest/v1/rpc/join_event")) { joins.push(route.request().postData() ?? ""); return json([{ ok: true, reason: "ok", attendee_status: "booked" }]); }
+    if (url.includes("/rest/v1/event_attendance_log")) return json([
+      { event_id: "e-mine", user_id: "p-3", action: "joined", at: inH(-20) },
+      { event_id: "e-mine", user_id: "p-3", action: "left", at: inH(-19) },
+      { event_id: "e-mine", user_id: "p-1", action: "joined", at: inH(-10) },
+    ]);
+    if (url.includes("/rest/v1/rpc/players_directory") && (route.request().postData() ?? "").includes("p-3")) return json([{ id: "p-3", name: "Francisco" }]);
     if (url.includes("/rest/v1/rpc/event_attendee_contacts")) return json(url.includes("e-mine") || (route.request().postData() ?? "").includes("e-mine") ? ATTENDEES : []);
     if (url.includes("/rest/v1/event_requests") && !url.includes("status=eq.pending")) {
       const single = (route.request().headers()["accept"] ?? "").includes("vnd.pgrst.object");
@@ -85,6 +91,8 @@ test("Players shows the way to a coach (quiet pill)", async ({ page }) => {
 test("an event can start on the half or quarter hour (not only on the court grid)", async ({ page }) => {
   await mockSupabase(page, "member");
   await page.goto("/events/new");
+  // tomorrow: today's past slots are (rightly) hidden, so the test can't depend on the clock
+  await page.getByRole("button", { name: /^tomorrow$/i }).click();
   await page.getByRole("button", { name: /^time$/i }).click();
   await page.getByRole("listbox").getByRole("option", { name: "12:30" }).click();
   await expect(page.getByRole("button", { name: /^time$/i })).toContainText("12:30");
@@ -99,6 +107,9 @@ test("Me → My events: each session by date, who's coming, who still owes the S
   await expect(box).toContainText("Linnea");
   await expect(box).toContainText(/Johan\s*Not paid yet/);
   await expect(box).not.toContainText("Sunday Americano"); // not her event
+  // signed up, then cancelled → said out loud (the "3 emails, nobody listed" case)
+  await expect(box).toContainText(/↩️ Francisco cancelled/);
+  await expect(box).not.toContainText(/Linnea cancelled/);
   await box.getByRole("link").first().click();
   await expect(page.locator("#ev-e-mine")).toHaveAttribute("style", /box-shadow/);
 });
