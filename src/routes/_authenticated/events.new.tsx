@@ -203,7 +203,9 @@ function NewEvent() {
           </div>
           </>)}
           <div className="csection-label mb-1">{t("slot.label")}</div>
-          <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} />
+          {/* Events aren't court bookings: any quarter hour (12:30, 18:15…) — the
+              hour-only grid made the SALK session's real 12:30 start unsettable. */}
+          <SlotPicker city={city} date={date} value={time} onChange={setTime} ariaLabel={t("slot.label")} step={15} />
         </div>
         <div className="mt-3">
           <div className="csection-label mb-1">{t("sos.duration")}</div>

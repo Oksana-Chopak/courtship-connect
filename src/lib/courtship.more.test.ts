@@ -118,6 +118,12 @@ describe("slots", () => {
     const now = new Date(); now.setHours(21, 0, 0, 0);
     const tomorrow = new Date(now.getTime() + 86400000);
     expect(generateSlots("Uppsala", tomorrow, now)[0]).toBe("07:00");
+    // events override the court grid: quarter hours, still 07:00–22:00
+    const q = generateSlots("Uppsala", tomorrow, now, 15);
+    expect(q.slice(0, 4)).toEqual(["07:00", "07:15", "07:30", "07:45"]);
+    expect(q).toContain("12:30");
+    expect(q[q.length - 1]).toBe("22:00");
+    expect(q).toHaveLength(61);
   });
 });
 

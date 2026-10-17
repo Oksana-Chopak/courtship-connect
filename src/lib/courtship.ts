@@ -137,9 +137,10 @@ export function defaultPostDate(now: Date = new Date()): Date {
   return d;
 }
 
-/** All valid HH:MM slots for a city across the playable day. */
-export function generateSlots(city: string, forDate?: Date, now: Date = new Date()): string[] {
-  const step = cityGranularity(city);
+/** All valid HH:MM slots for a city across the playable day. `step` overrides
+ *  the city's court-booking grid (games start on the courts' grid; an EVENT
+ *  may start at 12:30 or 18:15 — 2026-10-17). */
+export function generateSlots(city: string, forDate?: Date, now: Date = new Date(), step: number = cityGranularity(city)): string[] {
   // Stryker disable next-line ArithmeticOperator: this initial floor is defensive — the emit loop already starts at COURT_DAY_START, so any value ≤ the day start produces the identical slot list.
   let minMinutes = COURT_DAY_START * 60;
   // For today, only offer slots at least ~1h ahead (time to actually reach the court).

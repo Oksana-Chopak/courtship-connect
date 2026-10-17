@@ -80,3 +80,11 @@ test("Players shows the way to a coach (quiet pill)", async ({ page }) => {
   await page.getByRole("link", { name: /find a coach/i }).click();
   await expect(page).toHaveURL(/\/coach/);
 });
+
+test("an event can start on the half or quarter hour (not only on the court grid)", async ({ page }) => {
+  await mockSupabase(page, "member");
+  await page.goto("/events/new");
+  await page.getByRole("button", { name: /^time$/i }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "12:30" }).click();
+  await expect(page.getByRole("button", { name: /^time$/i })).toContainText("12:30");
+});

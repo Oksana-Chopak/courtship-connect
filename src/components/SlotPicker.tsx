@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { generateSlots } from "@/lib/courtship";
 import { useI18n } from "@/lib/i18n";
 
@@ -10,6 +10,7 @@ export function SlotPicker({
   onChange,
   ariaLabel,
   allowPast = false,
+  step,
 }: {
   city: string;
   date: Date;
@@ -18,14 +19,23 @@ export function SlotPicker({
   ariaLabel?: string;
   /** For logging past games: offer the whole day's slots, not just future ones. */
   allowPast?: boolean;
+  /** Minutes between slots; default = the city's court-booking grid. */
+  step?: number;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const slots = useMemo(() => {
-    if (!allowPast) return generateSlots(city, date);
+    if (!allowPast) return generateSlots(city, date, undefined, step);
     const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
-    return generateSlots(city, date, dayStart);
-  }, [city, date, allowPast]);
+    return generateSlots(city, date, dayStart, step);
+  }, [city, date, allowPast, step]);
+  // A fine grid is a long list — open it at the chosen time, not at 07:00.
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open || !value) return;
+    const el = listRef.current?.querySelector('[aria-selected="true"]') as HTMLElement | null;
+    el?.scrollIntoView({ block: "center" });
+  }, [open, value]);
 
   return (
     <div>
@@ -66,6 +76,7 @@ export function SlotPicker({
               </div>
             ) : (
               <div
+                ref={listRef}
                 role="listbox"
                 aria-label={ariaLabel}
                 className="border-2 border-[var(--ink)] rounded-2xl overflow-y-auto"
