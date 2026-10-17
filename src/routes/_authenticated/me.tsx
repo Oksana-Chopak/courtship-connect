@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { SeasonPanel } from "@/components/SeasonPanel";
 import { RF } from "@/components/RailKit";
 import { MembershipCard } from "@/components/MembershipCard";
+import { MyEvents } from "@/components/MyEvents";
 import { CourtsPassport } from "@/components/CourtsPassport";
 import { levelMeta, vibeEmoji } from "@/lib/courtship";
 import { joinSearch } from "@/lib/guest";
@@ -112,6 +113,9 @@ function MePage() {
       <SeasonPanel />
 
       <MembershipCard />
+
+      {/* The organizer's sessions: date first, who's coming, who still owes the Swish */}
+      {uid && <MyEvents uid={uid} />}
 
       {/* Matches — friends now live in the Players tab, not here */}
       <MenuRail to="/matches" emoji="🎾" bar="#C9EE3F" bg="#EEF6D6" title={t("matches.title")} sub={t("menu.matches_sub", { n: gamesPlayed })} />

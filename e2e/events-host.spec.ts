@@ -22,6 +22,7 @@ async function asHost(page: Page): Promise<string[]> {
     if (url.includes("/rest/v1/event_requests") && !url.includes("status=eq.pending")) {
       const single = (route.request().headers()["accept"] ?? "").includes("vnd.pgrst.object");
       if (single) return json(url.includes("e-mine") ? MINE : EVENT);
+      if (url.includes("host_id=eq.u-me")) return json([MINE]);
       return json([EVENT, MINE]);
     }
     return route.fallback();
@@ -87,4 +88,17 @@ test("an event can start on the half or quarter hour (not only on the court grid
   await page.getByRole("button", { name: /^time$/i }).click();
   await page.getByRole("listbox").getByRole("option", { name: "12:30" }).click();
   await expect(page.getByRole("button", { name: /^time$/i })).toContainText("12:30");
+});
+
+test("Me → My events: each session by date, who's coming, who still owes the Swish", async ({ page }) => {
+  await asHost(page);
+  await page.goto("/me");
+  const box = page.getByText("My events").locator("..");
+  await expect(box).toContainText("Warm up first, tennis after");
+  await expect(box).toContainText(/Who's coming · 2 \/ 10/);
+  await expect(box).toContainText("Linnea");
+  await expect(box).toContainText(/Johan\s*Not paid yet/);
+  await expect(box).not.toContainText("Sunday Americano"); // not her event
+  await box.getByRole("link").first().click();
+  await expect(page.locator("#ev-e-mine")).toHaveAttribute("style", /box-shadow/);
 });
